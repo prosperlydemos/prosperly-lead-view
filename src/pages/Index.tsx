@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
+import LeadEditForm from '../components/LeadEditForm';
 import { mockLeads, mockNotes } from '../data/mockData';
 import { Lead, Note } from '../types';
 import { toast } from "@/components/ui/use-toast";
@@ -10,6 +11,7 @@ const Index = () => {
   const [leads, setLeads] = useState<Lead[]>(mockLeads);
   const [notes, setNotes] = useState<Note[]>(mockNotes);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const selectedLead = selectedLeadId 
     ? leads.find(lead => lead.id === selectedLeadId) 
@@ -46,6 +48,23 @@ const Index = () => {
       description: `Lead status changed to ${status}`
     });
   };
+
+  const handleEditLead = (leadId: string) => {
+    setSelectedLeadId(leadId);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveLead = (updatedLead: Lead) => {
+    setLeads(leads.map(lead => 
+      lead.id === updatedLead.id ? updatedLead : lead
+    ));
+    setIsEditModalOpen(false);
+    
+    toast({
+      title: "Lead updated",
+      description: "Lead information has been updated successfully."
+    });
+  };
   
   return (
     <div className="min-h-screen bg-background">
@@ -62,6 +81,7 @@ const Index = () => {
               leads={leads}
               selectedLeadId={selectedLeadId}
               onLeadSelect={handleLeadSelect}
+              onEditLead={handleEditLead}
             />
           </div>
           <div className="border-l pl-6">
@@ -70,10 +90,18 @@ const Index = () => {
               notes={notes}
               onAddNote={handleAddNote}
               onStatusChange={handleStatusChange}
+              onEditLead={handleEditLead}
             />
           </div>
         </div>
       </main>
+
+      <LeadEditForm
+        lead={selectedLead}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleSaveLead}
+      />
     </div>
   );
 };

@@ -7,9 +7,10 @@ interface LeadListProps {
   leads: Lead[];
   selectedLeadId: string | null;
   onLeadSelect: (leadId: string) => void;
+  onEditLead: (leadId: string) => void;
 }
 
-const LeadList: React.FC<LeadListProps> = ({ leads, selectedLeadId, onLeadSelect }) => {
+const LeadList: React.FC<LeadListProps> = ({ leads, selectedLeadId, onLeadSelect, onEditLead }) => {
   return (
     <div className="overflow-y-auto pr-2 h-[calc(100vh-100px)]">
       <h2 className="text-xl font-bold mb-4">Leads ({leads.length})</h2>
@@ -19,6 +20,7 @@ const LeadList: React.FC<LeadListProps> = ({ leads, selectedLeadId, onLeadSelect
           lead={lead}
           isSelected={selectedLeadId === lead.id}
           onClick={() => onLeadSelect(lead.id)}
+          onEdit={() => onEditLead(lead.id)}
         />
       ))}
     </div>

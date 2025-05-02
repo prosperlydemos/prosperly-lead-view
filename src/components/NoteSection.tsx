@@ -4,15 +4,18 @@ import { Lead, Note as NoteType } from '../types';
 import Note from './Note';
 import AddNoteForm from './AddNoteForm';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Edit } from 'lucide-react';
 
 interface NoteSectionProps {
   lead: Lead | null;
   notes: NoteType[];
   onAddNote: (leadId: string, content: string) => void;
   onStatusChange: (leadId: string, status: string) => void;
+  onEditLead: (leadId: string) => void;
 }
 
-const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onStatusChange }) => {
+const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onStatusChange, onEditLead }) => {
   if (!lead) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -21,7 +24,10 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
     );
   }
 
-  const leadNotes = notes.filter(note => note.leadId === lead.id);
+  // Filter lead notes and sort by created date (newest first)
+  const leadNotes = notes
+    .filter(note => note.leadId === lead.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const handleStatusChange = (value: string) => {
     onStatusChange(lead.id, value);
@@ -30,7 +36,13 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
   return (
     <div className="h-[calc(100vh-100px)] overflow-y-auto pl-2">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">{lead.contactName}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold">{lead.contactName}</h2>
+          <Button variant="ghost" size="sm" onClick={() => onEditLead(lead.id)}>
+            <Edit size={16} className="mr-1" />
+            <span>Edit</span>
+          </Button>
+        </div>
         <Select value={lead.status} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Set Status" />
