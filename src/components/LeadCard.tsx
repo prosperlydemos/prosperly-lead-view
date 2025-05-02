@@ -2,8 +2,7 @@
 import React from 'react';
 import { Lead } from '../types';
 import { format } from 'date-fns';
-import { Calendar, Edit } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar } from 'lucide-react';
 
 interface LeadCardProps {
   lead: Lead;
@@ -12,11 +11,11 @@ interface LeadCardProps {
   onEdit: () => void;
 }
 
-const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }) => {
+const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick }) => {
   // Helper function to format date strings for display
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not scheduled';
-    return format(new Date(dateString), 'MMM d, yyyy h:mm a');
+    return format(new Date(dateString), 'MMM d, yyyy');
   };
 
   // Get status-specific className
@@ -25,25 +24,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
       case 'Demo Scheduled':
         return 'lead-status-demo-scheduled';
       case 'Warm':
-        return 'lead-status-warm';
+        return 'lead-status-warm bg-blue-50';
       case 'Hot':
-        return 'lead-status-hot';
+        return 'lead-status-hot bg-red-50';
       case 'Closed':
-        return 'lead-status-closed';
+        return 'lead-status-closed bg-green-50';
       default:
         return '';
     }
   };
 
-  // Stop propagation to prevent triggering card click when clicking edit button
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit();
-  };
-
   return (
     <div 
-      className={`rounded-lg border p-3 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
+      className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
     >
       <div className="flex justify-between items-start">
@@ -65,19 +58,16 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
           
           <div className="grid grid-cols-2 gap-1 text-xs">
             <div>
-              <span className="text-muted-foreground">Source:</span> {lead.leadSource}
+              <span className="text-muted-foreground">Demo:</span> {formatDate(lead.demoDate)}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Signup:</span> {formatDate(lead.signupDate)}
             </div>
             <div>
               <span className="text-muted-foreground">Setup:</span> ${lead.setupFee}
             </div>
             <div>
               <span className="text-muted-foreground">MRR:</span> ${lead.mrr}
-            </div>
-            <div>
-              <Button variant="ghost" size="sm" className="h-6 p-0" onClick={handleEditClick}>
-                <Edit size={14} className="mr-1" />
-                <span className="text-xs">Edit</span>
-              </Button>
             </div>
           </div>
         </div>

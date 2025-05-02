@@ -66,6 +66,34 @@ const Index = () => {
     });
   };
   
+  const handleAddLead = (leadData: Omit<Lead, 'id'>) => {
+    const newLead: Lead = {
+      ...leadData,
+      id: `lead-${Date.now()}`
+    };
+    
+    setLeads([...leads, newLead]);
+    
+    toast({
+      title: "Lead added",
+      description: "New lead has been added successfully."
+    });
+  };
+  
+  const handleDeleteLead = (leadId: string) => {
+    setLeads(leads.filter(lead => lead.id !== leadId));
+    setNotes(notes.filter(note => note.leadId !== leadId));
+    
+    if (selectedLeadId === leadId) {
+      setSelectedLeadId(null);
+    }
+    
+    toast({
+      title: "Lead deleted",
+      description: "Lead and associated notes have been deleted."
+    });
+  };
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -82,6 +110,7 @@ const Index = () => {
               selectedLeadId={selectedLeadId}
               onLeadSelect={handleLeadSelect}
               onEditLead={handleEditLead}
+              onAddLead={handleAddLead}
             />
           </div>
           <div className="border-l pl-6">
@@ -101,6 +130,7 @@ const Index = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveLead}
+        onDelete={handleDeleteLead}
       />
     </div>
   );

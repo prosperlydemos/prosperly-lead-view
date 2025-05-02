@@ -4,16 +4,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead } from '../types';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
 
 interface LeadEditFormProps {
   lead: Lead | null;
   isOpen: boolean;
   onClose: () => void;
   onSave: (updatedLead: Lead) => void;
+  onDelete: (leadId: string) => void;
 }
 
-const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSave }) => {
+const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSave, onDelete }) => {
   const [formData, setFormData] = React.useState<Partial<Lead>>({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (lead) {
@@ -33,6 +37,14 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSa
     e.preventDefault();
     if (lead && formData) {
       onSave({ ...lead, ...formData });
+      onClose();
+    }
+  };
+
+  const handleDelete = () => {
+    if (lead) {
+      onDelete(lead.id);
+      setDeleteDialogOpen(false);
       onClose();
     }
   };
@@ -90,30 +102,6 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSa
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="setupFee">Setup Fee ($)</label>
-              <Input 
-                id="setupFee"
-                name="setupFee"
-                type="number"
-                value={formData.setupFee || 0}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="mrr">MRR ($)</label>
-              <Input 
-                id="mrr"
-                name="mrr"
-                type="number"
-                value={formData.mrr || 0}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
               <label className="block text-sm font-medium mb-1" htmlFor="demoDate">Demo Date</label>
               <Input 
                 id="demoDate"
@@ -136,9 +124,56 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSa
             </div>
           </div>
           
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Save Changes</Button>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="setupFee">Setup Fee ($)</label>
+              <Input 
+                id="setupFee"
+                name="setupFee"
+                type="number"
+                value={formData.setupFee || 0}
+                onChange={handleChange}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="mrr">MRR ($)</label>
+              <Input 
+                id="mrr"
+                name="mrr"
+                type="number"
+                value={formData.mrr || 0}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex justify-between items-center pt-4">
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive">
+                  <Trash2 size={16} className="mr-1" />
+                  Delete Contact
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete {lead.contactName}'s contact record and all associated notes. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="submit">Save Changes</Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
