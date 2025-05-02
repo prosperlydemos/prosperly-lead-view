@@ -4,14 +4,36 @@ import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import LeadEditForm from '../components/LeadEditForm';
 import { mockLeads, mockNotes } from '../data/mockData';
-import { Lead, Note } from '../types';
+import { Lead, Note, User, LeadStatus } from '../types';
 import { toast } from "@/components/ui/use-toast";
+import { Badge } from '@/components/ui/badge';
 
 const Index = () => {
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  // Create a mock admin user for the initial state
+  const initialCurrentUser: User = {
+    id: 'user-1',
+    name: 'Admin User',
+    email: 'admin@example.com',
+    isAdmin: true
+  };
+  
+  // Initialize mock users with the admin user
+  const initialUsers = [initialCurrentUser];
+  
+  // Update mock leads to assign them to the admin user
+  const initialLeads = mockLeads.map(lead => ({
+    ...lead,
+    ownerId: initialCurrentUser.id
+  }));
+  
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [notes, setNotes] = useState<Note[]>(mockNotes);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [currentUser, setCurrentUser] = useState<User>(initialCurrentUser);
+  const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'All'>('All');
+  const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all');
 
   const selectedLead = selectedLeadId 
     ? leads.find(lead => lead.id === selectedLeadId) 
@@ -94,11 +116,47 @@ const Index = () => {
     });
   };
   
+  const handleAddUser = (userData: Omit<User, 'id'>) => {
+    const newUser: User = {
+      ...userData,
+      id: `user-${Date.now()}`
+    };
+    
+    setUsers([...users, newUser]);
+  };
+  
+  const handleStatusFilterChange = (status: LeadStatus | 'All') => {
+    setSelectedStatus(status);
+  };
+  
+  const handleUserFilterChange = (userId: string | 'all') => {
+    setSelectedUserId(userId);
+  };
+  
+  // Count leads by status
+  const leadStatusCounts = leads.reduce((acc, lead) => {
+    if (!acc[lead.status]) acc[lead.status] = 0;
+    acc[lead.status]++;
+    return acc;
+  }, {} as Record<LeadStatus, number>);
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container py-4">
           <h1 className="text-2xl font-bold">Prosperly Lead View</h1>
+          <div className="flex gap-2 mt-2">
+            {Object.entries(leadStatusCounts).map(([status, count]) => (
+              <Badge key={status} variant="outline" className={
+                status === 'Demo Scheduled' ? 'bg-white border' : 
+                status === 'Warm' ? 'bg-blue-50' :
+                status === 'Hot' ? 'bg-red-50' :
+                status === 'Closed' ? 'bg-green-50' : ''
+              }>
+                {status}: {count}
+              </Badge>
+            ))}
+          </div>
         </div>
       </header>
       
@@ -111,6 +169,13 @@ const Index = () => {
               onLeadSelect={handleLeadSelect}
               onEditLead={handleEditLead}
               onAddLead={handleAddLead}
+              users={users}
+              currentUser={currentUser}
+              onAddUser={handleAddUser}
+              selectedStatus={selectedStatus}
+              onStatusChange={handleStatusFilterChange}
+              selectedUserId={selectedUserId}
+              onUserChange={handleUserFilterChange}
             />
           </div>
           <div className="border-l pl-6">
@@ -131,6 +196,8 @@ const Index = () => {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveLead}
         onDelete={handleDeleteLead}
+        users={users}
+        currentUser={currentUser}
       />
     </div>
   );

@@ -3,9 +3,10 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Lead } from '../types';
+import { Lead, User } from '../types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
+import { Trash2, UserRound } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface LeadEditFormProps {
   lead: Lead | null;
@@ -13,9 +14,19 @@ interface LeadEditFormProps {
   onClose: () => void;
   onSave: (updatedLead: Lead) => void;
   onDelete: (leadId: string) => void;
+  users: User[];
+  currentUser: User;
 }
 
-const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSave, onDelete }) => {
+const LeadEditForm: React.FC<LeadEditFormProps> = ({ 
+  lead, 
+  isOpen, 
+  onClose, 
+  onSave, 
+  onDelete,
+  users,
+  currentUser
+}) => {
   const [formData, setFormData] = React.useState<Partial<Lead>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
@@ -49,7 +60,14 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSa
     }
   };
 
+  const handleOwnerChange = (ownerId: string) => {
+    setFormData(prev => ({ ...prev, ownerId }));
+  };
+
   if (!lead) return null;
+
+  // Only admin or the lead owner can edit
+  const canEditOwnership = currentUser.isAdmin;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -147,6 +165,30 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({ lead, isOpen, onClose, onSa
               />
             </div>
           </div>
+          
+          {canEditOwnership && (
+            <div>
+              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                <UserRound size={16} />
+                Assigned To
+              </label>
+              <Select 
+                value={formData.ownerId || ''} 
+                onValueChange={handleOwnerChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select team member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map(user => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} {user.id === currentUser.id ? '(You)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           
           <DialogFooter className="flex justify-between items-center pt-4">
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

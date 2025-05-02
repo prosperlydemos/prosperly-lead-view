@@ -1,17 +1,18 @@
 
 import React from 'react';
-import { Lead } from '../types';
+import { Lead, User } from '../types';
 import { format } from 'date-fns';
-import { Calendar } from 'lucide-react';
+import { Calendar, UserRound } from 'lucide-react';
 
 interface LeadCardProps {
   lead: Lead;
   isSelected: boolean;
   onClick: () => void;
   onEdit: () => void;
+  users: User[];
 }
 
-const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick }) => {
+const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users }) => {
   // Helper function to format date strings for display
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not scheduled';
@@ -34,6 +35,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick }) => {
     }
   };
 
+  // Find owner name
+  const owner = users.find(user => user.id === lead.ownerId);
+  const ownerName = owner ? owner.name : 'Unassigned';
+
   return (
     <div 
       className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
@@ -42,7 +47,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick }) => {
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex justify-between items-start mb-1">
-            <h3 className="font-semibold text-base">{lead.contactName}</h3>
+            <h3 className="font-semibold text-sm">{lead.contactName}</h3>
             <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
               {lead.status}
             </span>
@@ -52,7 +57,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick }) => {
             {lead.email}
           </div>
           
-          <div className="font-medium text-sm mb-1">
+          <div className="font-medium text-xs mb-1">
             {lead.businessName}
           </div>
           
@@ -68,6 +73,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick }) => {
             </div>
             <div>
               <span className="text-muted-foreground">MRR:</span> ${lead.mrr}
+            </div>
+            <div className="col-span-2 flex items-center gap-1 text-xs text-muted-foreground mt-1">
+              <UserRound size={12} />
+              <span>{ownerName}</span>
             </div>
           </div>
         </div>
