@@ -1,11 +1,19 @@
 
 export type LeadStatus = 'Demo Scheduled' | 'Warm' | 'Hot' | 'Closed';
 
+export interface CommissionRule {
+  threshold: number; // Number of closes before this rule applies
+  amount: number;    // Commission amount per close
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   isAdmin: boolean;
+  commissionRules?: CommissionRule[];
+  totalCommission?: number;
+  closedDeals?: number;
 }
 
 export interface Lead {
@@ -20,6 +28,7 @@ export interface Lead {
   signupDate: string | null;
   status: LeadStatus;
   ownerId: string; // ID of the user who owns this lead
+  closedAt?: string; // Date when the lead was closed
 }
 
 export interface Note {

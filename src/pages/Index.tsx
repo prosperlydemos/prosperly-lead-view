@@ -7,6 +7,9 @@ import { mockLeads, mockNotes } from '../data/mockData';
 import { Lead, Note, User, LeadStatus } from '../types';
 import { toast } from "@/components/ui/use-toast";
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { BarChart } from 'lucide-react';
 
 const Index = () => {
   // Create a mock admin user for the initial state
@@ -14,17 +17,51 @@ const Index = () => {
     id: 'user-1',
     name: 'Admin User',
     email: 'admin@example.com',
-    isAdmin: true
+    isAdmin: true,
+    commissionRules: [
+      { threshold: 0, amount: 100 }, // First 10 closes: $100 each
+      { threshold: 10, amount: 150 } // After 10 closes: $150 each
+    ]
   };
   
   // Initialize mock users with the admin user
-  const initialUsers = [initialCurrentUser];
+  const initialUsers = [
+    initialCurrentUser,
+    {
+      id: 'user-2',
+      name: 'Sales Rep 1',
+      email: 'sales1@example.com',
+      isAdmin: false,
+      commissionRules: [
+        { threshold: 0, amount: 100 },
+        { threshold: 10, amount: 150 }
+      ]
+    },
+    {
+      id: 'user-3',
+      name: 'Sales Rep 2',
+      email: 'sales2@example.com',
+      isAdmin: false,
+      commissionRules: [
+        { threshold: 0, amount: 100 },
+        { threshold: 10, amount: 150 }
+      ]
+    }
+  ];
   
   // Update mock leads to assign them to the admin user
-  const initialLeads = mockLeads.map(lead => ({
-    ...lead,
-    ownerId: initialCurrentUser.id
-  }));
+  const initialLeads = mockLeads.map((lead, index) => {
+    // Distribute leads among users
+    const ownerId = initialUsers[index % initialUsers.length].id;
+    const signupDate = lead.signupDate || (lead.status === 'Closed' ? new Date().toISOString() : null);
+    
+    return {
+      ...lead,
+      ownerId,
+      signupDate,
+      closedAt: lead.status === 'Closed' ? signupDate : null
+    };
+  });
   
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [notes, setNotes] = useState<Note[]>(mockNotes);
@@ -59,11 +96,23 @@ const Index = () => {
   };
 
   const handleStatusChange = (leadId: string, status: string) => {
-    setLeads(leads.map(lead => 
-      lead.id === leadId 
-        ? { ...lead, status: status as Lead['status'] } 
-        : lead
-    ));
+    setLeads(leads.map(lead => {
+      if (lead.id === leadId) {
+        // If changing to Closed status, update the signupDate
+        const updates: Partial<Lead> = { 
+          status: status as Lead['status']
+        };
+        
+        if (status === 'Closed' && !lead.signupDate) {
+          const now = new Date().toISOString();
+          updates.signupDate = now;
+          updates.closedAt = now;
+        }
+        
+        return { ...lead, ...updates };
+      }
+      return lead;
+    }));
     
     toast({
       title: "Status updated",
@@ -119,10 +168,19 @@ const Index = () => {
   const handleAddUser = (userData: Omit<User, 'id'>) => {
     const newUser: User = {
       ...userData,
-      id: `user-${Date.now()}`
+      id: `user-${Date.now()}`,
+      commissionRules: [
+        { threshold: 0, amount: 100 },
+        { threshold: 10, amount: 150 }
+      ]
     };
     
     setUsers([...users, newUser]);
+    
+    toast({
+      title: "User added",
+      description: "New user has been added successfully."
+    });
   };
   
   const handleStatusFilterChange = (status: LeadStatus | 'All') => {
@@ -140,22 +198,35 @@ const Index = () => {
     return acc;
   }, {} as Record<LeadStatus, number>);
   
+  const selectedLead = selectedLeadId 
+    ? leads.find(lead => lead.id === selectedLeadId) 
+    : null;
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container py-4">
-          <h1 className="text-2xl font-bold">Prosperly Lead View</h1>
-          <div className="flex gap-2 mt-2">
-            {Object.entries(leadStatusCounts).map(([status, count]) => (
-              <Badge key={status} variant="outline" className={
-                status === 'Demo Scheduled' ? 'bg-white border' : 
-                status === 'Warm' ? 'bg-blue-50' :
-                status === 'Hot' ? 'bg-red-50' :
-                status === 'Closed' ? 'bg-green-50' : ''
-              }>
-                {status}: {count}
-              </Badge>
-            ))}
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold">Prosperly Lead View</h1>
+              <div className="flex gap-2 mt-2">
+                {Object.entries(leadStatusCounts).map(([status, count]) => (
+                  <Badge key={status} variant="outline" className={
+                    status === 'Demo Scheduled' ? 'bg-white border' : 
+                    status === 'Warm' ? 'bg-blue-50' :
+                    status === 'Hot' ? 'bg-red-50' :
+                    status === 'Closed' ? 'bg-green-50' : ''
+                  }>
+                    {status}: {count}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <Link to="/reports">
+              <Button variant="outline" className="flex items-center">
+                <BarChart className="mr-2 h-4 w-4" /> Sales Reports
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
