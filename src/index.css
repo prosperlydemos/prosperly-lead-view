@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,20 +36,19 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Lead status colors */
+    --status-demo-scheduled: 0 0% 100%;
+    --status-warm: 214 91% 91%;
+    --status-hot: 24 96% 82%;
+    --status-closed: 84 74% 93%;
   }
 
   .dark {
@@ -98,4 +98,21 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Lead status background colors */
+.lead-status-demo-scheduled {
+  @apply bg-white border-gray-200;
+}
+
+.lead-status-warm {
+  @apply bg-[#D3E4FD] border-blue-200;
+}
+
+.lead-status-hot {
+  @apply bg-[#FEC6A1] border-orange-200;
+}
+
+.lead-status-closed {
+  @apply bg-[#F2FCE2] border-green-200;
 }
