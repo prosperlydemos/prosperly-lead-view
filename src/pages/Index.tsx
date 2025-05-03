@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -11,53 +10,19 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BarChart } from 'lucide-react';
 
-const Index = () => {
-  // Create a mock admin user for the initial state
-  const initialCurrentUser: User = {
-    id: 'user-1',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    isAdmin: true,
-    commissionRules: [
-      { threshold: 0, amount: 100 }, // First 10 closes: $100 each
-      { threshold: 10, amount: 150 } // After 10 closes: $150 each
-    ]
-  };
-  
-  // Initialize mock users with the admin user
-  const initialUsers = [
-    initialCurrentUser,
-    {
-      id: 'user-2',
-      name: 'Sales Rep 1',
-      email: 'sales1@example.com',
-      isAdmin: false,
-      commissionRules: [
-        { threshold: 0, amount: 100 },
-        { threshold: 10, amount: 150 }
-      ]
-    },
-    {
-      id: 'user-3',
-      name: 'Sales Rep 2',
-      email: 'sales2@example.com',
-      isAdmin: false,
-      commissionRules: [
-        { threshold: 0, amount: 100 },
-        { threshold: 10, amount: 150 }
-      ]
-    }
-  ];
-  
-  // Update mock leads to assign them to the admin user
-  const initialLeads = mockLeads.map((lead, index) => {
-    // Distribute leads among users
-    const ownerId = initialUsers[index % initialUsers.length].id;
+interface IndexProps {
+  initialUsers: User[];
+  initialCurrentUser: User;
+}
+
+const Index: React.FC<IndexProps> = ({ initialUsers, initialCurrentUser }) => {
+  // Update mock leads to assign them to users
+  const initialLeads = mockLeads.map((lead) => {
+    // Add closed date for closed leads
     const signupDate = lead.signupDate || (lead.status === 'Closed' ? new Date().toISOString() : null);
     
     return {
       ...lead,
-      ownerId,
       signupDate,
       closedAt: lead.status === 'Closed' ? signupDate : null
     };
@@ -198,9 +163,7 @@ const Index = () => {
     return acc;
   }, {} as Record<LeadStatus, number>);
   
-  const selectedLead = selectedLeadId 
-    ? leads.find(lead => lead.id === selectedLeadId) 
-    : null;
+  // Note: Removed the duplicate selectedLead declaration that was here
   
   return (
     <div className="min-h-screen bg-background">
@@ -238,24 +201,94 @@ const Index = () => {
               leads={leads}
               selectedLeadId={selectedLeadId}
               onLeadSelect={handleLeadSelect}
-              onEditLead={handleEditLead}
-              onAddLead={handleAddLead}
+              onEditLead={(leadId) => {
+                setSelectedLeadId(leadId);
+                setIsEditModalOpen(true);
+              }}
+              onAddLead={(leadData) => {
+                const newLead: Lead = {
+                  ...leadData,
+                  id: `lead-${Date.now()}`
+                };
+                
+                setLeads([...leads, newLead]);
+                
+                toast({
+                  title: "Lead added",
+                  description: "New lead has been added successfully."
+                });
+              }}
               users={users}
               currentUser={currentUser}
-              onAddUser={handleAddUser}
+              onAddUser={(userData) => {
+                const newUser: User = {
+                  ...userData,
+                  id: `user-${Date.now()}`,
+                  commissionRules: [
+                    { threshold: 0, amount: 100 },
+                    { threshold: 10, amount: 150 }
+                  ]
+                };
+                
+                setUsers([...users, newUser]);
+                
+                toast({
+                  title: "User added",
+                  description: "New user has been added successfully."
+                });
+              }}
               selectedStatus={selectedStatus}
-              onStatusChange={handleStatusFilterChange}
+              onStatusChange={setSelectedStatus}
               selectedUserId={selectedUserId}
-              onUserChange={handleUserFilterChange}
+              onUserChange={setSelectedUserId}
             />
           </div>
           <div className="border-l pl-6">
             <NoteSection 
               lead={selectedLead}
               notes={notes}
-              onAddNote={handleAddNote}
-              onStatusChange={handleStatusChange}
-              onEditLead={handleEditLead}
+              onAddNote={(leadId, content) => {
+                const newNote: Note = {
+                  id: `note-${Date.now()}`,
+                  leadId,
+                  content,
+                  createdAt: new Date().toISOString()
+                };
+                
+                setNotes([...notes, newNote]);
+                toast({
+                  title: "Note added",
+                  description: "Your note has been saved successfully."
+                });
+              }}
+              onStatusChange={(leadId, status) => {
+                setLeads(leads.map(lead => {
+                  if (lead.id === leadId) {
+                    // If changing to Closed status, update the signupDate
+                    const updates: Partial<Lead> = { 
+                      status: status as Lead['status']
+                    };
+                    
+                    if (status === 'Closed' && !lead.signupDate) {
+                      const now = new Date().toISOString();
+                      updates.signupDate = now;
+                      updates.closedAt = now;
+                    }
+                    
+                    return { ...lead, ...updates };
+                  }
+                  return lead;
+                }));
+                
+                toast({
+                  title: "Status updated",
+                  description: `Lead status changed to ${status}`
+                });
+              }}
+              onEditLead={(leadId) => {
+                setSelectedLeadId(leadId);
+                setIsEditModalOpen(true);
+              }}
             />
           </div>
         </div>
@@ -265,8 +298,32 @@ const Index = () => {
         lead={selectedLead}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        onSave={handleSaveLead}
-        onDelete={handleDeleteLead}
+        onSave={(updatedLead) => {
+          setLeads(leads.map(lead => 
+            lead.id === updatedLead.id ? updatedLead : lead
+          ));
+          setIsEditModalOpen(false);
+          
+          toast({
+            title: "Lead updated",
+            description: "Lead information has been updated successfully."
+          });
+        }}
+        onDelete={(leadId) => {
+          setLeads(leads.filter(lead => lead.id !== leadId));
+          setNotes(notes.filter(note => note.leadId !== leadId));
+          
+          if (selectedLeadId === leadId) {
+            setSelectedLeadId(null);
+          }
+          
+          setIsEditModalOpen(false);
+          
+          toast({
+            title: "Lead deleted",
+            description: "Lead and associated notes have been deleted."
+          });
+        }}
         users={users}
         currentUser={currentUser}
       />

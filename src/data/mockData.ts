@@ -12,7 +12,8 @@ export const mockLeads: Lead[] = [
     mrr: 350,
     demoDate: '2025-05-10T14:00:00Z',
     signupDate: null,
-    status: 'Demo Scheduled'
+    status: 'Demo Scheduled',
+    ownerId: 'user-1'  // Default owner
   },
   {
     id: '2',
@@ -24,7 +25,8 @@ export const mockLeads: Lead[] = [
     mrr: 500,
     demoDate: '2025-04-28T10:00:00Z',
     signupDate: null,
-    status: 'Warm'
+    status: 'Warm',
+    ownerId: 'user-1'
   },
   {
     id: '3',
@@ -36,7 +38,8 @@ export const mockLeads: Lead[] = [
     mrr: 750,
     demoDate: '2025-04-25T15:30:00Z',
     signupDate: null,
-    status: 'Hot'
+    status: 'Hot',
+    ownerId: 'user-2'
   },
   {
     id: '4',
@@ -48,7 +51,8 @@ export const mockLeads: Lead[] = [
     mrr: 450,
     demoDate: '2025-04-18T13:00:00Z',
     signupDate: '2025-04-22T09:15:00Z',
-    status: 'Closed'
+    status: 'Closed',
+    ownerId: 'user-2'
   },
   {
     id: '5',
@@ -60,7 +64,8 @@ export const mockLeads: Lead[] = [
     mrr: 300,
     demoDate: '2025-05-05T11:00:00Z',
     signupDate: null,
-    status: 'Demo Scheduled'
+    status: 'Demo Scheduled',
+    ownerId: 'user-3'
   }
 ];
 
