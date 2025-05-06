@@ -1,4 +1,3 @@
-
 import { Lead, Note } from '../types';
 
 export const mockLeads: Lead[] = [
@@ -15,7 +14,8 @@ export const mockLeads: Lead[] = [
     status: 'Demo Scheduled',
     ownerId: 'user-1',  // Default owner
     crm: 'HubSpot',
-    nextFollowUp: '2025-05-15T10:00:00Z'
+    nextFollowUp: '2025-05-15T10:00:00Z',
+    value: 4200  // Annual value (mrr * 12)
   },
   {
     id: '2',
@@ -30,7 +30,8 @@ export const mockLeads: Lead[] = [
     status: 'Warm',
     ownerId: 'user-1',
     crm: 'Salesforce',
-    nextFollowUp: '2025-05-07T14:30:00Z'
+    nextFollowUp: '2025-05-07T14:30:00Z',
+    value: 6000  // Annual value (mrr * 12)
   },
   {
     id: '3',
@@ -45,7 +46,8 @@ export const mockLeads: Lead[] = [
     status: 'Hot',
     ownerId: 'user-2',
     crm: 'Zoho CRM',
-    nextFollowUp: '2025-05-08T11:00:00Z'
+    nextFollowUp: '2025-05-08T11:00:00Z',
+    value: 9000  // Annual value (mrr * 12)
   },
   {
     id: '4',
@@ -60,7 +62,8 @@ export const mockLeads: Lead[] = [
     status: 'Closed',
     ownerId: 'user-2',
     crm: 'Microsoft Dynamics',
-    nextFollowUp: null
+    nextFollowUp: null,
+    value: 5400  // Annual value (mrr * 12)
   },
   {
     id: '5',
@@ -75,7 +78,8 @@ export const mockLeads: Lead[] = [
     status: 'Demo Scheduled',
     ownerId: 'user-3',
     crm: 'Pipedrive',
-    nextFollowUp: '2025-05-12T09:00:00Z'
+    nextFollowUp: '2025-05-12T09:00:00Z',
+    value: 3600  // Annual value (mrr * 12)
   }
 ];
 

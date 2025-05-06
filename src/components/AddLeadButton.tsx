@@ -31,7 +31,8 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     status: 'Demo Scheduled',
     ownerId: currentUser.id, // Default to current user
     crm: '',
-    nextFollowUp: null
+    nextFollowUp: null,
+    value: 0 // Added the value field which was missing
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +86,8 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
       status: 'Demo Scheduled',
       ownerId: currentUser.id,
       crm: '',
-      nextFollowUp: null
+      nextFollowUp: null,
+      value: 0 // Added the value field which was missing
     });
     setIsOpen(false);
   };

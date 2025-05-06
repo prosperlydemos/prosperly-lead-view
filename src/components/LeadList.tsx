@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { LeadStatus } from '../types';
+import AddLeadButton from './AddLeadButton';
 
 interface LeadListProps {
   leads: Lead[];
@@ -54,10 +55,16 @@ const LeadList: React.FC<LeadListProps> = ({
     <div className="overflow-y-auto pr-2 h-[calc(100vh-100px)]">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Leads ({filteredLeads.length})</h2>
-        <Button onClick={onAddLead}>
-          <PlusCircle size={16} className="mr-1" />
-          Add Lead
-        </Button>
+        <AddLeadButton 
+          onAddLead={onAddLead}
+          users={[]} 
+          currentUser={{
+            id: currentUser?.id || '',
+            name: currentUser?.name || '',
+            email: currentUser?.email || '',
+            isAdmin: currentUser?.is_admin || false
+          }}
+        />
       </div>
       
       <div className="flex flex-col md:flex-row gap-2 mb-4">

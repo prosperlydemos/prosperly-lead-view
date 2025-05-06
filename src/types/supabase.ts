@@ -3,7 +3,15 @@ import { Database as SupabaseDatabase } from '@/integrations/supabase/types';
 
 // Directly use Supabase generated types
 export type Profile = SupabaseDatabase['public']['Tables']['profiles']['Row'];
-export type Lead = SupabaseDatabase['public']['Tables']['leads']['Row'];
+export type Lead = SupabaseDatabase['public']['Tables']['leads']['Row'] & {
+  // Add these fields that were added via our SQL migrations but may not be in the generated types yet
+  lead_source?: string | null;
+  setup_fee?: number | null;
+  mrr?: number | null;
+  demo_date?: string | null;
+  signup_date?: string | null;
+  crm?: string | null;
+};
 export type Note = SupabaseDatabase['public']['Tables']['notes']['Row'];
 
 export interface SupabaseUser {

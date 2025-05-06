@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -14,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
 import { Lead as AppLead } from '../types/index';
+import AddLeadButton from '../components/AddLeadButton';
 
 interface TodoItem {
   id: string;
@@ -311,6 +311,41 @@ const Index: React.FC = () => {
   // Convert Supabase leads to App leads for LeadEditForm
   const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
   
+  const handleAddLead = async (newLead: Omit<AppLead, 'id'>) => {
+    if (!currentUser) return;
+    
+    try {
+      // Calculate the value field if not provided (default to annual value)
+      if (!newLead.value && newLead.mrr) {
+        newLead.value = newLead.mrr * 12; // Calculate annual value
+      }
+      
+      const supabaseNewLead = mapAppLeadToSupabaseLead(newLead as AppLead);
+      
+      const { data, error } = await supabase
+        .from('leads')
+        .insert(supabaseNewLead)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      setLeads(prev => [...prev, data]);
+      
+      toast({
+        title: "Lead added",
+        description: "New lead has been added successfully."
+      });
+    } catch (error) {
+      console.error('Error adding lead:', error);
+      toast({
+        title: "Error adding lead",
+        description: "Failed to add new lead",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -359,7 +394,7 @@ const Index: React.FC = () => {
               selectedLeadId={selectedLeadId}
               onLeadSelect={handleLeadSelect}
               onEditLead={handleEditLead}
-              onAddLead={() => {}} // We'll implement this with Supabase
+              onAddLead={() => {}} // This will be replaced by AddLeadButton
               selectedStatus={selectedStatus}
               onStatusChange={handleStatusFilterChange}
               selectedUserId={selectedUserId}
@@ -403,6 +438,18 @@ const Index: React.FC = () => {
           setIsTodoListOpen(false);
         }}
         currentUser={currentUser}
+      />
+
+      {/* Add the AddLeadButton component */}
+      <AddLeadButton 
+        onAddLead={handleAddLead}
+        users={[]} // We'll populate this properly in the future
+        currentUser={{
+          id: currentUser?.id || '',
+          name: currentUser?.name || '',
+          email: currentUser?.email || '',
+          isAdmin: currentUser?.is_admin || false
+        }} 
       />
     </div>
   );
