@@ -92,19 +92,22 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
+  // Enhanced date change handler that properly updates the form data
   const handleDateChange = (field: string, date: Date | undefined) => {
     if (date) {
-      // Format as YYYY-MM-DD for date fields (without time)
+      // Format as YYYY-MM-DD for date fields
       const formattedDate = date.toISOString().split('T')[0];
       setFormData(prev => ({ 
         ...prev, 
         [field]: formattedDate
       }));
+      console.log(`Date updated - ${field}:`, formattedDate);
     } else {
       setFormData(prev => ({ 
         ...prev, 
         [field]: null 
       }));
+      console.log(`Date cleared - ${field}`);
     }
   };
 
@@ -113,7 +116,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Only admin or the lead owner can edit ownership
   const canEditOwnership = currentUser.isAdmin;
 
-  // Format date for display in the date picker
+  // Convert string date to Date object for the calendar
   const formatDateForPicker = (dateString: string | null | undefined) => {
     if (!dateString) return undefined;
     
