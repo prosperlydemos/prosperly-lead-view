@@ -70,22 +70,20 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users })
                 </button>
               </span>
             </div>
-            <div className="font-medium text-xs">{lead.businessName}</div>
+            <div className="flex justify-between items-center w-full">
+              <span className="font-medium text-xs">{lead.businessName}</span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <UserRound size={12} />
+                {ownerName}
+              </span>
+            </div>
           </div>
           <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
             {lead.status}
           </span>
         </div>
-        
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <UserRound size={12} />
-          <span>{ownerName}</span>
-        </div>
 
         <div className="grid grid-cols-2 gap-1 text-xs">
-          <div>
-            <span className="text-muted-foreground">Demo:</span> {formatDate(lead.demoDate)}
-          </div>
           <div>
             <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.nextFollowUp)}
           </div>
