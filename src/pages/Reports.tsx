@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '../types';
 import { useAuth } from '@/context/AuthContext';
@@ -92,26 +91,46 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
         setFilteredLeads(transformedLeads);
         
         // Transform profiles to User format
-        const transformedUsers = profilesData ? profilesData.map((profile): User => ({
-          id: profile.id,
-          name: profile.name || 'Unknown',
-          email: profile.email || '',
-          isAdmin: profile.is_admin,
-          commissionRules: profile.commission_rules as CommissionRule[] || [],
-          totalCommission: profile.total_commission || 0,
-          closedDeals: profile.closed_deals || 0
-        })) : [];
+        const transformedUsers = profilesData ? profilesData.map((profile): User => {
+          // Type safe conversion of commission rules
+          let commissionRules: CommissionRule[] = [];
+          if (profile.commission_rules && Array.isArray(profile.commission_rules)) {
+            commissionRules = (profile.commission_rules as any[]).map(rule => ({
+              threshold: typeof rule.threshold === 'number' ? rule.threshold : 0,
+              amount: typeof rule.amount === 'number' ? rule.amount : 0
+            }));
+          }
+          
+          return {
+            id: profile.id,
+            name: profile.name || 'Unknown',
+            email: profile.email || '',
+            isAdmin: profile.is_admin,
+            commissionRules: commissionRules,
+            totalCommission: profile.total_commission || 0,
+            closedDeals: profile.closed_deals || 0
+          };
+        }) : [];
         setUsers(transformedUsers);
         
         // Find current user
         const currentUserData = profilesData?.find(p => p.id === profile.id);
         if (currentUserData) {
+          // Type safe conversion of commission rules for current user
+          let userCommissionRules: CommissionRule[] = [];
+          if (currentUserData.commission_rules && Array.isArray(currentUserData.commission_rules)) {
+            userCommissionRules = (currentUserData.commission_rules as any[]).map(rule => ({
+              threshold: typeof rule.threshold === 'number' ? rule.threshold : 0,
+              amount: typeof rule.amount === 'number' ? rule.amount : 0
+            }));
+          }
+          
           setCurrentUser({
             id: currentUserData.id,
             name: currentUserData.name || 'Unknown',
             email: currentUserData.email || '',
             isAdmin: currentUserData.is_admin,
-            commissionRules: currentUserData.commission_rules as CommissionRule[] || [],
+            commissionRules: userCommissionRules,
             totalCommission: currentUserData.total_commission || 0,
             closedDeals: currentUserData.closed_deals || 0
           });
@@ -172,6 +191,12 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
 
   const handleUpdateUser = async (updatedUser: User) => {
     try {
+      // Convert commissionRules to the format expected by Supabase
+      const commissionRulesJson = updatedUser.commissionRules?.map(rule => ({
+        threshold: rule.threshold,
+        amount: rule.amount
+      }));
+      
       // Update the user in the database
       const { error } = await supabase
         .from('profiles')
@@ -179,7 +204,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
           name: updatedUser.name,
           email: updatedUser.email,
           is_admin: updatedUser.isAdmin,
-          commission_rules: updatedUser.commissionRules
+          commission_rules: commissionRulesJson
         })
         .eq('id', updatedUser.id);
         
@@ -503,8 +528,8 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
                           <Tooltip content={<CustomTooltip />} />
                         </PieChart>
                       </ResponsiveContainer>
-                      <CustomChartLegend data={chartData.leadSourcePieData} colors={COLORS} />
                     </ChartContainer>
+                    <CustomChartLegend data={chartData.leadSourcePieData} colors={COLORS} />
                   </div>
                 </CardContent>
               </Card>
@@ -540,15 +565,15 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
                           <Tooltip content={<CustomTooltip />} />
                         </PieChart>
                       </ResponsiveContainer>
-                      <CustomChartLegend data={chartData.statusPieData} colors={COLORS} />
                     </ChartContainer>
+                    <CustomChartLegend data={chartData.statusPieData} colors={COLORS} />
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
           
-          {/* Leaderboard Tab */}
+          {/* Leaderboard and Commissions Tabs */}
           <TabsContent value="leaderboard">
             <Card>
               <CardHeader>
@@ -591,7 +616,6 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
             </Card>
           </TabsContent>
 
-          {/* Commissions Tab */}
           <TabsContent value="commissions">
             <Card>
               <CardHeader>
@@ -640,7 +664,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
                     })}
                     {users.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                        <TableCell colSpan={4} className="py-4 text-center text-muted-foreground">
                           No users available
                         </TableCell>
                       </TableRow>
