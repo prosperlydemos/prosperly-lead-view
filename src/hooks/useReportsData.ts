@@ -15,6 +15,7 @@ interface ChartData {
   leadSourcePieData: Array<{ name: string; value: number }>;
   statusPieData: Array<{ name: string; value: number }>;
   monthlyTrendData: Array<{ month: string; deals: number }>;
+  revenueData: Array<{ month: string; mrr: number; setupFees: number; total: number }>;
   leaderboardData: Array<{
     id: string;
     name: string;
@@ -39,6 +40,7 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
     leadSourcePieData: [],
     statusPieData: [],
     monthlyTrendData: [],
+    revenueData: [],
     leaderboardData: []
   });
 
@@ -131,7 +133,7 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
       return acc;
     }, {} as Record<string, number>);
 
-    // Group by month for trend chart
+    // Group by month for trend chart and revenue chart
     const monthlyData = Array(12).fill(0).map((_, i) => {
       const month = new Date();
       month.setMonth(month.getMonth() - 11 + i);
@@ -145,11 +147,20 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
           return closedDate >= monthStart && closedDate <= monthEnd && lead.status === 'Closed';
         }
         return false;
-      }).length;
+      });
+      
+      const monthlyDealsCount = monthlyClosedDeals.length;
+      
+      // Calculate MRR and setup fees for the month
+      const monthlyMRR = monthlyClosedDeals.reduce((sum, lead) => sum + (lead.mrr || 0), 0);
+      const monthlySetupFees = monthlyClosedDeals.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
       
       return {
         month: format(month, 'MMM'),
-        deals: monthlyClosedDeals,
+        deals: monthlyDealsCount,
+        mrr: monthlyMRR,
+        setupFees: monthlySetupFees,
+        total: monthlyMRR + monthlySetupFees
       };
     });
 
@@ -194,10 +205,19 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
       };
     }).sort((a, b) => b.closedDeals - a.closedDeals);
 
+    // Extract revenue data from monthlyData
+    const revenueData = monthlyData.map(item => ({
+      month: item.month,
+      mrr: item.mrr,
+      setupFees: item.setupFees,
+      total: item.total
+    }));
+
     setChartData({
       leadSourcePieData: Object.entries(leadSourceData).map(([name, value]) => ({ name, value })),
       statusPieData: Object.entries(statusData).map(([name, value]) => ({ name, value })),
-      monthlyTrendData: monthlyData,
+      monthlyTrendData: monthlyData.map(item => ({ month: item.month, deals: item.deals })),
+      revenueData,
       leaderboardData
     });
   }, [filteredLeads, users]);
