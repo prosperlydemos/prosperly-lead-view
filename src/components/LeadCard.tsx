@@ -71,54 +71,51 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
 
   return (
     <div 
-      className={`rounded-lg border p-4 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''} relative`}
+      className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
     >
-      <div className="flex flex-col gap-2">
-        {/* Lead name and company */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="font-semibold text-md">{lead.contact_name}</h3>
-            {lead.business_name && (
-              <p className="text-sm text-muted-foreground">{lead.business_name}</p>
+      <div className="flex flex-col gap-1">
+        {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-1">
+            <h3 className="font-semibold text-sm">{lead.contact_name}</h3>
+            {lead.email && (
+              <span className="text-xs text-muted-foreground">
+                ({lead.email}) 
+                <button 
+                  onClick={copyEmail} 
+                  className="ml-1 inline-flex hover:text-primary"
+                  aria-label="Copy email"
+                >
+                  <Copy size={12} />
+                </button>
+              </span>
             )}
           </div>
-          <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-            {lead.status}
+          <span className="text-xs flex items-center gap-1">
+            <UserRound size={12} />
+            {ownerName}
           </span>
         </div>
         
-        {/* Email with copy button */}
-        {lead.email && (
-          <div className="flex items-center gap-1 text-sm">
-            <span className="text-muted-foreground">Email:</span>
-            <span>{lead.email}</span>
-            <button 
-              onClick={copyEmail}
-              className="ml-1 hover:text-primary"
-              aria-label="Copy email"
-            >
-              <Copy size={14} />
-            </button>
-          </div>
-        )}
-        
-        {/* Value */}
-        <div className="text-sm">
-          <span className="text-muted-foreground">Value:</span>
-          <span className="font-semibold"> ${lead.value}</span>
+        {/* Second line: Demo date and Follow-up date */}
+        <div className="text-xs flex justify-between">
+          <span>
+            <span className="text-muted-foreground">Demo:</span> {formatDate(lead.demo_date)}
+          </span>
+          <span>
+            <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.next_follow_up)}
+          </span>
         </div>
         
-        {/* Next follow-up */}
-        <div className="text-sm">
-          <span className="text-muted-foreground">Next Follow-up:</span>
-          <span> {formatDate(lead.next_follow_up)}</span>
-        </div>
-        
-        {/* Owner */}
-        <div className="text-sm flex items-center gap-1 mt-1">
-          <UserRound size={14} className="text-muted-foreground" />
-          <span>{ownerName}</span>
+        {/* Third line: Setup Fee and MRR */}
+        <div className="text-xs flex justify-between">
+          <span>
+            <span className="text-muted-foreground">Setup Fee:</span> ${lead.setup_fee || 0}
+          </span>
+          <span>
+            <span className="text-muted-foreground">MRR:</span> ${lead.mrr || 0}
+          </span>
         </div>
       </div>
     </div>
