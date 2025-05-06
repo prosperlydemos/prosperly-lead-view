@@ -60,6 +60,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
               <SelectItem value="Warm Lead">Warm Lead</SelectItem>
               <SelectItem value="Hot Lead">Hot Lead</SelectItem>
               <SelectItem value="Closed">Closed</SelectItem>
+              <SelectItem value="Lost">Lost</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

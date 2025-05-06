@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -193,6 +192,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 <SelectItem value="Warm Lead">Warm Lead</SelectItem>
                 <SelectItem value="Hot Lead">Hot Lead</SelectItem>
                 <SelectItem value="Closed">Closed</SelectItem>
+                <SelectItem value="Lost">Lost</SelectItem>
               </SelectContent>
             </Select>
           </div>

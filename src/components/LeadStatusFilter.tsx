@@ -17,7 +17,8 @@ const LeadStatusFilter: React.FC<LeadStatusFilterProps> = ({ selectedStatus, onS
     { value: 'Demo Scheduled', label: 'Demo Scheduled', color: 'bg-white border' },
     { value: 'Warm Lead', label: 'Warm Lead', color: 'bg-blue-50' },
     { value: 'Hot Lead', label: 'Hot Lead', color: 'bg-red-50' },
-    { value: 'Closed', label: 'Closed', color: 'bg-green-50' }
+    { value: 'Closed', label: 'Closed', color: 'bg-green-50' },
+    { value: 'Lost', label: 'Lost', color: 'bg-gray-100' }
   ];
 
   return (

@@ -1,5 +1,5 @@
 
-export type LeadStatus = 'Demo Scheduled' | 'Warm Lead' | 'Hot Lead' | 'Closed';
+export type LeadStatus = 'Demo Scheduled' | 'Warm Lead' | 'Hot Lead' | 'Closed' | 'Lost';
 
 export interface CommissionRule {
   threshold: number; // Number of closes before this rule applies

@@ -51,6 +51,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
         return 'lead-status-hot';
       case 'Closed':
         return 'lead-status-closed';
+      case 'Lost':
+        return 'lead-status-lost';
       default:
         return '';
     }

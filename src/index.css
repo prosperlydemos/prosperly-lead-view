@@ -49,6 +49,7 @@
     --status-warm: 39 86% 92%;
     --status-hot: 5 63% 90%;
     --status-closed: 120 37% 90%;
+    --status-lost: 0 0% 97%; /* Added Lost status color */
   }
 
   .dark {
@@ -115,4 +116,8 @@
 
 .lead-status-closed {
   @apply bg-[#DBF1DE] border-green-200;
+}
+
+.lead-status-lost {
+  @apply bg-[#F8F8F8] border-gray-300;
 }
