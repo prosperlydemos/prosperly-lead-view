@@ -79,15 +79,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-muted-foreground">Phone:</span> {lead.phone || 'Not specified'}
-          </div>
-          <div>
             <span className="text-muted-foreground">Status:</span> {lead.status}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <span className="text-muted-foreground">Value:</span> ${lead.value}
           </div>
           <div>
             <span className="text-muted-foreground">Closing Date:</span> {formatDate(lead.closing_date)}
