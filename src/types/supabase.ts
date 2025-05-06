@@ -26,6 +26,10 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
   const mrr = typeof supabaseLead.mrr === 'number' ? supabaseLead.mrr : 0;
   const value = typeof supabaseLead.value === 'number' ? supabaseLead.value : 0;
   
+  // Format dates correctly - strip the time component
+  const demoDate = supabaseLead.demo_date ? supabaseLead.demo_date.split('T')[0] : null;
+  const signupDate = supabaseLead.signup_date ? supabaseLead.signup_date.split('T')[0] : null;
+  
   return {
     id: supabaseLead.id,
     contactName: supabaseLead.contact_name,
@@ -34,8 +38,8 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     leadSource: supabaseLead.lead_source || '', 
     setupFee: setupFee,
     mrr: mrr,
-    demoDate: supabaseLead.demo_date || null,
-    signupDate: supabaseLead.signup_date || null,
+    demoDate: demoDate,
+    signupDate: signupDate,
     status: supabaseLead.status as import('./index').LeadStatus,
     ownerId: supabaseLead.owner_id,
     closedAt: supabaseLead.closing_date || undefined,

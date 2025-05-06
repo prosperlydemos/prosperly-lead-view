@@ -9,7 +9,7 @@ import { Trash2, UserRound, Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface LeadEditFormProps {
@@ -45,7 +45,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     if (formData.status === 'Closed' && lead && lead.status !== 'Closed') {
       setFormData(prev => ({
         ...prev,
-        closedAt: new Date().toISOString()
+        closedAt: new Date().toISOString().split('T')[0]
       }));
     }
   }, [formData.status, lead]);
@@ -63,7 +63,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     
     // Set closedAt date when status changes to Closed
     if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
-      updates.closedAt = new Date().toISOString();
+      updates.closedAt = new Date().toISOString().split('T')[0];
     }
     
     setFormData(prev => ({
@@ -94,11 +94,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
 
   const handleDateChange = (field: string, date: Date | undefined) => {
     if (date) {
-      // Format as YYYY-MM-DD for date fields
-      const isoDate = date.toISOString().split('T')[0] + 'T00:00:00Z';
+      // Format as YYYY-MM-DD for date fields (without time)
+      const formattedDate = date.toISOString().split('T')[0];
       setFormData(prev => ({ 
         ...prev, 
-        [field]: isoDate 
+        [field]: formattedDate
       }));
     } else {
       setFormData(prev => ({ 
@@ -116,7 +116,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Format date for display in the date picker
   const formatDateForPicker = (dateString: string | null | undefined) => {
     if (!dateString) return undefined;
-    return new Date(dateString);
+    
+    // Parse the date string to a Date object
+    // If it's already in YYYY-MM-DD format, add a time component to ensure it parses correctly
+    const dateWithTime = dateString.includes('T') ? dateString : `${dateString}T00:00:00`;
+    return new Date(dateWithTime);
   };
 
   return (
@@ -214,7 +218,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.demoDate ? (
-                      format(new Date(formData.demoDate), 'PPP')
+                      format(formatDateForPicker(formData.demoDate) as Date, 'PPP')
                     ) : (
                       <span>Select demo date</span>
                     )}
@@ -226,7 +230,6 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                     selected={formatDateForPicker(formData.demoDate)}
                     onSelect={(date) => handleDateChange('demoDate', date)}
                     initialFocus
-                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -245,7 +248,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.signupDate ? (
-                      format(new Date(formData.signupDate), 'PPP')
+                      format(formatDateForPicker(formData.signupDate) as Date, 'PPP')
                     ) : (
                       <span>Select signup date</span>
                     )}
@@ -257,7 +260,6 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                     selected={formatDateForPicker(formData.signupDate)}
                     onSelect={(date) => handleDateChange('signupDate', date)}
                     initialFocus
-                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -277,7 +279,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {formData.nextFollowUp ? (
-                    format(new Date(formData.nextFollowUp), 'PPP')
+                    format(formatDateForPicker(formData.nextFollowUp) as Date, 'PPP')
                   ) : (
                     <span>Schedule follow-up</span>
                   )}
@@ -289,7 +291,6 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   selected={formatDateForPicker(formData.nextFollowUp)}
                   onSelect={(date) => handleDateChange('nextFollowUp', date)}
                   initialFocus
-                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
