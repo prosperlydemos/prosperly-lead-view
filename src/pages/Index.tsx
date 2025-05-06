@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -14,6 +15,7 @@ import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
 import { Lead as AppLead, LeadStatus, User } from '../types/index';
 import AddLeadButton from '../components/AddLeadButton';
+import UserManagement from '../components/UserManagement';
 
 interface TodoItem {
   id: string;
@@ -372,6 +374,90 @@ const Index: React.FC = () => {
     }
   };
 
+  const onAddUser = async (userData: Omit<User, 'id'>) => {
+    try {
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        email_confirm: true,
+        user_metadata: { name: userData.name, is_admin: userData.isAdmin }
+      });
+      
+      if (error) throw error;
+      
+      // Refresh users list
+      const { data: updatedUsers } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (updatedUsers) {
+        setUsers(updatedUsers);
+      }
+      
+      return data.user;
+    } catch (error) {
+      console.error('Error adding user:', error);
+      toast({
+        title: "Error adding user",
+        description: `Failed to add user: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const onUpdateUser = async (updatedUser: User) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          name: updatedUser.name,
+          is_admin: updatedUser.isAdmin
+        })
+        .eq('id', updatedUser.id);
+        
+      if (error) throw error;
+      
+      // Refresh users list
+      const { data: updatedUsers } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (updatedUsers) {
+        setUsers(updatedUsers);
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error updating user",
+        description: `Failed to update user: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const onDeleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (error) throw error;
+      
+      // Refresh users list
+      const { data: updatedUsers } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (updatedUsers) {
+        setUsers(updatedUsers);
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error deleting user",
+        description: `Failed to delete user: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -393,6 +479,15 @@ const Index: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {currentUser?.is_admin && (
+                <UserManagement 
+                  users={appUsers}
+                  onAddUser={onAddUser}
+                  onUpdateUser={onUpdateUser}
+                  onDeleteUser={onDeleteUser}
+                  currentUser={appCurrentUser}
+                />
+              )}
               <Button 
                 variant="outline" 
                 className="flex items-center gap-2" 
@@ -413,6 +508,13 @@ const Index: React.FC = () => {
       </header>
       
       <main className="container py-6">
+        <div className="flex justify-end mb-4">
+          <AddLeadButton 
+            onAddLead={handleAddLead}
+            users={appUsers}
+            currentUser={appCurrentUser} 
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <LeadList 
@@ -460,13 +562,6 @@ const Index: React.FC = () => {
           setIsTodoListOpen(false);
         }}
         currentUser={currentUser}
-      />
-
-      {/* Add the AddLeadButton component with the users list */}
-      <AddLeadButton 
-        onAddLead={handleAddLead}
-        users={appUsers}
-        currentUser={appCurrentUser} 
       />
     </div>
   );
