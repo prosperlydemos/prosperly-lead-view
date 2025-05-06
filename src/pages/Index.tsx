@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import LeadEditForm from '../components/LeadEditForm';
 import TodoList from '../components/TodoList';
-import { Note, Lead, mapSupabaseLeadToAppLead, mapAppLeadToSupabaseLead } from '../types/supabase';
+import { Note, Lead, mapSupabaseLeadToAppLead, mapAppLeadToSupabaseLead, Profile } from '../types/supabase';
 import { toast } from "@/components/ui/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { isToday, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
-import { Lead as AppLead, LeadStatus } from '../types/index';
+import { Lead as AppLead, LeadStatus, User } from '../types/index';
 import AddLeadButton from '../components/AddLeadButton';
 
 interface TodoItem {
@@ -35,6 +36,7 @@ const Index: React.FC = () => {
   const [isTodoListOpen, setIsTodoListOpen] = useState(false);
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<Profile[]>([]);
 
   const selectedLead = selectedLeadId 
     ? leads.find(lead => lead.id === selectedLeadId) 
@@ -276,6 +278,10 @@ const Index: React.FC = () => {
   const handleUserFilterChange = (userId: string | 'all') => {
     setSelectedUserId(userId);
   };
+
+  const handleUsersLoaded = (loadedUsers: Profile[]) => {
+    setUsers(loadedUsers);
+  };
   
   const handleMarkTodoComplete = (todoId: string) => {
     setTodoItems(todoItems.map(item => 
@@ -310,6 +316,22 @@ const Index: React.FC = () => {
   
   // Convert Supabase leads to App leads for LeadEditForm
   const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
+  
+  // Map Supabase profiles to App users
+  const appUsers: User[] = users.map(profile => ({
+    id: profile.id,
+    name: profile.name || '',
+    email: profile.email || '',
+    isAdmin: profile.is_admin
+  }));
+  
+  // Map current user to App user format
+  const appCurrentUser: User = {
+    id: currentUser?.id || '',
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    isAdmin: currentUser?.is_admin || false
+  };
   
   const handleAddLead = async (newLead: Omit<AppLead, 'id'>) => {
     if (!currentUser) return;
@@ -404,6 +426,7 @@ const Index: React.FC = () => {
               onStatusChange={handleStatusFilterChange}
               selectedUserId={selectedUserId}
               onUserChange={handleUserFilterChange}
+              onUsersLoaded={handleUsersLoaded}
             />
           </div>
           <div className="border-l pl-6">
@@ -424,13 +447,8 @@ const Index: React.FC = () => {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveLead}
         onDelete={handleDeleteLead}
-        users={[]} // Add empty users array for now, will be populated later
-        currentUser={{
-          id: currentUser?.id || '',
-          name: currentUser?.name || '',
-          email: currentUser?.email || '',
-          isAdmin: currentUser?.is_admin || false
-        }} 
+        users={appUsers}
+        currentUser={appCurrentUser} 
       />
       
       <TodoList
@@ -445,16 +463,11 @@ const Index: React.FC = () => {
         currentUser={currentUser}
       />
 
-      {/* Add the AddLeadButton component */}
+      {/* Add the AddLeadButton component with the users list */}
       <AddLeadButton 
         onAddLead={handleAddLead}
-        users={[]} // We'll populate this properly in the future
-        currentUser={{
-          id: currentUser?.id || '',
-          name: currentUser?.name || '',
-          email: currentUser?.email || '',
-          isAdmin: currentUser?.is_admin || false
-        }} 
+        users={appUsers}
+        currentUser={appCurrentUser} 
       />
     </div>
   );

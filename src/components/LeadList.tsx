@@ -1,14 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import LeadCard from './LeadCard';
-import { Lead } from '../types/supabase';
 import LeadStatusFilter from './LeadStatusFilter';
 import UserFilter from './UserFilter';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { LeadStatus } from '../types';
-import AddLeadButton from './AddLeadButton';
+import { Lead, Profile } from '@/types/supabase';
 
 interface LeadListProps {
   leads: Lead[];
@@ -20,82 +15,63 @@ interface LeadListProps {
   onStatusChange: (status: string | 'All') => void;
   selectedUserId: string | 'all';
   onUserChange: (userId: string | 'all') => void;
+  onUsersLoaded?: (users: Profile[]) => void; // New prop
 }
 
-const LeadList: React.FC<LeadListProps> = ({ 
-  leads, 
-  selectedLeadId, 
-  onLeadSelect, 
-  onEditLead, 
+const LeadList: React.FC<LeadListProps> = ({
+  leads,
+  selectedLeadId,
+  onLeadSelect,
+  onEditLead,
   onAddLead,
   selectedStatus,
   onStatusChange,
   selectedUserId,
-  onUserChange
+  onUserChange,
+  onUsersLoaded
 }) => {
-  const { profile: currentUser } = useAuth();
-
-  // Filter leads based on selected status and user
+  // Filter leads by status and user
   const filteredLeads = leads.filter(lead => {
-    // Filter by status
     const statusMatch = selectedStatus === 'All' || lead.status === selectedStatus;
-    
-    // Filter by user (if not admin, only show owned leads)
-    let userMatch = true;
-    if (currentUser && !currentUser.is_admin) {
-      userMatch = lead.owner_id === currentUser.id;
-    } else if (selectedUserId !== 'all') {
-      userMatch = lead.owner_id === selectedUserId;
-    }
-    
+    const userMatch = selectedUserId === 'all' || lead.owner_id === selectedUserId;
     return statusMatch && userMatch;
   });
 
   return (
-    <div className="overflow-y-auto pr-2 h-[calc(100vh-100px)]">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Leads ({filteredLeads.length})</h2>
-        <AddLeadButton 
-          onAddLead={onAddLead}
-          users={[]} 
-          currentUser={{
-            id: currentUser?.id || '',
-            name: currentUser?.name || '',
-            email: currentUser?.email || '',
-            isAdmin: currentUser?.is_admin || false
-          }}
+    <div>
+      <div className="flex justify-between items-end mb-4">
+        <h2 className="text-xl font-semibold">Leads</h2>
+      </div>
+
+      <div className="flex flex-wrap gap-4 mb-4">
+        <LeadStatusFilter
+          selectedStatus={selectedStatus}
+          onStatusChange={onStatusChange}
+        />
+        <UserFilter
+          selectedUserId={selectedUserId}
+          onUserChange={onUserChange}
+          onUsersLoaded={onUsersLoaded} // Pass the callback here
         />
       </div>
-      
-      <div className="flex flex-col md:flex-row gap-2 mb-4">
-        <LeadStatusFilter 
-          selectedStatus={selectedStatus as 'All' | LeadStatus} 
-          onStatusChange={onStatusChange} 
-        />
-        
-        {currentUser?.is_admin && (
-          <UserFilter 
-            selectedUserId={selectedUserId} 
-            onUserChange={onUserChange}
-          />
+
+      <div className="space-y-2">
+        {filteredLeads.length > 0 ? (
+          filteredLeads.map((lead) => (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              isSelected={lead.id === selectedLeadId}
+              onSelect={() => onLeadSelect(lead.id)}
+              onEdit={() => onEditLead(lead.id)}
+            />
+          ))
+        ) : (
+          <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+            No leads match your filters
+          </div>
         )}
       </div>
-      
-      {filteredLeads.map((lead) => (
-        <LeadCard
-          key={lead.id}
-          lead={lead}
-          isSelected={selectedLeadId === lead.id}
-          onClick={() => onLeadSelect(lead.id)}
-          onEdit={() => onEditLead(lead.id)}
-        />
-      ))}
-      
-      {filteredLeads.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          No leads match your current filters
-        </div>
-      )}
     </div>
   );
 };

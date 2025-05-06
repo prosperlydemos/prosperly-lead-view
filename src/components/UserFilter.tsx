@@ -8,11 +8,13 @@ import { useAuth } from '@/context/AuthContext';
 interface UserFilterProps {
   selectedUserId: string | 'all';
   onUserChange: (userId: string | 'all') => void;
+  onUsersLoaded?: (users: Profile[]) => void; // New prop to expose loaded users
 }
 
 const UserFilter: React.FC<UserFilterProps> = ({ 
   selectedUserId, 
-  onUserChange
+  onUserChange,
+  onUsersLoaded
 }) => {
   const [users, setUsers] = useState<Profile[]>([]);
   const { profile: currentUser } = useAuth();
@@ -30,11 +32,14 @@ const UserFilter: React.FC<UserFilterProps> = ({
       
       if (data) {
         setUsers(data);
+        if (onUsersLoaded) {
+          onUsersLoaded(data);
+        }
       }
     };
     
     fetchUsers();
-  }, []);
+  }, [onUsersLoaded]);
 
   return (
     <div className="mb-4">
