@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface LeadCardProps {
   lead: Lead;
   isSelected: boolean;
-  onClick: () => void;  // Changed from onSelect to onClick
+  onClick: () => void;
   onEdit: () => void;
 }
 
@@ -44,13 +44,13 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
   const getStatusClassName = () => {
     switch (lead.status) {
       case 'Demo Scheduled':
-        return 'lead-status-demo-scheduled';
+        return 'bg-purple-50';
       case 'Warm':
-        return 'lead-status-warm bg-blue-50';
+        return 'bg-blue-50';
       case 'Hot':
-        return 'lead-status-hot bg-red-50';
+        return 'bg-red-50';
       case 'Closed':
-        return 'lead-status-closed bg-green-50';
+        return 'bg-green-50';
       default:
         return '';
     }
@@ -71,47 +71,55 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
 
   return (
     <div 
-      className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
+      className={`rounded-lg border p-4 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''} relative`}
       onClick={onClick}
     >
-      <div className="flex flex-col gap-1">
-        {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-1">
-            <h3 className="font-semibold text-sm">{lead.contact_name}</h3>
-            {lead.email && (
-              <span className="text-xs text-muted-foreground">
-                ({lead.email}) 
-                <button 
-                  onClick={copyEmail} 
-                  className="ml-1 inline-flex hover:text-primary"
-                  aria-label="Copy email"
-                >
-                  <Copy size={12} />
-                </button>
-              </span>
+      <div className="flex flex-col gap-2">
+        {/* Lead name and company */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-semibold text-md">{lead.contact_name}</h3>
+            {lead.business_name && (
+              <p className="text-sm text-muted-foreground">{lead.business_name}</p>
             )}
           </div>
-          <span className="text-xs flex items-center gap-1">
-            <UserRound size={12} />
-            {ownerName}
+          <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+            {lead.status}
           </span>
         </div>
         
-        {/* Second line: Follow-up date */}
-        <div className="text-xs">
-          <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.next_follow_up)}
+        {/* Email with copy button */}
+        {lead.email && (
+          <div className="flex items-center gap-1 text-sm">
+            <span className="text-muted-foreground">Email:</span>
+            <span>{lead.email}</span>
+            <button 
+              onClick={copyEmail}
+              className="ml-1 hover:text-primary"
+              aria-label="Copy email"
+            >
+              <Copy size={14} />
+            </button>
+          </div>
+        )}
+        
+        {/* Value */}
+        <div className="text-sm">
+          <span className="text-muted-foreground">Value:</span>
+          <span className="font-semibold"> ${lead.value}</span>
         </div>
         
-        {/* Third line: Value */}
-        <div className="text-xs">
-          <span className="text-muted-foreground">Value:</span> ${lead.value}
+        {/* Next follow-up */}
+        <div className="text-sm">
+          <span className="text-muted-foreground">Next Follow-up:</span>
+          <span> {formatDate(lead.next_follow_up)}</span>
         </div>
         
-        {/* Status tag at the top right */}
-        <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-          {lead.status}
-        </span>
+        {/* Owner */}
+        <div className="text-sm flex items-center gap-1 mt-1">
+          <UserRound size={14} className="text-muted-foreground" />
+          <span>{ownerName}</span>
+        </div>
       </div>
     </div>
   );
