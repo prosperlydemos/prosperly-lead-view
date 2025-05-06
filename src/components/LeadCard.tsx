@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface LeadCardProps {
   lead: Lead;
   isSelected: boolean;
-  onClick: () => void;
+  onClick: () => void;  // Changed from onSelect to onClick
   onEdit: () => void;
 }
 

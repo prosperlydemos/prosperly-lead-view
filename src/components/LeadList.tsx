@@ -4,6 +4,7 @@ import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
 import UserFilter from './UserFilter';
 import { Lead, Profile } from '@/types/supabase';
+import { LeadStatus } from '@/types';
 
 interface LeadListProps {
   leads: Lead[];
@@ -11,11 +12,11 @@ interface LeadListProps {
   onLeadSelect: (leadId: string) => void;
   onEditLead: (leadId: string) => void;
   onAddLead: () => void;
-  selectedStatus: string | 'All';
-  onStatusChange: (status: string | 'All') => void;
+  selectedStatus: LeadStatus | 'All';
+  onStatusChange: (status: LeadStatus | 'All') => void;
   selectedUserId: string | 'all';
   onUserChange: (userId: string | 'all') => void;
-  onUsersLoaded?: (users: Profile[]) => void; // New prop
+  onUsersLoaded?: (users: Profile[]) => void;
 }
 
 const LeadList: React.FC<LeadListProps> = ({
@@ -51,7 +52,7 @@ const LeadList: React.FC<LeadListProps> = ({
         <UserFilter
           selectedUserId={selectedUserId}
           onUserChange={onUserChange}
-          onUsersLoaded={onUsersLoaded} // Pass the callback here
+          onUsersLoaded={onUsersLoaded}
         />
       </div>
 
@@ -62,7 +63,7 @@ const LeadList: React.FC<LeadListProps> = ({
               key={lead.id}
               lead={lead}
               isSelected={lead.id === selectedLeadId}
-              onSelect={() => onLeadSelect(lead.id)}
+              onClick={() => onLeadSelect(lead.id)}
               onEdit={() => onEditLead(lead.id)}
             />
           ))
