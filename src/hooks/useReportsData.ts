@@ -66,12 +66,20 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
         break;
     }
 
+    // Include all leads within the time filter with proper status tracking
     const filtered = leads.filter(lead => {
-      if (lead.closedAt) {
-        const closedDate = new Date(lead.closedAt);
-        return closedDate >= filterDate;
+      // For closed and lost leads, check the closed date
+      if (lead.status === 'Closed' || lead.status === 'Lost') {
+        if (lead.closedAt) {
+          const closedDate = new Date(lead.closedAt);
+          return closedDate >= filterDate;
+        }
+        return false;
       }
-      return false;
+      
+      // For other lead statuses, include if they were created in the time period
+      // (This is an approximation since we don't have created_at in our Lead type)
+      return true;
     });
 
     setFilteredLeads(filtered);
@@ -92,13 +100,13 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
     
     // Total MRR from closed deals
     const totalMRR = filteredLeads
-      .filter(lead => lead.status === 'Closed' && lead.mrr)
-      .reduce((sum, lead) => sum + lead.mrr, 0);
+      .filter(lead => lead.status === 'Closed')
+      .reduce((sum, lead) => sum + (lead.mrr || 0), 0);
 
     // Total setup fees from closed deals
     const totalSetupFees = filteredLeads
-      .filter(lead => lead.status === 'Closed' && lead.setupFee)
-      .reduce((sum, lead) => sum + lead.setupFee, 0);
+      .filter(lead => lead.status === 'Closed')
+      .reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
 
     // Count of new leads
     const newLeadsCount = filteredLeads.length;
@@ -142,9 +150,9 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
       const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
       
       const monthlyClosedDeals = filteredLeads.filter(lead => {
-        if (lead.closedAt) {
+        if (lead.closedAt && lead.status === 'Closed') {
           const closedDate = new Date(lead.closedAt);
-          return closedDate >= monthStart && closedDate <= monthEnd && lead.status === 'Closed';
+          return closedDate >= monthStart && closedDate <= monthEnd;
         }
         return false;
       });
@@ -164,7 +172,7 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
       };
     });
 
-    // Create leaderboard data
+    // Create leaderboard data with commission calculation
     const leaderboardData = users.map(user => {
       const userLeads = filteredLeads.filter(lead => lead.ownerId === user.id && lead.status === 'Closed');
       const totalMRR = userLeads.reduce((sum, lead) => sum + (lead.mrr || 0), 0);

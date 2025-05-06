@@ -46,12 +46,24 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Commission Rules</TableHead>
+                <TableHead>Closed Deals</TableHead>
+                <TableHead>Total Revenue</TableHead>
                 <TableHead>Total Earned</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((user) => {
                 const userData = leaderboardData.find(u => u.id === user.id);
+                const userClosedLeads = filteredLeads.filter(lead => 
+                  lead.ownerId === user.id && 
+                  lead.status === 'Closed'
+                );
+                
+                // Calculate the total revenue for each user's closed leads
+                const userTotalMRR = userClosedLeads.reduce((sum, lead) => sum + lead.mrr, 0);
+                const userTotalSetupFees = userClosedLeads.reduce((sum, lead) => sum + lead.setupFee, 0);
+                const userTotalRevenue = userTotalMRR + userTotalSetupFees;
+                
                 return (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
@@ -73,13 +85,15 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                         <span className="text-muted-foreground">No rules defined</span>
                       )}
                     </TableCell>
+                    <TableCell>{userClosedLeads.length}</TableCell>
+                    <TableCell>${userTotalRevenue.toLocaleString()}</TableCell>
                     <TableCell>${userData?.commission.toLocaleString() || 0}</TableCell>
                   </TableRow>
                 );
               })}
               {users.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-4 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-4 text-center text-muted-foreground">
                     No users available
                   </TableCell>
                 </TableRow>
@@ -106,6 +120,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 <TableHead>Close Date</TableHead>
                 <TableHead className="text-right">Setup Fee</TableHead>
                 <TableHead className="text-right">MRR</TableHead>
+                <TableHead className="text-right">Total Value</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,12 +138,13 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                       <TableCell>{lead.closedAt ? format(new Date(lead.closedAt), 'MMM d, yyyy') : 'N/A'}</TableCell>
                       <TableCell className="text-right">${lead.setupFee.toLocaleString()}</TableCell>
                       <TableCell className="text-right">${lead.mrr.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">${(lead.setupFee + lead.mrr).toLocaleString()}</TableCell>
                     </TableRow>
                   );
                 })}
               {filteredLeads.filter(lead => lead.status === 'Closed').length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
+                  <TableCell colSpan={7} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
                 </TableRow>
               )}
             </TableBody>

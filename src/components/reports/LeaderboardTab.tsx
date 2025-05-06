@@ -37,7 +37,7 @@ const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ leaderboardData }) => {
         <CardHeader>
           <CardTitle className="text-lg">Sales Leaderboard</CardTitle>
           <CardDescription>
-            Performance ranking based on number of closed deals
+            Performance ranking based on number of closed deals and revenue
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -47,7 +47,7 @@ const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ leaderboardData }) => {
                 <TableHead>Rank</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Closed Deals</TableHead>
-                <TableHead>Total Value</TableHead>
+                <TableHead>Total Revenue</TableHead>
                 <TableHead className="text-right">Commission Earned</TableHead>
               </TableRow>
             </TableHeader>
