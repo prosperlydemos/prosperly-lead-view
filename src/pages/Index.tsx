@@ -12,7 +12,7 @@ import { isToday, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
-import { Lead as AppLead } from '../types/index';
+import { Lead as AppLead, LeadStatus } from '../types/index';
 import AddLeadButton from '../components/AddLeadButton';
 
 interface TodoItem {
@@ -315,12 +315,17 @@ const Index: React.FC = () => {
     if (!currentUser) return;
     
     try {
-      // Calculate the value field if not provided (default to annual value)
-      if (!newLead.value && newLead.mrr) {
-        newLead.value = newLead.mrr * 12; // Calculate annual value
-      }
+      // Ensure all required fields are set for Supabase schema
+      const leadToInsert = {
+        ...newLead as AppLead,
+        id: undefined, // Let Supabase generate the ID
+        contactName: newLead.contactName || 'New Contact', // Ensure this is never empty
+        status: newLead.status || 'Demo Scheduled' as LeadStatus, // Ensure status is set
+        ownerId: newLead.ownerId || currentUser.id, // Ensure owner is set
+        value: newLead.value || (newLead.mrr ? newLead.mrr * 12 : 0) // Calculate value if not provided
+      };
       
-      const supabaseNewLead = mapAppLeadToSupabaseLead(newLead as AppLead);
+      const supabaseNewLead = mapAppLeadToSupabaseLead(leadToInsert);
       
       const { data, error } = await supabase
         .from('leads')

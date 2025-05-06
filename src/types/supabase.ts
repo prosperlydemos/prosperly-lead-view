@@ -41,10 +41,27 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
 };
 
 // Helper function to map App Lead to Supabase Lead
-export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): Partial<Lead> => {
+export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
+  id?: string;
+  contact_name: string;  // Make this required to match Supabase schema
+  email?: string | null;
+  business_name?: string | null;
+  lead_source?: string | null;
+  setup_fee?: number | null;
+  mrr?: number | null;
+  demo_date?: string | null;
+  signup_date?: string | null;
+  status: string;  // Make this required to match Supabase schema
+  owner_id: string;  // Make this required to match Supabase schema
+  closing_date?: string | null;
+  next_follow_up?: string | null;
+  value: number;  // Make this required to match Supabase schema
+  crm?: string | null;
+  phone?: string | null;
+} => {
   return {
     id: appLead.id,
-    contact_name: appLead.contactName,
+    contact_name: appLead.contactName, // This must always be set
     email: appLead.email || null,
     business_name: appLead.businessName || null,
     lead_source: appLead.leadSource || null,
@@ -58,6 +75,6 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): Parti
     next_follow_up: appLead.nextFollowUp || null,
     value: appLead.value || 0,
     crm: appLead.crm || null,
-    phone: null // Assuming this field exists but is optional
+    phone: null
   };
 };
