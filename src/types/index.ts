@@ -29,6 +29,8 @@ export interface Lead {
   status: LeadStatus;
   ownerId: string; // ID of the user who owns this lead
   closedAt?: string; // Date when the lead was closed
+  crm?: string; // CRM system the lead uses
+  nextFollowUp?: string | null; // Date for the next follow-up
 }
 
 export interface Note {

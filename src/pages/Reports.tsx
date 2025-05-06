@@ -13,10 +13,12 @@ import { ChartContainer } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Trophy, Medal, Award, ChevronLeft } from 'lucide-react';
+import { Trophy, Medal, Award, ChevronLeft, Edit, UserCog } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import UserEditForm from '../components/UserEditForm';
+import { toast } from "@/components/ui/use-toast";
 
 interface ReportsProps {
   users: User[];
@@ -29,9 +31,15 @@ const DEFAULT_COMMISSION_RULES: CommissionRule[] = [
   { threshold: 10, amount: 150 } // After 10 closes: $150 each
 ];
 
-const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
+const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLeads, currentUser: initialCurrentUser }) => {
   const [monthFilter, setMonthFilter] = useState<string>(getCurrentMonthKey());
   const [userCommissionData, setUserCommissionData] = useState<User[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState({ setupFees: 0, mrr: 0 });
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [currentUser, setCurrentUser] = useState<User>(initialCurrentUser);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isUserEditOpen, setIsUserEditOpen] = useState(false);
   
   // Get current month in YYYY-MM format
   function getCurrentMonthKey(): string {
@@ -100,8 +108,25 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
 
     // Count closed deals per user in the selected month
     const closesPerUser: Record<string, number> = {};
+    const setupFeesPerUser: Record<string, number> = {};
+    const mrrPerUser: Record<string, number> = {};
+    
+    let totalSetupFees = 0;
+    let totalMRR = 0;
+    
     filteredLeads.forEach(lead => {
       closesPerUser[lead.ownerId] = (closesPerUser[lead.ownerId] || 0) + 1;
+      setupFeesPerUser[lead.ownerId] = (setupFeesPerUser[lead.ownerId] || 0) + (lead.setupFee || 0);
+      mrrPerUser[lead.ownerId] = (mrrPerUser[lead.ownerId] || 0) + (lead.mrr || 0);
+      
+      totalSetupFees += lead.setupFee || 0;
+      totalMRR += lead.mrr || 0;
+    });
+
+    // Update total revenue
+    setTotalRevenue({
+      setupFees: totalSetupFees,
+      mrr: totalMRR
     });
 
     // Calculate commissions and update user data
@@ -113,7 +138,9 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
       return {
         ...user,
         closedDeals,
-        totalCommission
+        totalCommission,
+        setupFees: setupFeesPerUser[user.id] || 0,
+        mrrClosed: mrrPerUser[user.id] || 0
       };
     });
 
@@ -126,8 +153,58 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
   const chartData = userCommissionData.map(user => ({
     name: user.name,
     closedDeals: user.closedDeals || 0,
-    commission: user.totalCommission || 0
+    commission: user.totalCommission || 0,
+    setupFees: user.setupFees || 0,
+    mrr: user.mrrClosed || 0
   }));
+
+  // Handle opening the user edit form
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setIsUserEditOpen(true);
+  };
+
+  // Handle saving user changes
+  const handleSaveUser = (updatedUser: User) => {
+    const updatedUsers = users.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    );
+    
+    setUsers(updatedUsers);
+    
+    // If the current user was updated, update the current user state
+    if (updatedUser.id === currentUser.id) {
+      setCurrentUser(updatedUser);
+    }
+    
+    toast({
+      title: "User updated",
+      description: `${updatedUser.name}'s information has been updated.`
+    });
+  };
+
+  // Handle deleting a user
+  const handleDeleteUser = (userId: string) => {
+    // Check if the user has any assigned leads
+    const userHasLeads = leads.some(lead => lead.ownerId === userId);
+    
+    if (userHasLeads) {
+      toast({
+        title: "Cannot delete user",
+        description: "This user has leads assigned to them. Reassign the leads before deleting.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const updatedUsers = users.filter(user => user.id !== userId);
+    setUsers(updatedUsers);
+    
+    toast({
+      title: "User deleted",
+      description: "The user has been permanently deleted."
+    });
+  };
 
   // Determine if user is admin
   const isAdmin = currentUser?.isAdmin;
@@ -192,14 +269,17 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle>Total Commission</CardTitle>
+              <CardTitle>Total Revenue</CardTitle>
               <CardDescription>
                 {getMonthName(monthFilter)}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                ${userCommissionData.reduce((sum, user) => sum + (user.totalCommission || 0), 0).toLocaleString()}
+                ${totalRevenue.setupFees.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                MRR: ${totalRevenue.mrr.toLocaleString()}/month
               </div>
             </CardContent>
           </Card>
@@ -226,11 +306,29 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Leaderboard</CardTitle>
-              <CardDescription>
-                Sales performance for {getMonthName(monthFilter)}
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Leaderboard</CardTitle>
+                <CardDescription>
+                  Sales performance for {getMonthName(monthFilter)}
+                </CardDescription>
+              </div>
+              
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    if (userCommissionData.length > 0) {
+                      handleEditUser(userCommissionData[0]);
+                    }
+                  }}
+                  disabled={userCommissionData.length === 0}
+                >
+                  <UserCog size={16} className="mr-1" />
+                  Manage Users
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
@@ -240,6 +338,7 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
                     <TableHead>Name</TableHead>
                     <TableHead className="text-right">Closed</TableHead>
                     <TableHead className="text-right">Commission</TableHead>
+                    {isAdmin && <TableHead></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -258,12 +357,23 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">${(user.totalCommission || 0).toLocaleString()}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            <Edit size={16} />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                   
                   {userCommissionData.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={isAdmin ? 5 : 4} className="text-center py-4 text-muted-foreground">
                         No data available for this period
                       </TableCell>
                     </TableRow>
@@ -290,6 +400,48 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
                   <Legend />
                   <Bar yAxisId="left" dataKey="closedDeals" name="Closed Deals" fill="#8884d8" />
                   <Bar yAxisId="right" dataKey="commission" name="Commission ($)" fill="#82ca9d" />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Setup Fee Revenue</CardTitle>
+              <CardDescription>
+                One-time revenue from setup fees
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <ChartContainer className="h-64" config={{}}>
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="setupFees" name="Setup Fees ($)" fill="#22c55e" />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>MRR Added</CardTitle>
+              <CardDescription>
+                Monthly recurring revenue from new deals
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <ChartContainer className="h-64" config={{}}>
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="mrr" name="MRR ($)" fill="#f97316" />
                 </BarChart>
               </ChartContainer>
             </CardContent>
@@ -326,10 +478,26 @@ const Reports: React.FC<ReportsProps> = ({ users, leads, currentUser }) => {
                   </TableRow>
                 </TableBody>
               </Table>
+              <div className="text-sm text-muted-foreground mt-4">
+                <p>
+                  To modify commission structures for individual team members, click the "Edit" button next to their name in the leaderboard.
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
       </main>
+
+      {editingUser && (
+        <UserEditForm
+          user={editingUser}
+          isOpen={isUserEditOpen}
+          onClose={() => setIsUserEditOpen(false)}
+          onSave={handleSaveUser}
+          onDelete={handleDeleteUser}
+          currentUser={currentUser}
+        />
+      )}
     </div>
   );
 };

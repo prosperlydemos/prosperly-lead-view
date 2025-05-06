@@ -4,8 +4,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead, User } from '../types';
-import { PlusCircle, UserRound } from 'lucide-react';
+import { PlusCircle, UserRound, Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface AddLeadButtonProps {
   onAddLead: (lead: Omit<Lead, 'id'>) => void;
@@ -25,7 +29,9 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     demoDate: null,
     signupDate: null,
     status: 'Demo Scheduled',
-    ownerId: currentUser.id // Default to current user
+    ownerId: currentUser.id, // Default to current user
+    crm: '',
+    nextFollowUp: null
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +56,20 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     }));
   };
 
+  const handleDateChange = (field: string, date: Date | undefined) => {
+    if (date) {
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: date.toISOString() 
+      }));
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: null 
+      }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAddLead(formData);
@@ -63,9 +83,17 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
       demoDate: null,
       signupDate: null,
       status: 'Demo Scheduled',
-      ownerId: currentUser.id
+      ownerId: currentUser.id,
+      crm: '',
+      nextFollowUp: null
     });
     setIsOpen(false);
+  };
+
+  // Format date for display in the date picker
+  const formatDateForPicker = (dateString: string | null | undefined) => {
+    if (!dateString) return undefined;
+    return new Date(dateString);
   };
 
   return (
@@ -122,6 +150,19 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
           </div>
 
           <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="crm">
+              CRM System
+            </label>
+            <Input
+              id="crm"
+              name="crm"
+              value={formData.crm}
+              onChange={handleChange}
+              placeholder="e.g. Salesforce, HubSpot, etc."
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium mb-1" htmlFor="leadSource">
               Lead Source
             </label>
@@ -159,6 +200,39 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                 onChange={handleChange}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="nextFollowUp">
+              Next Follow-Up
+            </label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.nextFollowUp && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {formData.nextFollowUp ? (
+                    format(new Date(formData.nextFollowUp), 'PPP')
+                  ) : (
+                    <span>Schedule follow-up</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={formatDateForPicker(formData.nextFollowUp)}
+                  onSelect={(date) => handleDateChange('nextFollowUp', date)}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

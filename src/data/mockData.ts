@@ -13,7 +13,9 @@ export const mockLeads: Lead[] = [
     demoDate: '2025-05-10T14:00:00Z',
     signupDate: null,
     status: 'Demo Scheduled',
-    ownerId: 'user-1'  // Default owner
+    ownerId: 'user-1',  // Default owner
+    crm: 'HubSpot',
+    nextFollowUp: '2025-05-15T10:00:00Z'
   },
   {
     id: '2',
@@ -26,7 +28,9 @@ export const mockLeads: Lead[] = [
     demoDate: '2025-04-28T10:00:00Z',
     signupDate: null,
     status: 'Warm',
-    ownerId: 'user-1'
+    ownerId: 'user-1',
+    crm: 'Salesforce',
+    nextFollowUp: '2025-05-07T14:30:00Z'
   },
   {
     id: '3',
@@ -39,7 +43,9 @@ export const mockLeads: Lead[] = [
     demoDate: '2025-04-25T15:30:00Z',
     signupDate: null,
     status: 'Hot',
-    ownerId: 'user-2'
+    ownerId: 'user-2',
+    crm: 'Zoho CRM',
+    nextFollowUp: '2025-05-08T11:00:00Z'
   },
   {
     id: '4',
@@ -52,7 +58,9 @@ export const mockLeads: Lead[] = [
     demoDate: '2025-04-18T13:00:00Z',
     signupDate: '2025-04-22T09:15:00Z',
     status: 'Closed',
-    ownerId: 'user-2'
+    ownerId: 'user-2',
+    crm: 'Microsoft Dynamics',
+    nextFollowUp: null
   },
   {
     id: '5',
@@ -65,7 +73,9 @@ export const mockLeads: Lead[] = [
     demoDate: '2025-05-05T11:00:00Z',
     signupDate: null,
     status: 'Demo Scheduled',
-    ownerId: 'user-3'
+    ownerId: 'user-3',
+    crm: 'Pipedrive',
+    nextFollowUp: '2025-05-12T09:00:00Z'
   }
 ];
 

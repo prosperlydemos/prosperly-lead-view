@@ -9,7 +9,7 @@ import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import { useState } from "react";
 import { mockLeads } from "./data/mockData";
-import { User } from "./types";
+import { User, Lead } from "./types";
 
 const queryClient = new QueryClient();
 
@@ -55,19 +55,96 @@ const AppRoutes = () => {
   // State for passing to both pages
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [currentUser, setCurrentUser] = useState<User>(initialCurrentUser);
-  const [leads, setLeads] = useState(mockLeads);
+  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  
+  // Handler for adding a new user
+  const handleAddUser = (userData: Omit<User, 'id'>) => {
+    const newUser: User = {
+      ...userData,
+      id: `user-${users.length + 1}`,
+      commissionRules: [
+        { threshold: 0, amount: 100 },
+        { threshold: 10, amount: 150 }
+      ]
+    };
+    
+    setUsers(prev => [...prev, newUser]);
+  };
+  
+  // Handler for updating a user
+  const handleUpdateUser = (updatedUser: User) => {
+    setUsers(prev => prev.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    ));
+    
+    // If the current user was updated, update the current user state
+    if (updatedUser.id === currentUser.id) {
+      setCurrentUser(updatedUser);
+    }
+  };
+  
+  // Handler for deleting a user
+  const handleDeleteUser = (userId: string) => {
+    // Check if the user has any assigned leads
+    const userHasLeads = leads.some(lead => lead.ownerId === userId);
+    
+    if (userHasLeads) {
+      return;
+    }
+    
+    setUsers(prev => prev.filter(user => user.id !== userId));
+  };
+  
+  // Handler for adding a new lead
+  const handleAddLead = (leadData: Omit<Lead, 'id'>) => {
+    const newLead: Lead = {
+      ...leadData,
+      id: `${leads.length + 1}`
+    };
+    
+    setLeads(prev => [...prev, newLead]);
+  };
+  
+  // Handler for updating a lead
+  const handleUpdateLead = (updatedLead: Lead) => {
+    setLeads(prev => prev.map(lead => 
+      lead.id === updatedLead.id ? updatedLead : lead
+    ));
+  };
+  
+  // Handler for deleting a lead
+  const handleDeleteLead = (leadId: string) => {
+    setLeads(prev => prev.filter(lead => lead.id !== leadId));
+  };
   
   return (
     <Routes>
-      <Route path="/" element={<Index 
-        initialUsers={initialUsers} 
-        initialCurrentUser={initialCurrentUser} 
-      />} />
-      <Route path="/reports" element={<Reports 
-        users={users} 
-        leads={leads} 
-        currentUser={currentUser} 
-      />} />
+      <Route 
+        path="/" 
+        element={
+          <Index 
+            users={users}
+            currentUser={currentUser}
+            leads={leads}
+            onAddUser={handleAddUser}
+            onUpdateUser={handleUpdateUser}
+            onDeleteUser={handleDeleteUser}
+            onAddLead={handleAddLead}
+            onUpdateLead={handleUpdateLead}
+            onDeleteLead={handleDeleteLead}
+          />
+        } 
+      />
+      <Route 
+        path="/reports" 
+        element={
+          <Reports 
+            users={users} 
+            leads={leads} 
+            currentUser={currentUser} 
+          />
+        } 
+      />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
