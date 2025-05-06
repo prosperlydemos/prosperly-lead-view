@@ -9,7 +9,7 @@ import { Trash2, UserRound, Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface LeadEditFormProps {
@@ -110,11 +110,10 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     const formattedDate = date.toISOString().split('T')[0];
     console.log(`Formatted date for ${field}:`, formattedDate);
     
-    setFormData(prev => {
-      const updated = { ...prev };
-      updated[field] = formattedDate;
-      return updated;
-    });
+    setFormData(prev => ({
+      ...prev,
+      [field]: formattedDate
+    }));
   };
 
   if (!lead) return null;
@@ -122,27 +121,25 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Only admin or the lead owner can edit ownership
   const canEditOwnership = currentUser.isAdmin;
 
-  // Improved date parsing for calendar components
-  const parseDateString = (dateString: string | null | undefined): Date | undefined => {
+  // Parse a date string to a Date object for the calendar
+  const parseDate = (dateString: string | null | undefined): Date | undefined => {
     if (!dateString) return undefined;
     
     try {
-      // Parse ISO format dates (YYYY-MM-DD)
-      if (typeof dateString === 'string') {
-        // Ensure we're dealing with YYYY-MM-DD format
-        const datePart = dateString.split('T')[0];
-        // Add noon time to avoid timezone issues (will display as selected date regardless of timezone)
-        const date = new Date(`${datePart}T12:00:00`);
-        console.log(`Parsing date string ${dateString} to:`, date);
-        
-        // Check if date is valid
-        if (!isNaN(date.getTime())) {
-          return date;
-        }
+      // For YYYY-MM-DD format strings
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return new Date(dateString + 'T12:00:00'); // Add noon time to avoid timezone issues
+      }
+      
+      // For ISO strings or other formats
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date;
       }
     } catch (error) {
-      console.error("Error parsing date:", dateString, error);
+      console.error("Error parsing date:", dateString);
     }
+    
     return undefined;
   };
 
@@ -242,7 +239,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.demoDate ? (
-                      format(parseDateString(formData.demoDate) as Date, 'PP')
+                      format(parseDate(formData.demoDate) as Date, 'PPP')
                     ) : (
                       <span>Select demo date</span>
                     )}
@@ -251,7 +248,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <CalendarComponent
                     mode="single"
-                    selected={parseDateString(formData.demoDate)}
+                    selected={parseDate(formData.demoDate)}
                     onSelect={(date) => handleDateChange('demoDate', date)}
                     initialFocus
                   />
@@ -273,7 +270,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.signupDate ? (
-                      format(parseDateString(formData.signupDate) as Date, 'PP')
+                      format(parseDate(formData.signupDate) as Date, 'PPP')
                     ) : (
                       <span>Select signup date</span>
                     )}
@@ -282,7 +279,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <CalendarComponent
                     mode="single"
-                    selected={parseDateString(formData.signupDate)}
+                    selected={parseDate(formData.signupDate)}
                     onSelect={(date) => handleDateChange('signupDate', date)}
                     initialFocus
                   />
@@ -305,7 +302,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {formData.nextFollowUp ? (
-                    format(parseDateString(formData.nextFollowUp) as Date, 'PP')
+                    format(parseDate(formData.nextFollowUp) as Date, 'PPP')
                   ) : (
                     <span>Schedule follow-up</span>
                   )}
@@ -314,7 +311,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={parseDateString(formData.nextFollowUp)}
+                  selected={parseDate(formData.nextFollowUp)}
                   onSelect={(date) => handleDateChange('nextFollowUp', date)}
                   initialFocus
                 />
