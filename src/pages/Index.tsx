@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -31,7 +30,7 @@ const Index: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | 'All'>('All');
+  const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'All'>('All');
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all');
   const [isTodoListOpen, setIsTodoListOpen] = useState(false);
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
@@ -271,7 +270,7 @@ const Index: React.FC = () => {
     }
   };
   
-  const handleStatusFilterChange = (status: string | 'All') => {
+  const handleStatusFilterChange = (status: LeadStatus | 'All') => {
     setSelectedStatus(status);
   };
   
