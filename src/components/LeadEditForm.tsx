@@ -9,7 +9,7 @@ import { Trash2, UserRound, Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface LeadEditFormProps {
@@ -117,10 +117,14 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   const formatDateForPicker = (dateString: string | null | undefined) => {
     if (!dateString) return undefined;
     
-    // Parse the date string to a Date object
-    // If it's already in YYYY-MM-DD format, add a time component to ensure it parses correctly
-    const dateWithTime = dateString.includes('T') ? dateString : `${dateString}T00:00:00`;
-    return new Date(dateWithTime);
+    try {
+      // Create a date object from the YYYY-MM-DD string
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    } catch (e) {
+      console.error("Error parsing date:", dateString, e);
+      return undefined;
+    }
   };
 
   return (
@@ -210,6 +214,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
@@ -218,7 +223,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.demoDate ? (
-                      format(formatDateForPicker(formData.demoDate) as Date, 'PPP')
+                      format(formatDateForPicker(formData.demoDate) as Date, 'PP')
                     ) : (
                       <span>Select demo date</span>
                     )}
@@ -240,6 +245,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
@@ -248,7 +254,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.signupDate ? (
-                      format(formatDateForPicker(formData.signupDate) as Date, 'PPP')
+                      format(formatDateForPicker(formData.signupDate) as Date, 'PP')
                     ) : (
                       <span>Select signup date</span>
                     )}
@@ -271,6 +277,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button
+                  type="button"
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
@@ -279,7 +286,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {formData.nextFollowUp ? (
-                    format(formatDateForPicker(formData.nextFollowUp) as Date, 'PPP')
+                    format(formatDateForPicker(formData.nextFollowUp) as Date, 'PP')
                   ) : (
                     <span>Schedule follow-up</span>
                   )}
