@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/use-toast';
 
 interface LeadEditFormProps {
   lead: Lead | null;
@@ -74,12 +75,28 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }));
   };
 
-  // Form submission handler
+  // Form submission handler with improved logging
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (lead && formData) {
-      onSave({ ...lead, ...formData });
+      // Log what we're about to save for debugging
+      console.log('Saving lead with dates:', {
+        demoDate: formData.demoDate,
+        signupDate: formData.signupDate,
+        nextFollowUp: formData.nextFollowUp,
+        closedAt: formData.closedAt
+      });
+      
+      const updatedLead = { ...lead, ...formData };
+      onSave(updatedLead);
       onClose();
+      
+      // Show success message
+      toast({
+        title: "Lead updated successfully",
+        description: `Updated ${updatedLead.contactName}'s information`,
+      });
     }
   };
 
@@ -97,12 +114,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
-  // Date change handler - completely rewritten for clarity and reliability
+  // Date change handler - completely rewritten for reliability
   const handleDateChange = (fieldName: string, date: Date | undefined) => {
-    console.log(`Date selected for ${fieldName}:`, date);
-    
     if (!date) {
       // Clear the date field if no date is selected
+      console.log(`Clearing date field: ${fieldName}`);
       setFormData(prev => ({
         ...prev,
         [fieldName]: null
@@ -110,18 +126,27 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       return;
     }
     
-    // Format as YYYY-MM-DD string
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
-    
-    console.log(`Formatted date for ${fieldName}:`, formattedDate);
-    
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: formattedDate
-    }));
+    try {
+      // Format as YYYY-MM-DD string consistently
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      
+      console.log(`Setting ${fieldName} to: ${formattedDate}`);
+      
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: formattedDate
+      }));
+    } catch (error) {
+      console.error(`Error formatting date for ${fieldName}:`, error);
+      toast({
+        title: "Date Error",
+        description: "There was an error processing the date. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!lead) return null;
@@ -134,26 +159,42 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     if (!dateString) return undefined;
     
     try {
-      // Handle YYYY-MM-DD format
+      // First try to parse ISO format
       if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = dateString.split('-').map(Number);
-        // Month is 0-indexed in JavaScript Date
-        return new Date(year, month - 1, day, 12, 0, 0);
+        return new Date(year, month - 1, day);
       }
       
-      // Handle other formats as fallback
+      // If that fails, try standard Date constructor
       const date = new Date(dateString);
-      return !isNaN(date.getTime()) ? date : undefined;
+      return isNaN(date.getTime()) ? undefined : date;
     } catch (error) {
-      console.error("Error converting date string to Date:", dateString);
+      console.error("Error converting date string to Date:", dateString, error);
       return undefined;
     }
   };
 
-  // Format a date for display - separate from data storage format
-  const formatDateForDisplay = (date: Date): string => {
-    return format(date, 'PP'); // Localized date format like "Apr 29, 2025"
+  // Format a date for display
+  const formatDateForDisplay = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'Select a date';
+    
+    try {
+      const dateObj = stringToDate(dateString);
+      if (!dateObj) return 'Select a date';
+      
+      return format(dateObj, 'PP'); // Localized date format
+    } catch (error) {
+      console.error("Error formatting date for display:", dateString, error);
+      return 'Invalid date';
+    }
   };
+
+  // Check if we have any date fields
+  console.log("Current form data:", {
+    demoDate: formData.demoDate,
+    signupDate: formData.signupDate,
+    nextFollowUp: formData.nextFollowUp
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -163,7 +204,6 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Contact Information */}
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="contactName">Contact Name</label>
             <Input 
@@ -251,11 +291,10 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                     )}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {formData.demoDate && stringToDate(formData.demoDate) ? (
-                      formatDateForDisplay(stringToDate(formData.demoDate)!)
-                    ) : (
+                    {formData.demoDate ? 
+                      formatDateForDisplay(formData.demoDate) : 
                       <span>Select demo date</span>
-                    )}
+                    }
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -283,11 +322,10 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                     )}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {formData.signupDate && stringToDate(formData.signupDate) ? (
-                      formatDateForDisplay(stringToDate(formData.signupDate)!)
-                    ) : (
+                    {formData.signupDate ? 
+                      formatDateForDisplay(formData.signupDate) : 
                       <span>Select signup date</span>
-                    )}
+                    }
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -316,11 +354,10 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   )}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {formData.nextFollowUp && stringToDate(formData.nextFollowUp) ? (
-                    formatDateForDisplay(stringToDate(formData.nextFollowUp)!)
-                  ) : (
+                  {formData.nextFollowUp ? 
+                    formatDateForDisplay(formData.nextFollowUp) : 
                     <span>Schedule follow-up</span>
-                  )}
+                  }
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

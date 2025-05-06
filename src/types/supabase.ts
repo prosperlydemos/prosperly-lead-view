@@ -30,10 +30,21 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
   const formatDate = (dateStr: string | null | undefined): string | null => {
     if (!dateStr) return null;
     try {
-      // Extract date part only (YYYY-MM-DD) from any date string
-      return dateStr.split('T')[0];
+      // Handle various date formats by creating a Date object first
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date format:", dateStr);
+        return null;
+      }
+      
+      // Format as YYYY-MM-DD
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
     } catch (e) {
-      console.error("Invalid date format:", dateStr);
+      console.error("Error formatting date:", dateStr, e);
       return null;
     }
   };
@@ -76,6 +87,12 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
   crm?: string | null;
   phone?: string | null;
 } => {
+  // Ensure dates are formatted properly for Supabase
+  const formatDateForSupabase = (dateStr: string | null | undefined): string | null => {
+    if (!dateStr) return null;
+    return dateStr;  // Keep YYYY-MM-DD format that Supabase expects
+  };
+
   return {
     id: appLead.id,
     contact_name: appLead.contactName,
@@ -84,12 +101,12 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
     lead_source: appLead.leadSource || null,
     setup_fee: appLead.setupFee || 0,
     mrr: appLead.mrr || 0,
-    demo_date: appLead.demoDate || null,
-    signup_date: appLead.signupDate || null,
+    demo_date: formatDateForSupabase(appLead.demoDate),
+    signup_date: formatDateForSupabase(appLead.signupDate),
     status: appLead.status,
     owner_id: appLead.ownerId,
-    closing_date: appLead.closedAt || null,
-    next_follow_up: appLead.nextFollowUp || null,
+    closing_date: formatDateForSupabase(appLead.closedAt),
+    next_follow_up: formatDateForSupabase(appLead.nextFollowUp),
     value: appLead.value || 0,
     crm: appLead.crm || null,
     phone: null
