@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -532,7 +531,7 @@ const Index: React.FC = () => {
           </div>
           <div className="border-l pl-6">
             <NoteSection 
-              lead={selectedLead}
+              lead={selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null}
               notes={notes.filter(note => note.lead_id === selectedLeadId)}
               onAddNote={handleAddNote}
               onStatusChange={handleStatusChange}

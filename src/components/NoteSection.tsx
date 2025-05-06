@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Lead, Note as NoteType, LeadStatus } from '../types';
+import { Lead, Note as AppNoteType, LeadStatus } from '../types';
+import { Note as SupabaseNote } from '../types/supabase';
 import Note from './Note';
 import AddNoteForm from './AddNoteForm';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +11,7 @@ import { format } from 'date-fns';
 
 interface NoteSectionProps {
   lead: Lead | null;
-  notes: NoteType[];
+  notes: (AppNoteType | SupabaseNote)[];
   onAddNote: (leadId: string, content: string) => void;
   onStatusChange: (leadId: string, status: string) => void;
   onEditLead: (leadId: string) => void;
@@ -27,7 +28,11 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
 
   // Sort notes by created date (newest first)
   const sortedNotes = [...notes].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => {
+      const dateA = new Date('created_at' in a ? a.created_at : ('createdAt' in a ? a.createdAt : new Date()));
+      const dateB = new Date('created_at' in b ? b.created_at : ('createdAt' in b ? b.createdAt : new Date()));
+      return dateB.getTime() - dateA.getTime();
+    }
   );
 
   const handleStatusChange = (value: string) => {
@@ -91,7 +96,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
         {sortedNotes.length > 0 ? (
           <div>
             {sortedNotes.map(note => (
-              <Note key={note.id} note={note} />
+              <Note key={'id' in note ? note.id : ''} note={note} />
             ))}
           </div>
         ) : (

@@ -39,4 +39,6 @@ export interface Note {
   leadId: string;
   content: string;
   createdAt: string;
+  userId?: string; // Added to match Supabase user_id
 }
+

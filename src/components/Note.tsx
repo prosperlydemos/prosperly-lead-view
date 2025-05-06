@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { Note as NoteType, Profile } from '../types/supabase';
 import { supabase } from '@/integrations/supabase/client';
+import { Note as AppNoteType } from '../types';
 
 interface NoteProps {
-  note: NoteType;
+  note: NoteType | AppNoteType;
 }
 
 const Note: React.FC<NoteProps> = ({ note }) => {
@@ -13,7 +14,8 @@ const Note: React.FC<NoteProps> = ({ note }) => {
   
   useEffect(() => {
     const fetchAuthor = async () => {
-      if (note.user_id) {
+      // Check if it's a Supabase note type with user_id
+      if ('user_id' in note && note.user_id) {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -27,9 +29,13 @@ const Note: React.FC<NoteProps> = ({ note }) => {
     };
     
     fetchAuthor();
-  }, [note.user_id]);
+  }, ['user_id' in note ? note.user_id : undefined]);
 
-  const formattedDate = format(new Date(note.created_at), 'MMM d, yyyy h:mm a');
+  // Get the formatted date from either format
+  const formattedDate = format(
+    new Date('created_at' in note ? note.created_at : ('createdAt' in note ? note.createdAt : new Date())), 
+    'MMM d, yyyy h:mm a'
+  );
 
   return (
     <div className="border-b pb-4 mb-4 last:border-b-0">
