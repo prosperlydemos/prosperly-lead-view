@@ -28,11 +28,11 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     mrr: 0,
     demoDate: null,
     signupDate: null,
-    status: 'Demo Scheduled',
+    status: 'Demo Scheduled', // Default status
     ownerId: currentUser.id, // Default to current user
     crm: '',
     nextFollowUp: null,
-    value: 0 // Added the value field which was missing
+    value: 0
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,13 +40,6 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     setFormData(prev => ({
       ...prev,
       [name]: name === 'setupFee' || name === 'mrr' ? Number(value) : value
-    }));
-  };
-
-  const handleStatusChange = (status: string) => {
-    setFormData(prev => ({
-      ...prev,
-      status: status as Lead['status']
     }));
   };
 
@@ -59,9 +52,13 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
 
   const handleDateChange = (field: string, date: Date | undefined) => {
     if (date) {
+      // Format the date to match the expected format
+      const formattedDate = new Date(date);
+      formattedDate.setHours(12, 0, 0, 0);
+      
       setFormData(prev => ({ 
         ...prev, 
-        [field]: date.toISOString() 
+        [field]: formattedDate.toISOString() 
       }));
     } else {
       setFormData(prev => ({ 
@@ -73,7 +70,10 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddLead(formData);
+    onAddLead({
+      ...formData,
+      status: 'Demo Scheduled' // Ensure status is always Demo Scheduled
+    });
     setFormData({
       contactName: '',
       email: '',
@@ -87,7 +87,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
       ownerId: currentUser.id,
       crm: '',
       nextFollowUp: null,
-      value: 0 // Added the value field which was missing
+      value: 0
     });
     setIsOpen(false);
   };
@@ -181,26 +181,64 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
               <label className="block text-sm font-medium mb-1" htmlFor="demoDate">
                 Demo Date
               </label>
-              <Input
-                id="demoDate"
-                name="demoDate"
-                type="datetime-local"
-                value={formData.demoDate ? formData.demoDate.slice(0, 16) : ''}
-                onChange={handleChange}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.demoDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {formData.demoDate ? (
+                      format(new Date(formData.demoDate), 'PPP')
+                    ) : (
+                      <span>Select date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={formatDateForPicker(formData.demoDate)}
+                    onSelect={(date) => handleDateChange('demoDate', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="signupDate">
                 Signup Date
               </label>
-              <Input
-                id="signupDate"
-                name="signupDate"
-                type="datetime-local"
-                value={formData.signupDate ? formData.signupDate.slice(0, 16) : ''}
-                onChange={handleChange}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.signupDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {formData.signupDate ? (
+                      format(new Date(formData.signupDate), 'PPP')
+                    ) : (
+                      <span>Select date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={formatDateForPicker(formData.signupDate)}
+                    onSelect={(date) => handleDateChange('signupDate', date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -231,7 +269,6 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                   selected={formatDateForPicker(formData.nextFollowUp)}
                   onSelect={(date) => handleDateChange('nextFollowUp', date)}
                   initialFocus
-                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -263,23 +300,6 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                 onChange={handleChange}
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="status">
-              Status
-            </label>
-            <Select value={formData.status} onValueChange={handleStatusChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-                <SelectItem value="Warm">Warm</SelectItem>
-                <SelectItem value="Hot">Hot</SelectItem>
-                <SelectItem value="Closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           
           {currentUser.isAdmin && (
