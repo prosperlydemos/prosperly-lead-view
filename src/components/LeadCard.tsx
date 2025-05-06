@@ -44,13 +44,13 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
   const getStatusClassName = () => {
     switch (lead.status) {
       case 'Demo Scheduled':
-        return 'bg-purple-50';
-      case 'Warm':
-        return 'bg-blue-50';
-      case 'Hot':
-        return 'bg-red-50';
+        return 'lead-status-demo-scheduled';
+      case 'Warm Lead':
+        return 'lead-status-warm';
+      case 'Hot Lead':
+        return 'lead-status-hot';
       case 'Closed':
-        return 'bg-green-50';
+        return 'lead-status-closed';
       default:
         return '';
     }

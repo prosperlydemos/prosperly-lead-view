@@ -27,7 +27,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
 
   // Sort notes by created date (newest first)
   const sortedNotes = [...notes].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   const handleStatusChange = (value: string) => {
@@ -44,7 +44,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
     <div className="h-[calc(100vh-100px)] overflow-y-auto pl-2">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold">{lead.contact_name}</h2>
+          <h2 className="text-xl font-bold">{lead.contactName}</h2>
           <Button variant="ghost" size="sm" onClick={() => onEditLead(lead.id)}>
             <Edit size={16} className="mr-1" />
             <span>Edit</span>
@@ -69,7 +69,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
       <div className="mb-4 space-y-2 text-sm border-b pb-4">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-muted-foreground">Business:</span> {lead.business_name || 'Not specified'}
+            <span className="text-muted-foreground">Business:</span> {lead.businessName || 'Not specified'}
           </div>
           <div>
             <span className="text-muted-foreground">Email:</span> {lead.email || 'Not specified'}
@@ -80,7 +80,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
             <span className="text-muted-foreground">Status:</span> {lead.status}
           </div>
           <div>
-            <span className="text-muted-foreground">Closing Date:</span> {formatDate(lead.closing_date)}
+            <span className="text-muted-foreground">Closing Date:</span> {formatDate(lead.signupDate)}
           </div>
         </div>
       </div>
