@@ -26,6 +26,12 @@ interface ReportsProps {
   currentUser: User;
 }
 
+// Extend the User type for the chart data
+interface UserWithRevenueData extends User {
+  setupFees?: number;
+  mrrClosed?: number;
+}
+
 const DEFAULT_COMMISSION_RULES: CommissionRule[] = [
   { threshold: 0, amount: 100 }, // First 10 closes: $100 each
   { threshold: 10, amount: 150 } // After 10 closes: $150 each
@@ -33,7 +39,7 @@ const DEFAULT_COMMISSION_RULES: CommissionRule[] = [
 
 const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLeads, currentUser: initialCurrentUser }) => {
   const [monthFilter, setMonthFilter] = useState<string>(getCurrentMonthKey());
-  const [userCommissionData, setUserCommissionData] = useState<User[]>([]);
+  const [userCommissionData, setUserCommissionData] = useState<UserWithRevenueData[]>([]);
   const [totalRevenue, setTotalRevenue] = useState({ setupFees: 0, mrr: 0 });
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
@@ -130,7 +136,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
     });
 
     // Calculate commissions and update user data
-    const updatedUsers = users.map(user => {
+    const updatedUsers: UserWithRevenueData[] = users.map(user => {
       const closedDeals = closesPerUser[user.id] || 0;
       const rules = user.commissionRules || DEFAULT_COMMISSION_RULES;
       const totalCommission = calculateCommission(closedDeals, rules);

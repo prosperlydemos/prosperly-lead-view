@@ -16,6 +16,8 @@ interface LeadListProps {
   users: User[];
   currentUser: User;
   onAddUser: (user: Omit<User, 'id'>) => void;
+  onUpdateUser: (user: User) => void;
+  onDeleteUser: (userId: string) => void;
   selectedStatus: LeadStatus | 'All';
   onStatusChange: (status: LeadStatus | 'All') => void;
   selectedUserId: string | 'all';
@@ -31,6 +33,8 @@ const LeadList: React.FC<LeadListProps> = ({
   users,
   currentUser,
   onAddUser,
+  onUpdateUser,
+  onDeleteUser,
   selectedStatus,
   onStatusChange,
   selectedUserId,
@@ -43,7 +47,7 @@ const LeadList: React.FC<LeadListProps> = ({
     
     // Filter by user (if not admin, only show owned leads)
     let userMatch = true;
-    if (!currentUser.isAdmin) {
+    if (currentUser && !currentUser.isAdmin) {
       userMatch = lead.ownerId === currentUser.id;
     } else if (selectedUserId !== 'all') {
       userMatch = lead.ownerId === selectedUserId;
@@ -59,10 +63,12 @@ const LeadList: React.FC<LeadListProps> = ({
         <AddLeadButton onAddLead={onAddLead} users={users} currentUser={currentUser} />
       </div>
       
-      {currentUser.isAdmin && (
+      {currentUser && currentUser.isAdmin && (
         <UserManagement 
           users={users} 
-          onAddUser={onAddUser} 
+          onAddUser={onAddUser}
+          onUpdateUser={onUpdateUser}
+          onDeleteUser={onDeleteUser}
           currentUser={currentUser}
         />
       )}
@@ -73,7 +79,7 @@ const LeadList: React.FC<LeadListProps> = ({
           onStatusChange={onStatusChange} 
         />
         
-        {currentUser.isAdmin && (
+        {currentUser && currentUser.isAdmin && (
           <UserFilter 
             users={users} 
             selectedUserId={selectedUserId} 
