@@ -61,7 +61,7 @@ const LeadList: React.FC<LeadListProps> = ({
       
       <div className="flex flex-col md:flex-row gap-2 mb-4">
         <LeadStatusFilter 
-          selectedStatus={selectedStatus} 
+          selectedStatus={selectedStatus as 'All' | import('../types/index').LeadStatus} 
           onStatusChange={onStatusChange} 
         />
         

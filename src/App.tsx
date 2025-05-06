@@ -37,7 +37,18 @@ const App = () => (
               path="/reports" 
               element={
                 <ProtectedRoute>
-                  <Reports />
+                  {/* We're passing empty arrays as props because the Reports component
+                      will fetch its own data from Supabase */}
+                  <Reports 
+                    users={[]} 
+                    leads={[]} 
+                    currentUser={{
+                      id: '',
+                      name: '',
+                      email: '',
+                      isAdmin: false
+                    }} 
+                  />
                 </ProtectedRoute>
               } 
             />

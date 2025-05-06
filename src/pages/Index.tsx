@@ -4,7 +4,7 @@ import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import LeadEditForm from '../components/LeadEditForm';
 import TodoList from '../components/TodoList';
-import { Note, Lead } from '../types/supabase';
+import { Note, Lead, mapSupabaseLeadToAppLead, mapAppLeadToSupabaseLead } from '../types/supabase';
 import { toast } from "@/components/ui/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { isToday, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
+import { Lead as AppLead } from '../types/index';
 
 interface TodoItem {
   id: string;
@@ -204,11 +205,13 @@ const Index: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleSaveLead = async (updatedLead: Lead) => {
+  const handleSaveLead = async (updatedLead: AppLead) => {
     try {
+      const supabaseUpdatedLead = mapAppLeadToSupabaseLead(updatedLead);
+      
       const { data, error } = await supabase
         .from('leads')
-        .update(updatedLead)
+        .update(supabaseUpdatedLead)
         .eq('id', updatedLead.id)
         .select()
         .single();
@@ -305,6 +308,9 @@ const Index: React.FC = () => {
     );
   }
   
+  // Convert Supabase leads to App leads for LeadEditForm
+  const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -373,7 +379,7 @@ const Index: React.FC = () => {
       </main>
 
       <LeadEditForm
-        lead={selectedLead}
+        lead={appSelectedLead}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveLead}
