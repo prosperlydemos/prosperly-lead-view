@@ -1,15 +1,25 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import LeadEditForm from '../components/LeadEditForm';
+import TodoList from '../components/TodoList';
 import { mockLeads, mockNotes } from '../data/mockData';
 import { Lead, Note, User, LeadStatus } from '../types';
 import { toast } from "@/components/ui/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BarChart } from 'lucide-react';
+import { BarChart, ListTodo } from 'lucide-react';
+import { isToday, parseISO } from 'date-fns';
+
+interface TodoItem {
+  id: string;
+  leadId: string;
+  contactName: string;
+  businessName: string;
+  dueDate: string;
+  completed: boolean;
+}
 
 interface IndexProps {
   users: User[];
@@ -40,10 +50,43 @@ const Index: React.FC<IndexProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'All'>('All');
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all');
+  const [isTodoListOpen, setIsTodoListOpen] = useState(false);
+  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
 
   const selectedLead = selectedLeadId 
     ? leads.find(lead => lead.id === selectedLeadId) 
     : null;
+
+  // Update todo items whenever leads change
+  useEffect(() => {
+    const newTodoItems: TodoItem[] = [];
+    
+    leads.forEach(lead => {
+      // Only consider leads assigned to the current user
+      if (lead.ownerId === currentUser.id && lead.nextFollowUp) {
+        // Check if the next follow-up is today
+        const followUpDate = parseISO(lead.nextFollowUp);
+        if (isToday(followUpDate)) {
+          newTodoItems.push({
+            id: `todo-${lead.id}-${Date.now()}`,
+            leadId: lead.id,
+            contactName: lead.contactName,
+            businessName: lead.businessName || '',
+            dueDate: lead.nextFollowUp,
+            completed: false
+          });
+        }
+      }
+    });
+    
+    // Filter out completed items and add new ones
+    const filteredItems = todoItems.filter(item => 
+      !item.completed && 
+      !newTodoItems.some(newItem => newItem.leadId === item.leadId)
+    );
+    
+    setTodoItems([...filteredItems, ...newTodoItems]);
+  }, [leads, currentUser.id]);
 
   const handleLeadSelect = (leadId: string) => {
     setSelectedLeadId(leadId);
@@ -58,6 +101,12 @@ const Index: React.FC<IndexProps> = ({
     };
     
     setNotes([...notes, newNote]);
+    
+    // Mark todo item for this lead as completed when a note is added
+    setTodoItems(todoItems.map(item => 
+      item.leadId === leadId ? { ...item, completed: true } : item
+    ));
+    
     toast({
       title: "Note added",
       description: "Your note has been saved successfully."
@@ -133,6 +182,22 @@ const Index: React.FC<IndexProps> = ({
     setSelectedUserId(userId);
   };
   
+  const handleMarkTodoComplete = (todoId: string) => {
+    setTodoItems(todoItems.map(item => 
+      item.id === todoId ? { ...item, completed: true } : item
+    ));
+    
+    toast({
+      title: "Task completed",
+      description: "Follow-up task marked as completed."
+    });
+  };
+  
+  // Get the number of active todo items for the current user
+  const activeTodoCount = todoItems.filter(
+    item => !item.completed && item.leadId
+  ).length;
+  
   // Count leads by status
   const leadStatusCounts = leads.reduce((acc, lead) => {
     if (!acc[lead.status]) acc[lead.status] = 0;
@@ -160,11 +225,26 @@ const Index: React.FC<IndexProps> = ({
                 ))}
               </div>
             </div>
-            <Link to="/reports">
-              <Button variant="outline" className="flex items-center">
-                <BarChart className="mr-2 h-4 w-4" /> Sales Reports
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2" 
+                onClick={() => setIsTodoListOpen(true)}
+              >
+                <ListTodo className="h-4 w-4" /> 
+                <span>Items For Today</span>
+                {activeTodoCount > 0 && (
+                  <span className="ml-1 text-red-500 font-medium">
+                    ({activeTodoCount})
+                  </span>
+                )}
               </Button>
-            </Link>
+              <Link to="/reports">
+                <Button variant="outline" className="flex items-center">
+                  <BarChart className="mr-2 h-4 w-4" /> Sales Reports
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -208,6 +288,18 @@ const Index: React.FC<IndexProps> = ({
         onSave={handleSaveLead}
         onDelete={handleDeleteLead}
         users={users}
+        currentUser={currentUser}
+      />
+      
+      <TodoList
+        isOpen={isTodoListOpen}
+        onClose={() => setIsTodoListOpen(false)}
+        todoItems={todoItems}
+        onMarkComplete={handleMarkTodoComplete}
+        onViewLead={(leadId) => {
+          setSelectedLeadId(leadId);
+          setIsTodoListOpen(false);
+        }}
         currentUser={currentUser}
       />
     </div>
