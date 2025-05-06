@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Lead, User } from '../types';
+import { Lead, User, LeadStatus } from '../types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Trash2, UserRound, Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,12 +39,36 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       setFormData(lead);
     }
   }, [lead]);
+  
+  // Watch for status changes to update closedAt date
+  useEffect(() => {
+    if (formData.status === 'Closed' && lead && lead.status !== 'Closed') {
+      setFormData(prev => ({
+        ...prev,
+        closedAt: new Date().toISOString()
+      }));
+    }
+  }, [formData.status, lead]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: name === 'setupFee' || name === 'mrr' ? Number(value) : value
+    }));
+  };
+
+  const handleStatusChange = (status: LeadStatus) => {
+    const updates: Partial<Lead> = { status };
+    
+    // Set closedAt date when status changes to Closed
+    if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
+      updates.closedAt = new Date().toISOString();
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      ...updates
     }));
   };
 
@@ -101,6 +125,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Contact Information */}
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="contactName">Contact Name</label>
             <Input 
@@ -151,6 +176,25 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               value={formData.leadSource || ''}
               onChange={handleChange}
             />
+          </div>
+          
+          {/* Status Selection */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Lead Status</label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => handleStatusChange(value as LeadStatus)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+                <SelectItem value="Warm Lead">Warm Lead</SelectItem>
+                <SelectItem value="Hot Lead">Hot Lead</SelectItem>
+                <SelectItem value="Closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
