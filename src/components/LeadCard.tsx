@@ -1,19 +1,39 @@
 
-import React from 'react';
-import { Lead, User } from '../types';
+import React, { useEffect, useState } from 'react';
+import { Lead, Profile } from '../types/supabase';
 import { format } from 'date-fns';
 import { Copy, UserRound } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 
 interface LeadCardProps {
   lead: Lead;
   isSelected: boolean;
   onClick: () => void;
   onEdit: () => void;
-  users: User[];
 }
 
-const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users }) => {
+const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }) => {
+  const [owner, setOwner] = useState<Profile | null>(null);
+  
+  useEffect(() => {
+    const fetchOwner = async () => {
+      if (lead.owner_id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', lead.owner_id)
+          .single();
+          
+        if (!error && data) {
+          setOwner(data);
+        }
+      }
+    };
+    
+    fetchOwner();
+  }, [lead.owner_id]);
+
   // Helper function to format date strings for display
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Not set';
@@ -36,17 +56,17 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users })
     }
   };
 
-  // Find owner name
-  const owner = users.find(user => user.id === lead.ownerId);
   const ownerName = owner ? owner.name : 'Unassigned';
 
   const copyEmail = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(lead.email);
-    toast({
-      title: "Email copied",
-      description: `${lead.email} copied to clipboard`,
-    });
+    if (lead.email) {
+      navigator.clipboard.writeText(lead.email);
+      toast({
+        title: "Email copied",
+        description: `${lead.email} copied to clipboard`,
+      });
+    }
   };
 
   return (
@@ -58,17 +78,19 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users })
         {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1">
-            <h3 className="font-semibold text-sm">{lead.contactName}</h3>
-            <span className="text-xs text-muted-foreground">
-              ({lead.email}) 
-              <button 
-                onClick={copyEmail} 
-                className="ml-1 inline-flex hover:text-primary"
-                aria-label="Copy email"
-              >
-                <Copy size={12} />
-              </button>
-            </span>
+            <h3 className="font-semibold text-sm">{lead.contact_name}</h3>
+            {lead.email && (
+              <span className="text-xs text-muted-foreground">
+                ({lead.email}) 
+                <button 
+                  onClick={copyEmail} 
+                  className="ml-1 inline-flex hover:text-primary"
+                  aria-label="Copy email"
+                >
+                  <Copy size={12} />
+                </button>
+              </span>
+            )}
           </div>
           <span className="text-xs flex items-center gap-1">
             <UserRound size={12} />
@@ -76,24 +98,14 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users })
           </span>
         </div>
         
-        {/* Second line: Demo date and Next Follow-up date */}
-        <div className="grid grid-cols-2 gap-1 text-xs">
-          <div>
-            <span className="text-muted-foreground">Demo Date:</span> {formatDate(lead.demoDate)}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.nextFollowUp)}
-          </div>
+        {/* Second line: Follow-up date */}
+        <div className="text-xs">
+          <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.next_follow_up)}
         </div>
         
-        {/* Third line: Setup Fee and MRR */}
-        <div className="grid grid-cols-2 gap-1 text-xs">
-          <div>
-            <span className="text-muted-foreground">Setup:</span> ${lead.setupFee}
-          </div>
-          <div>
-            <span className="text-muted-foreground">MRR:</span> ${lead.mrr}
-          </div>
+        {/* Third line: Value */}
+        <div className="text-xs">
+          <span className="text-muted-foreground">Value:</span> ${lead.value}
         </div>
         
         {/* Status tag at the top right */}

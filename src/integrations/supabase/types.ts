@@ -9,13 +9,119 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          business_name: string | null
+          closing_date: string | null
+          contact_name: string
+          created_at: string
+          email: string | null
+          id: string
+          next_follow_up: string | null
+          owner_id: string
+          phone: string | null
+          status: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          business_name?: string | null
+          closing_date?: string | null
+          contact_name: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          next_follow_up?: string | null
+          owner_id: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          business_name?: string | null
+          closing_date?: string | null
+          contact_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          next_follow_up?: string | null
+          owner_id?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_admin: boolean
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          is_admin?: boolean
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_admin?: boolean
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

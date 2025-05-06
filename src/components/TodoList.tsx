@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Lead, User } from '../types';
+import { Lead, Profile } from '../types/supabase';
 import { format, isToday, parseISO } from 'date-fns';
 import { Check, ListTodo } from 'lucide-react';
 import {
@@ -27,7 +27,7 @@ interface TodoListProps {
   todoItems: TodoItem[];
   onMarkComplete: (todoId: string) => void;
   onViewLead: (leadId: string) => void;
-  currentUser: User | undefined;
+  currentUser: Profile | null;
 }
 
 const TodoList: React.FC<TodoListProps> = ({ 

@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Lead, Note as NoteType } from '../types';
+import { Lead, Note as NoteType } from '../types/supabase';
 import Note from './Note';
 import AddNoteForm from './AddNoteForm';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Edit, Calendar } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface NoteSectionProps {
@@ -25,10 +25,10 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
     );
   }
 
-  // Filter lead notes and sort by created date (newest first)
-  const leadNotes = notes
-    .filter(note => note.leadId === lead.id)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Sort notes by created date (newest first)
+  const sortedNotes = [...notes].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   const handleStatusChange = (value: string) => {
     onStatusChange(lead.id, value);
@@ -44,7 +44,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
     <div className="h-[calc(100vh-100px)] overflow-y-auto pl-2">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold">{lead.contactName}</h2>
+          <h2 className="text-xl font-bold">{lead.contact_name}</h2>
           <Button variant="ghost" size="sm" onClick={() => onEditLead(lead.id)}>
             <Edit size={16} className="mr-1" />
             <span>Edit</span>
@@ -56,9 +56,11 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-              <SelectItem value="Warm">Warm</SelectItem>
-              <SelectItem value="Hot">Hot</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="contacted">Contacted</SelectItem>
+              <SelectItem value="qualified">Qualified</SelectItem>
+              <SelectItem value="proposal">Proposal</SelectItem>
+              <SelectItem value="negotiation">Negotiation</SelectItem>
               <SelectItem value="Closed">Closed</SelectItem>
             </SelectGroup>
           </SelectContent>
@@ -69,35 +71,35 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
       <div className="mb-4 space-y-2 text-sm border-b pb-4">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-muted-foreground">Business:</span> {lead.businessName || 'Not specified'}
+            <span className="text-muted-foreground">Business:</span> {lead.business_name || 'Not specified'}
           </div>
           <div>
-            <span className="text-muted-foreground">Lead Source:</span> {lead.leadSource || 'Not specified'}
+            <span className="text-muted-foreground">Email:</span> {lead.email || 'Not specified'}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-muted-foreground">Signup Date:</span> {formatDate(lead.signupDate)}
+            <span className="text-muted-foreground">Phone:</span> {lead.phone || 'Not specified'}
           </div>
-          <div>
-            <span className="text-muted-foreground">CRM:</span> {lead.crm || 'Not specified'}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
           <div>
             <span className="text-muted-foreground">Status:</span> {lead.status}
           </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-muted-foreground">Demo Date:</span> {formatDate(lead.demoDate)}
+            <span className="text-muted-foreground">Value:</span> ${lead.value}
+          </div>
+          <div>
+            <span className="text-muted-foreground">Closing Date:</span> {formatDate(lead.closing_date)}
           </div>
         </div>
       </div>
 
       <div className="mb-8">
-        <h3 className="font-medium mb-3">Notes ({leadNotes.length})</h3>
-        {leadNotes.length > 0 ? (
+        <h3 className="font-medium mb-3">Notes ({sortedNotes.length})</h3>
+        {sortedNotes.length > 0 ? (
           <div>
-            {leadNotes.map(note => (
+            {sortedNotes.map(note => (
               <Note key={note.id} note={note} />
             ))}
           </div>
