@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   }, [lead]);
   
   // Watch for status changes to update closedAt date
-  useEffect(() => {
+  React.useEffect(() => {
     if (formData.status === 'Closed' && lead && lead.status !== 'Closed') {
       setFormData(prev => ({
         ...prev,
@@ -51,6 +51,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   }, [formData.status, lead]);
 
+  // Standard input field handler
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -59,10 +60,10 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }));
   };
 
+  // Status field handler
   const handleStatusChange = (status: LeadStatus) => {
     const updates: Partial<Lead> = { status };
     
-    // Set closedAt date when status changes to Closed
     if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
       updates.closedAt = new Date().toISOString().split('T')[0];
     }
@@ -73,6 +74,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }));
   };
 
+  // Form submission handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (lead && formData) {
@@ -81,6 +83,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   };
 
+  // Delete lead handler
   const handleDelete = () => {
     if (lead) {
       onDelete(lead.id);
@@ -89,30 +92,35 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   };
 
+  // Owner change handler
   const handleOwnerChange = (ownerId: string) => {
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
-  // Improved date handling function
-  const handleDateChange = (field: string, date: Date | undefined) => {
-    console.log(`Date selected for ${field}:`, date);
+  // Date change handler - completely rewritten for clarity and reliability
+  const handleDateChange = (fieldName: string, date: Date | undefined) => {
+    console.log(`Date selected for ${fieldName}:`, date);
     
     if (!date) {
-      setFormData(prev => {
-        const updated = { ...prev };
-        updated[field] = null;
-        return updated;
-      });
+      // Clear the date field if no date is selected
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: null
+      }));
       return;
     }
     
-    // Format consistently as YYYY-MM-DD, avoiding time zone issues
-    const formattedDate = date.toISOString().split('T')[0];
-    console.log(`Formatted date for ${field}:`, formattedDate);
+    // Format as YYYY-MM-DD string
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
+    
+    console.log(`Formatted date for ${fieldName}:`, formattedDate);
     
     setFormData(prev => ({
       ...prev,
-      [field]: formattedDate
+      [fieldName]: formattedDate
     }));
   };
 
@@ -121,26 +129,30 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Only admin or the lead owner can edit ownership
   const canEditOwnership = currentUser.isAdmin;
 
-  // Parse a date string to a Date object for the calendar
-  const parseDate = (dateString: string | null | undefined): Date | undefined => {
+  // Convert a date string to a Date object for the calendar
+  const stringToDate = (dateString: string | null | undefined): Date | undefined => {
     if (!dateString) return undefined;
     
     try {
-      // For YYYY-MM-DD format strings
+      // Handle YYYY-MM-DD format
       if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return new Date(dateString + 'T12:00:00'); // Add noon time to avoid timezone issues
+        const [year, month, day] = dateString.split('-').map(Number);
+        // Month is 0-indexed in JavaScript Date
+        return new Date(year, month - 1, day, 12, 0, 0);
       }
       
-      // For ISO strings or other formats
+      // Handle other formats as fallback
       const date = new Date(dateString);
-      if (!isNaN(date.getTime())) {
-        return date;
-      }
+      return !isNaN(date.getTime()) ? date : undefined;
     } catch (error) {
-      console.error("Error parsing date:", dateString);
+      console.error("Error converting date string to Date:", dateString);
+      return undefined;
     }
-    
-    return undefined;
+  };
+
+  // Format a date for display - separate from data storage format
+  const formatDateForDisplay = (date: Date): string => {
+    return format(date, 'PP'); // Localized date format like "Apr 29, 2025"
   };
 
   return (
@@ -225,6 +237,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           </div>
           
           <div className="grid grid-cols-2 gap-4">
+            {/* Demo Date */}
             <div>
               <label className="block text-sm font-medium mb-1">Demo Date</label>
               <Popover>
@@ -238,8 +251,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                     )}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {formData.demoDate ? (
-                      format(parseDate(formData.demoDate) as Date, 'PPP')
+                    {formData.demoDate && stringToDate(formData.demoDate) ? (
+                      formatDateForDisplay(stringToDate(formData.demoDate)!)
                     ) : (
                       <span>Select demo date</span>
                     )}
@@ -248,7 +261,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <CalendarComponent
                     mode="single"
-                    selected={parseDate(formData.demoDate)}
+                    selected={stringToDate(formData.demoDate)}
                     onSelect={(date) => handleDateChange('demoDate', date)}
                     initialFocus
                   />
@@ -256,6 +269,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               </Popover>
             </div>
             
+            {/* Signup Date */}
             <div>
               <label className="block text-sm font-medium mb-1">Signup Date</label>
               <Popover>
@@ -269,8 +283,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                     )}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {formData.signupDate ? (
-                      format(parseDate(formData.signupDate) as Date, 'PPP')
+                    {formData.signupDate && stringToDate(formData.signupDate) ? (
+                      formatDateForDisplay(stringToDate(formData.signupDate)!)
                     ) : (
                       <span>Select signup date</span>
                     )}
@@ -279,7 +293,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <CalendarComponent
                     mode="single"
-                    selected={parseDate(formData.signupDate)}
+                    selected={stringToDate(formData.signupDate)}
                     onSelect={(date) => handleDateChange('signupDate', date)}
                     initialFocus
                   />
@@ -288,8 +302,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             </div>
           </div>
           
+          {/* Next Follow-Up */}
           <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="nextFollowUp">Next Follow-Up</label>
+            <label className="block text-sm font-medium mb-1">Next Follow-Up</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -301,8 +316,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   )}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {formData.nextFollowUp ? (
-                    format(parseDate(formData.nextFollowUp) as Date, 'PPP')
+                  {formData.nextFollowUp && stringToDate(formData.nextFollowUp) ? (
+                    formatDateForDisplay(stringToDate(formData.nextFollowUp)!)
                   ) : (
                     <span>Schedule follow-up</span>
                   )}
@@ -311,7 +326,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={parseDate(formData.nextFollowUp)}
+                  selected={stringToDate(formData.nextFollowUp)}
                   onSelect={(date) => handleDateChange('nextFollowUp', date)}
                   initialFocus
                 />

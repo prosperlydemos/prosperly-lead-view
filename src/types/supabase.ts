@@ -26,12 +26,12 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
   const mrr = typeof supabaseLead.mrr === 'number' ? supabaseLead.mrr : 0;
   const value = typeof supabaseLead.value === 'number' ? supabaseLead.value : 0;
   
-  // Format dates consistently - ISO format without time component
+  // Format dates consistently as YYYY-MM-DD strings
   const formatDate = (dateStr: string | null | undefined): string | null => {
     if (!dateStr) return null;
     try {
-      // Strip time component and ensure YYYY-MM-DD format
-      return new Date(dateStr).toISOString().split('T')[0];
+      // Extract date part only (YYYY-MM-DD) from any date string
+      return dateStr.split('T')[0];
     } catch (e) {
       console.error("Invalid date format:", dateStr);
       return null;
