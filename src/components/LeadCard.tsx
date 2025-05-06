@@ -87,11 +87,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users })
           <div>
             <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.nextFollowUp)}
           </div>
+          <div className="flex justify-between items-center">
+            <span>
+              <span className="text-muted-foreground">MRR:</span> ${lead.mrr}
+            </span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-1 text-xs">
           <div>
             <span className="text-muted-foreground">Setup:</span> ${lead.setupFee}
-          </div>
-          <div>
-            <span className="text-muted-foreground">MRR:</span> ${lead.mrr}
           </div>
         </div>
       </div>
