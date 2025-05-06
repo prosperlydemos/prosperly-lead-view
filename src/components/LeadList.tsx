@@ -7,6 +7,7 @@ import UserFilter from './UserFilter';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { LeadStatus } from '../types';
 
 interface LeadListProps {
   leads: Lead[];
@@ -61,7 +62,7 @@ const LeadList: React.FC<LeadListProps> = ({
       
       <div className="flex flex-col md:flex-row gap-2 mb-4">
         <LeadStatusFilter 
-          selectedStatus={selectedStatus as 'All' | import('../types/index').LeadStatus} 
+          selectedStatus={selectedStatus as 'All' | LeadStatus} 
           onStatusChange={onStatusChange} 
         />
         

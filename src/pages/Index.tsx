@@ -384,6 +384,13 @@ const Index: React.FC = () => {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveLead}
         onDelete={handleDeleteLead}
+        users={[]} // Add empty users array for now, will be populated later
+        currentUser={{
+          id: currentUser?.id || '',
+          name: currentUser?.name || '',
+          email: currentUser?.email || '',
+          isAdmin: currentUser?.is_admin || false
+        }} 
       />
       
       <TodoList

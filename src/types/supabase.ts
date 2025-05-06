@@ -18,16 +18,16 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     contactName: supabaseLead.contact_name,
     email: supabaseLead.email || '',
     businessName: supabaseLead.business_name || '',
-    leadSource: '', // This field is not in Supabase schema yet
-    setupFee: 0, // This field is not in Supabase schema yet
-    mrr: 0, // This field is not in Supabase schema yet
-    demoDate: null,
-    signupDate: supabaseLead.closing_date,
+    leadSource: supabaseLead.lead_source || '', 
+    setupFee: supabaseLead.setup_fee || 0,
+    mrr: supabaseLead.mrr || 0,
+    demoDate: supabaseLead.demo_date ? supabaseLead.demo_date : null,
+    signupDate: supabaseLead.signup_date || null,
     status: supabaseLead.status as import('./index').LeadStatus,
     ownerId: supabaseLead.owner_id,
     closedAt: supabaseLead.closing_date || undefined,
     nextFollowUp: supabaseLead.next_follow_up || null,
-    crm: '', // This field is not in Supabase schema yet
+    crm: supabaseLead.crm || '',
     value: supabaseLead.value
   };
 };
@@ -39,11 +39,17 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): Parti
     contact_name: appLead.contactName,
     email: appLead.email || null,
     business_name: appLead.businessName || null,
+    lead_source: appLead.leadSource || null,
+    setup_fee: appLead.setupFee || 0,
+    mrr: appLead.mrr || 0,
+    demo_date: appLead.demoDate || null,
+    signup_date: appLead.signupDate || null,
     status: appLead.status,
     owner_id: appLead.ownerId,
     closing_date: appLead.closedAt || null,
     next_follow_up: appLead.nextFollowUp || null,
     value: appLead.value || 0,
+    crm: appLead.crm || null,
     phone: null // Assuming this field exists but is optional
   };
 };

@@ -35,7 +35,9 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
           
         if (leadsError) throw leadsError;
         
-        setLeads(leadsData || []);
+        // Transform Supabase leads to our app's Lead format
+        const transformedLeads = leadsData ? leadsData.map(mapSupabaseLeadToAppLead) : [];
+        setLeads(transformedLeads);
       } catch (error) {
         console.error('Error loading reports data:', error);
       } finally {
