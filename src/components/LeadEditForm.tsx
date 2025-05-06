@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -93,9 +94,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
 
   const handleDateChange = (field: string, date: Date | undefined) => {
     if (date) {
+      // Format as YYYY-MM-DD for date fields
+      const isoDate = date.toISOString().split('T')[0] + 'T00:00:00Z';
       setFormData(prev => ({ 
         ...prev, 
-        [field]: date.toISOString() 
+        [field]: isoDate 
       }));
     } else {
       setFormData(prev => ({ 
@@ -199,25 +202,65 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="demoDate">Demo Date</label>
-              <Input 
-                id="demoDate"
-                name="demoDate"
-                type="datetime-local"
-                value={formData.demoDate ? formData.demoDate.slice(0, 16) : ''}
-                onChange={handleChange}
-              />
+              <label className="block text-sm font-medium mb-1">Demo Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.demoDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {formData.demoDate ? (
+                      format(new Date(formData.demoDate), 'PPP')
+                    ) : (
+                      <span>Select demo date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={formatDateForPicker(formData.demoDate)}
+                    onSelect={(date) => handleDateChange('demoDate', date)}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="signupDate">Signup Date</label>
-              <Input 
-                id="signupDate"
-                name="signupDate"
-                type="datetime-local"
-                value={formData.signupDate ? formData.signupDate.slice(0, 16) : ''}
-                onChange={handleChange}
-              />
+              <label className="block text-sm font-medium mb-1">Signup Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.signupDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {formData.signupDate ? (
+                      format(new Date(formData.signupDate), 'PPP')
+                    ) : (
+                      <span>Select signup date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={formatDateForPicker(formData.signupDate)}
+                    onSelect={(date) => handleDateChange('signupDate', date)}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           

@@ -26,13 +26,6 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
   const mrr = typeof supabaseLead.mrr === 'number' ? supabaseLead.mrr : 0;
   const value = typeof supabaseLead.value === 'number' ? supabaseLead.value : 0;
   
-  console.log(`Mapping lead ${supabaseLead.contact_name}:`, { 
-    setupFee: supabaseLead.setup_fee, 
-    mappedSetupFee: setupFee,
-    mrr: supabaseLead.mrr,
-    mappedMRR: mrr
-  });
-  
   return {
     id: supabaseLead.id,
     contactName: supabaseLead.contact_name,
@@ -41,7 +34,7 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     leadSource: supabaseLead.lead_source || '', 
     setupFee: setupFee,
     mrr: mrr,
-    demoDate: supabaseLead.demo_date ? supabaseLead.demo_date : null,
+    demoDate: supabaseLead.demo_date || null,
     signupDate: supabaseLead.signup_date || null,
     status: supabaseLead.status as import('./index').LeadStatus,
     ownerId: supabaseLead.owner_id,
