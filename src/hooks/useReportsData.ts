@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '@/types';
-import { format } from 'date-fns';
+import { format, parse, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear } from 'date-fns';
 
 interface Metrics {
   totalMRR: number;
@@ -27,7 +27,17 @@ interface ChartData {
   }>;
 }
 
-export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' | 'month' | 'quarter' | 'year') => {
+interface DateFilter {
+  month: number; // 0-11 (January is 0)
+  year: number;
+}
+
+export const useReportsData = (
+  leads: Lead[], 
+  users: User[], 
+  timeFilter: 'week' | 'month' | 'quarter' | 'year',
+  dateFilter?: DateFilter
+) => {
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [metrics, setMetrics] = useState<Metrics>({
     totalMRR: 0,
@@ -44,35 +54,54 @@ export const useReportsData = (leads: Lead[], users: User[], timeFilter: 'week' 
     leaderboardData: []
   });
 
-  // Filter leads based on time range
+  // Filter leads based on time range or specific month/year
   useEffect(() => {
     if (!leads.length) return;
 
-    const now = new Date();
-    let filterDate = new Date();
+    let filtered: Lead[];
 
-    switch (timeFilter) {
-      case 'week':
-        filterDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        filterDate.setMonth(now.getMonth() - 1);
-        break;
-      case 'quarter':
-        filterDate.setMonth(now.getMonth() - 3);
-        break;
-      case 'year':
-        filterDate.setFullYear(now.getFullYear() - 1);
-        break;
+    if (dateFilter) {
+      // Filter by specific month and year
+      const startDate = startOfMonth(new Date(dateFilter.year, dateFilter.month));
+      const endDate = endOfMonth(new Date(dateFilter.year, dateFilter.month));
+      
+      filtered = leads.filter(lead => {
+        // Check if the lead was created in the selected month/year
+        const createdDate = lead.created_at ? new Date(lead.created_at) : null;
+        const closedDate = lead.closedAt ? new Date(lead.closedAt) : null;
+        
+        // Include if either created or closed in the selected month
+        return (createdDate && isWithinInterval(createdDate, { start: startDate, end: endDate })) || 
+               (closedDate && isWithinInterval(closedDate, { start: startDate, end: endDate }));
+      });
+      
+      console.log(`Filtered to ${filtered.length} leads for ${format(startDate, 'MMMM yyyy')}`);
+    } else {
+      // Filter by general time range (week, month, quarter, year)
+      const now = new Date();
+      let filterDate = new Date();
+
+      switch (timeFilter) {
+        case 'week':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          filterDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          filterDate.setFullYear(now.getFullYear() - 1);
+          break;
+      }
+
+      filtered = leads;  // Use all leads initially for testing
     }
 
-    // Include all leads within the time filter with proper status tracking
-    const filtered = leads;  // Use all leads initially for testing
-
     setFilteredLeads(filtered);
-    
     console.log('Filtered leads:', filtered);
-  }, [leads, timeFilter]);
+  }, [leads, timeFilter, dateFilter]);
 
   // Compute sales metrics
   useEffect(() => {

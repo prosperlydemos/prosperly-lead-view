@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Lead } from '../types';
 import { useAuth } from '@/context/AuthContext';
@@ -6,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { mapSupabaseLeadToAppLead } from '../types/supabase';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Calendar, CalendarIcon } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserManagement from '@/components/UserManagement';
 import { useReportsData } from '@/hooks/useReportsData';
@@ -14,6 +13,9 @@ import MetricsCards from '@/components/reports/MetricsCards';
 import OverviewTab from '@/components/reports/OverviewTab';
 import LeaderboardTab from '@/components/reports/LeaderboardTab';
 import CommissionsTab from '@/components/reports/CommissionsTab';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 // Colors for charts - kept here for reference
 const COLORS = ['#9b87f5', '#8E9196', '#F97316', '#0EA5E9'];
@@ -31,6 +33,27 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
   const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Month/year filter for reports
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const months = [
+    { value: 0, label: 'January' },
+    { value: 1, label: 'February' },
+    { value: 2, label: 'March' },
+    { value: 3, label: 'April' },
+    { value: 4, label: 'May' },
+    { value: 5, label: 'June' },
+    { value: 6, label: 'July' },
+    { value: 7, label: 'August' },
+    { value: 8, label: 'September' },
+    { value: 9, label: 'October' },
+    { value: 10, label: 'November' },
+    { value: 11, label: 'December' }
+  ];
 
   // Fetch leads and users data from Supabase
   useEffect(() => {
@@ -165,8 +188,26 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
     }
   };
 
-  // Use the custom hook to get processed data
-  const { filteredLeads, metrics, chartData } = useReportsData(leads, users, timeFilter);
+  // Reset month/year filters
+  const clearDateFilter = () => {
+    setSelectedMonth(null);
+    setSelectedYear(null);
+  };
+  
+  // Format selected month and year for display
+  const getSelectedDateDisplay = () => {
+    if (selectedMonth !== null && selectedYear !== null) {
+      return format(new Date(selectedYear, selectedMonth, 1), 'MMMM yyyy');
+    }
+    return null;
+  };
+
+  // Use the custom hook to get processed data with date filtering
+  const dateFilter = selectedMonth !== null && selectedYear !== null 
+    ? { month: selectedMonth, year: selectedYear } 
+    : undefined;
+    
+  const { filteredLeads, metrics, chartData } = useReportsData(leads, users, timeFilter, dateFilter);
 
   if (loading) {
     return (
@@ -204,39 +245,98 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
           </div>
         )}
 
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <h2 className="text-xl font-semibold">Sales Analytics</h2>
-          <div className="flex gap-2">
-            <Button 
-              variant={timeFilter === 'week' ? 'default' : 'outline'} 
-              onClick={() => setTimeFilter('week')}
-              size="sm"
-            >
-              Week
-            </Button>
-            <Button 
-              variant={timeFilter === 'month' ? 'default' : 'outline'} 
-              onClick={() => setTimeFilter('month')}
-              size="sm"
-            >
-              Month
-            </Button>
-            <Button 
-              variant={timeFilter === 'quarter' ? 'default' : 'outline'} 
-              onClick={() => setTimeFilter('quarter')}
-              size="sm"
-            >
-              Quarter
-            </Button>
-            <Button 
-              variant={timeFilter === 'year' ? 'default' : 'outline'} 
-              onClick={() => setTimeFilter('year')}
-              size="sm"
-            >
-              Year
-            </Button>
+          
+          <div className="flex flex-wrap gap-2">
+            {/* Date filter controls */}
+            <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-md">
+              <Select 
+                value={selectedMonth !== null ? selectedMonth.toString() : ""} 
+                onValueChange={(value) => setSelectedMonth(parseInt(value))}
+              >
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month) => (
+                    <SelectItem key={month.value} value={month.value.toString()}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select 
+                value={selectedYear !== null ? selectedYear.toString() : ""} 
+                onValueChange={(value) => setSelectedYear(parseInt(value))}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {(selectedMonth !== null || selectedYear !== null) && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearDateFilter}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+            
+            {/* Time range filter buttons */}
+            {!dateFilter && (
+              <div className="flex gap-2">
+                <Button 
+                  variant={timeFilter === 'week' ? 'default' : 'outline'} 
+                  onClick={() => setTimeFilter('week')}
+                  size="sm"
+                >
+                  Week
+                </Button>
+                <Button 
+                  variant={timeFilter === 'month' ? 'default' : 'outline'} 
+                  onClick={() => setTimeFilter('month')}
+                  size="sm"
+                >
+                  Month
+                </Button>
+                <Button 
+                  variant={timeFilter === 'quarter' ? 'default' : 'outline'} 
+                  onClick={() => setTimeFilter('quarter')}
+                  size="sm"
+                >
+                  Quarter
+                </Button>
+                <Button 
+                  variant={timeFilter === 'year' ? 'default' : 'outline'} 
+                  onClick={() => setTimeFilter('year')}
+                  size="sm"
+                >
+                  Year
+                </Button>
+              </div>
+            )}
           </div>
         </div>
+        
+        {/* Show selected date filter */}
+        {getSelectedDateDisplay() && (
+          <div className="mb-4 flex items-center">
+            <CalendarIcon className="h-5 w-5 mr-2 text-muted-foreground" />
+            <span className="font-medium">Showing data for: {getSelectedDateDisplay()}</span>
+          </div>
+        )}
 
         {/* Key metrics */}
         <MetricsCards {...metrics} />
