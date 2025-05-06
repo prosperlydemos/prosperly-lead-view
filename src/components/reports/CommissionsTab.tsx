@@ -30,8 +30,44 @@ interface CommissionsTabProps {
 }
 
 const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, leaderboardData }) => {
+  // Calculate totals for summary
+  const totalSetupFees = filteredLeads
+    .filter(lead => lead.status === 'Closed')
+    .reduce((sum, lead) => sum + lead.setupFee, 0);
+  
+  const totalMRR = filteredLeads
+    .filter(lead => lead.status === 'Closed')
+    .reduce((sum, lead) => sum + lead.mrr, 0);
+    
+  const totalCommissions = leaderboardData.reduce((sum, user) => sum + user.commission, 0);
+
   return (
     <TabsContent value="commissions">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Revenue Summary</CardTitle>
+          <CardDescription>
+            Overview of revenue and commissions for the selected time period
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-muted rounded-md">
+              <div className="text-sm text-muted-foreground mb-1">Total Setup Fees</div>
+              <div className="text-2xl font-bold">${totalSetupFees.toLocaleString()}</div>
+            </div>
+            <div className="p-4 bg-muted rounded-md">
+              <div className="text-sm text-muted-foreground mb-1">Total MRR</div>
+              <div className="text-2xl font-bold">${totalMRR.toLocaleString()}</div>
+            </div>
+            <div className="p-4 bg-muted rounded-md">
+              <div className="text-sm text-muted-foreground mb-1">Total Commissions Paid</div>
+              <div className="text-2xl font-bold">${totalCommissions.toLocaleString()}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Commission Structure</CardTitle>
