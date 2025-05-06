@@ -15,11 +15,17 @@ export type Database = {
           closing_date: string | null
           contact_name: string
           created_at: string
+          crm: string | null
+          demo_date: string | null
           email: string | null
           id: string
+          lead_source: string | null
+          mrr: number | null
           next_follow_up: string | null
           owner_id: string
           phone: string | null
+          setup_fee: number | null
+          signup_date: string | null
           status: string
           updated_at: string
           value: number
@@ -29,11 +35,17 @@ export type Database = {
           closing_date?: string | null
           contact_name: string
           created_at?: string
+          crm?: string | null
+          demo_date?: string | null
           email?: string | null
           id?: string
+          lead_source?: string | null
+          mrr?: number | null
           next_follow_up?: string | null
           owner_id: string
           phone?: string | null
+          setup_fee?: number | null
+          signup_date?: string | null
           status?: string
           updated_at?: string
           value?: number
@@ -43,11 +55,17 @@ export type Database = {
           closing_date?: string | null
           contact_name?: string
           created_at?: string
+          crm?: string | null
+          demo_date?: string | null
           email?: string | null
           id?: string
+          lead_source?: string | null
+          mrr?: number | null
           next_follow_up?: string | null
           owner_id?: string
           phone?: string | null
+          setup_fee?: number | null
+          signup_date?: string | null
           status?: string
           updated_at?: string
           value?: number
