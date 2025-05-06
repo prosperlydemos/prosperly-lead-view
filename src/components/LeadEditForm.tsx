@@ -97,10 +97,14 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     if (date) {
       // Format as YYYY-MM-DD for date fields
       const formattedDate = date.toISOString().split('T')[0];
-      setFormData(prev => ({ 
-        ...prev, 
-        [field]: formattedDate
-      }));
+      
+      // Update the form state with the new date
+      setFormData(prevData => {
+        const newData = { ...prevData };
+        newData[field] = formattedDate;
+        return newData;
+      });
+      
       console.log(`Date updated - ${field}:`, formattedDate);
     } else {
       setFormData(prev => ({ 
