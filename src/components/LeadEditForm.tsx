@@ -9,7 +9,7 @@ import { Trash2, UserRound, Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface LeadEditFormProps {
@@ -34,6 +34,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   const [formData, setFormData] = React.useState<Partial<Lead>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
+  // Initialize form data when lead changes
   React.useEffect(() => {
     if (lead) {
       setFormData(lead);
@@ -92,26 +93,29 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
-  // Enhanced date change handler that properly updates the form data
+  // Updated date change handler with better date handling
   const handleDateChange = (field: string, date: Date | undefined) => {
-    if (date) {
-      // Format as YYYY-MM-DD for date fields
+    if (!date) {
+      setFormData(prev => ({ ...prev, [field]: null }));
+      console.log(`Date cleared - ${field}`);
+      return;
+    }
+
+    try {
+      // Format date as YYYY-MM-DD
       const formattedDate = date.toISOString().split('T')[0];
       
-      // Update the form state with the new date
-      setFormData(prevData => {
-        const newData = { ...prevData };
-        newData[field] = formattedDate;
-        return newData;
+      // Update form data with the new date
+      setFormData(prev => {
+        // Create a copy to avoid mutation
+        const updatedData = { ...prev };
+        updatedData[field] = formattedDate;
+        return updatedData;
       });
       
       console.log(`Date updated - ${field}:`, formattedDate);
-    } else {
-      setFormData(prev => ({ 
-        ...prev, 
-        [field]: null 
-      }));
-      console.log(`Date cleared - ${field}`);
+    } catch (error) {
+      console.error(`Error updating ${field} date:`, error);
     }
   };
 
@@ -120,16 +124,19 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Only admin or the lead owner can edit ownership
   const canEditOwnership = currentUser.isAdmin;
 
-  // Convert string date to Date object for the calendar
-  const formatDateForPicker = (dateString: string | null | undefined) => {
+  // Improved date parsing for calendar components
+  const parseDateForCalendar = (dateString: string | null | undefined): Date | undefined => {
     if (!dateString) return undefined;
     
     try {
-      // Create a date object from the YYYY-MM-DD string
-      const [year, month, day] = dateString.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    } catch (e) {
-      console.error("Error parsing date:", dateString, e);
+      // For ISO format dates (YYYY-MM-DD)
+      if (dateString.includes('-')) {
+        return parseISO(dateString);
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error("Error parsing date:", dateString, error);
       return undefined;
     }
   };
@@ -230,7 +237,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.demoDate ? (
-                      format(formatDateForPicker(formData.demoDate) as Date, 'PP')
+                      format(parseDateForCalendar(formData.demoDate) as Date, 'PP')
                     ) : (
                       <span>Select demo date</span>
                     )}
@@ -239,7 +246,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <CalendarComponent
                     mode="single"
-                    selected={formatDateForPicker(formData.demoDate)}
+                    selected={parseDateForCalendar(formData.demoDate)}
                     onSelect={(date) => handleDateChange('demoDate', date)}
                     initialFocus
                   />
@@ -261,7 +268,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.signupDate ? (
-                      format(formatDateForPicker(formData.signupDate) as Date, 'PP')
+                      format(parseDateForCalendar(formData.signupDate) as Date, 'PP')
                     ) : (
                       <span>Select signup date</span>
                     )}
@@ -270,7 +277,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <CalendarComponent
                     mode="single"
-                    selected={formatDateForPicker(formData.signupDate)}
+                    selected={parseDateForCalendar(formData.signupDate)}
                     onSelect={(date) => handleDateChange('signupDate', date)}
                     initialFocus
                   />
@@ -293,7 +300,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {formData.nextFollowUp ? (
-                    format(formatDateForPicker(formData.nextFollowUp) as Date, 'PP')
+                    format(parseDateForCalendar(formData.nextFollowUp) as Date, 'PP')
                   ) : (
                     <span>Schedule follow-up</span>
                   )}
@@ -302,7 +309,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={formatDateForPicker(formData.nextFollowUp)}
+                  selected={parseDateForCalendar(formData.nextFollowUp)}
                   onSelect={(date) => handleDateChange('nextFollowUp', date)}
                   initialFocus
                 />
