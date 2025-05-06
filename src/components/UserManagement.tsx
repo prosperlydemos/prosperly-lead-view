@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User } from '../types';
+import { User, CommissionRule } from '../types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,10 @@ const UserManagement: React.FC<UserManagementProps> = ({
       name: '',
       email: '',
       isAdmin: false,
+      commissionRules: [{
+        threshold: 0,
+        amount: 100
+      }]
     }
   });
 
@@ -114,6 +118,11 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   <div>
                     <div className="font-medium">{user.name} {user.id === currentUser.id ? '(You)' : ''}</div>
                     <div className="text-xs text-muted-foreground">{user.email}</div>
+                    {user.commissionRules && user.commissionRules.length > 0 && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Base commission: ${user.commissionRules[0].amount}/close
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={user.isAdmin ? 'default' : 'outline'}>
@@ -161,6 +170,24 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="john@example.com" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="commissionRules.0.amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base Commission Amount ($ per close)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="100" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
                       </FormControl>
                     </FormItem>
                   )}

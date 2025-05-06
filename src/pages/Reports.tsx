@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Lead } from '../types';
+import { User, Lead, CommissionRule } from '../types';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { mapSupabaseLeadToAppLead } from '../types/supabase';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { 
   ChevronLeft, 
   CalendarDays,
-  FileChart, 
+  BarChart2, 
   TrendingUp 
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +35,16 @@ import {
   Pie, 
   Cell
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import UserManagement from '@/components/UserManagement';
 
 // Colors for charts
 const COLORS = ['#9b87f5', '#8E9196', '#F97316', '#0EA5E9'];
@@ -49,13 +58,16 @@ interface ReportsProps {
 const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLeads, currentUser: initialCurrentUser }) => {
   const { profile } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
+  const [currentTab, setCurrentTab] = useState<'overview' | 'leaderboard' | 'commissions'>('overview');
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Fetch leads data from Supabase
+  // Fetch leads and users data from Supabase
   useEffect(() => {
-    const fetchLeads = async () => {
+    const fetchData = async () => {
       if (!profile) return;
       
       setLoading(true);
@@ -67,10 +79,43 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
           
         if (leadsError) throw leadsError;
         
+        // Fetch user profiles
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+          
+        if (profilesError) throw profilesError;
+        
         // Transform Supabase leads to our app's Lead format
         const transformedLeads = leadsData ? leadsData.map(mapSupabaseLeadToAppLead) : [];
         setLeads(transformedLeads);
         setFilteredLeads(transformedLeads);
+        
+        // Transform profiles to User format
+        const transformedUsers = profilesData ? profilesData.map((profile): User => ({
+          id: profile.id,
+          name: profile.name || 'Unknown',
+          email: profile.email || '',
+          isAdmin: profile.is_admin,
+          commissionRules: profile.commission_rules as CommissionRule[] || [],
+          totalCommission: profile.total_commission || 0,
+          closedDeals: profile.closed_deals || 0
+        })) : [];
+        setUsers(transformedUsers);
+        
+        // Find current user
+        const currentUserData = profilesData?.find(p => p.id === profile.id);
+        if (currentUserData) {
+          setCurrentUser({
+            id: currentUserData.id,
+            name: currentUserData.name || 'Unknown',
+            email: currentUserData.email || '',
+            isAdmin: currentUserData.is_admin,
+            commissionRules: currentUserData.commission_rules as CommissionRule[] || [],
+            totalCommission: currentUserData.total_commission || 0,
+            closedDeals: currentUserData.closed_deals || 0
+          });
+        }
       } catch (error) {
         console.error('Error loading reports data:', error);
       } finally {
@@ -78,7 +123,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
       }
     };
     
-    fetchLeads();
+    fetchData();
   }, [profile]);
 
   // Filter leads based on time range
@@ -114,6 +159,54 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
     setFilteredLeads(filtered);
   }, [leads, timeFilter]);
 
+  // Handle adding, editing, or deleting a user
+  const handleAddUser = async (user: Omit<User, 'id'>) => {
+    try {
+      // Generate a UUID for the new user (in a real app, this would be handled by auth)
+      const newUser = { ...user, id: crypto.randomUUID() };
+      setUsers(prev => [...prev, newUser as User]);
+    } catch (error) {
+      console.error('Error adding user:', error);
+    }
+  };
+
+  const handleUpdateUser = async (updatedUser: User) => {
+    try {
+      // Update the user in the database
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: updatedUser.name,
+          email: updatedUser.email,
+          is_admin: updatedUser.isAdmin,
+          commission_rules: updatedUser.commissionRules
+        })
+        .eq('id', updatedUser.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
+      
+      // Update current user if that's the one being edited
+      if (currentUser && currentUser.id === updatedUser.id) {
+        setCurrentUser(updatedUser);
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      // In a real app with auth, you would delete the user from auth system
+      // For now, we'll just remove from local state
+      setUsers(users.filter(user => user.id !== userId));
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+  };
+
   // Compute sales metrics
   const computeMetrics = () => {
     // Total MRR from closed deals
@@ -143,7 +236,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
 
   const metrics = computeMetrics();
 
-  // Prepare data for charts
+  // Prepare data for charts and leaderboards
   const prepareChartData = () => {
     // Group by lead source
     const leadSourceData = filteredLeads.reduce((acc, lead) => {
@@ -181,10 +274,52 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
       };
     });
 
+    // Create leaderboard data
+    const leaderboardData = users.map(user => {
+      const userLeads = filteredLeads.filter(lead => lead.ownerId === user.id && lead.status === 'Closed');
+      const totalMRR = userLeads.reduce((sum, lead) => sum + (lead.mrr || 0), 0);
+      const totalSetupFees = userLeads.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
+      const closedDeals = userLeads.length;
+      
+      // Calculate commission based on rules
+      let commission = 0;
+      if (user.commissionRules && user.commissionRules.length) {
+        // Sort rules by threshold (highest first)
+        const sortedRules = [...user.commissionRules].sort((a, b) => b.threshold - a.threshold);
+        
+        // Apply rules
+        let remainingDeals = closedDeals;
+        for (const rule of sortedRules) {
+          if (remainingDeals > rule.threshold) {
+            const dealsAtThisLevel = remainingDeals - rule.threshold;
+            commission += dealsAtThisLevel * rule.amount;
+            remainingDeals = rule.threshold;
+          }
+        }
+        
+        // Apply base rule (if any) to remaining deals
+        const baseRule = sortedRules[sortedRules.length - 1];
+        if (baseRule && baseRule.threshold === 0) {
+          commission += remainingDeals * baseRule.amount;
+        }
+      }
+      
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        closedDeals,
+        totalValue: totalMRR + totalSetupFees,
+        commission,
+        commissionRules: user.commissionRules || []
+      };
+    }).sort((a, b) => b.closedDeals - a.closedDeals);
+
     return {
       leadSourcePieData: Object.entries(leadSourceData).map(([name, value]) => ({ name, value })),
       statusPieData: Object.entries(statusData).map(([name, value]) => ({ name, value })),
-      monthlyTrendData: monthlyData
+      monthlyTrendData: monthlyData,
+      leaderboardData
     };
   };
 
@@ -214,6 +349,18 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
       </header>
 
       <main className="container py-6">
+        {currentUser?.isAdmin && (
+          <div className="mb-6">
+            <UserManagement 
+              users={users} 
+              onAddUser={handleAddUser} 
+              onUpdateUser={handleUpdateUser} 
+              onDeleteUser={handleDeleteUser} 
+              currentUser={currentUser}
+            />
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">Sales Analytics</h2>
           <div className="flex gap-2">
@@ -288,14 +435,15 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
           </Card>
         </div>
 
-        {/* Charts section */}
-        <Tabs defaultValue="overview" className="mb-8">
+        {/* Main tabs for different report types */}
+        <Tabs defaultValue="overview" className="mb-8" onValueChange={(value) => setCurrentTab(value as any)}>
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="sources">Lead Sources</TabsTrigger>
-            <TabsTrigger value="status">Lead Status</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+            <TabsTrigger value="commissions">Commissions</TabsTrigger>
           </TabsList>
           
+          {/* Overview Tab */}
           <TabsContent value="overview">
             <Card>
               <CardHeader>
@@ -314,7 +462,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
-                        <Tooltip content={<ChartTooltipContent />} />
+                        <Tooltip content={<CustomTooltip />} />
                         <Bar dataKey="deals" fill="var(--color-deals)" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -322,146 +470,279 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
                 </div>
               </CardContent>
             </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Lead Sources</CardTitle>
+                  <CardDescription>
+                    Breakdown of leads by acquisition source
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ChartContainer config={{
+                      sources: { label: "Lead Sources" }
+                    }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={chartData.leadSourcePieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                          >
+                            {chartData.leadSourcePieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <CustomChartLegend data={chartData.leadSourcePieData} colors={COLORS} />
+                    </ChartContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Lead Status</CardTitle>
+                  <CardDescription>
+                    Distribution of leads by current status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ChartContainer config={{
+                      status: { label: "Lead Status" }
+                    }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={chartData.statusPieData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                          >
+                            {chartData.statusPieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <CustomChartLegend data={chartData.statusPieData} colors={COLORS} />
+                    </ChartContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
-          <TabsContent value="sources">
+          {/* Leaderboard Tab */}
+          <TabsContent value="leaderboard">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Lead Sources</CardTitle>
+                <CardTitle className="text-lg">Sales Leaderboard</CardTitle>
                 <CardDescription>
-                  Breakdown of leads by acquisition source
+                  Performance ranking based on number of closed deals
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ChartContainer config={{
-                    sources: { label: "Lead Sources" }
-                  }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={chartData.leadSourcePieData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                          nameKey="name"
-                        >
-                          {chartData.leadSourcePieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <ChartLegend
-                      payload={chartData.leadSourcePieData.map((item, index) => ({
-                        value: item.name,
-                        color: COLORS[index % COLORS.length],
-                      }))}
-                    >
-                      <ChartLegendContent />
-                    </ChartLegend>
-                  </ChartContainer>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Rank</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Closed Deals</TableHead>
+                      <TableHead>Total Value</TableHead>
+                      <TableHead className="text-right">Commission Earned</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {chartData.leaderboardData.map((user, index) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.closedDeals}</TableCell>
+                        <TableCell>${user.totalValue.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">${user.commission.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                    {chartData.leaderboardData.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                          No data available for the selected time period
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          <TabsContent value="status">
+
+          {/* Commissions Tab */}
+          <TabsContent value="commissions">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Lead Status</CardTitle>
+                <CardTitle className="text-lg">Commission Structure</CardTitle>
                 <CardDescription>
-                  Distribution of leads by current status
+                  Current commission rules for each team member
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ChartContainer config={{
-                    status: { label: "Lead Status" }
-                  }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={chartData.statusPieData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                          nameKey="name"
-                        >
-                          {chartData.statusPieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <ChartLegend
-                      payload={chartData.statusPieData.map((item, index) => ({
-                        value: item.name,
-                        color: COLORS[index % COLORS.length],
-                      }))}
-                    >
-                      <ChartLegendContent />
-                    </ChartLegend>
-                  </ChartContainer>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Commission Rules</TableHead>
+                      <TableHead>Total Earned</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => {
+                      const userData = chartData.leaderboardData.find(u => u.id === user.id);
+                      return (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            {user.commissionRules && user.commissionRules.length > 0 ? (
+                              <ul className="text-sm space-y-1">
+                                {user.commissionRules
+                                  .sort((a, b) => a.threshold - b.threshold)
+                                  .map((rule, idx) => (
+                                    <li key={idx}>
+                                      {rule.threshold === 0 
+                                        ? `Base: $${rule.amount} per close`
+                                        : `After ${rule.threshold} closes: $${rule.amount} each`}
+                                    </li>
+                                  ))}
+                              </ul>
+                            ) : (
+                              <span className="text-muted-foreground">No rules defined</span>
+                            )}
+                          </TableCell>
+                          <TableCell>${userData?.commission.toLocaleString() || 0}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {users.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                          No users available
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Closed Deals</CardTitle>
+                <CardDescription>
+                  Showing the most recently closed deals in the selected time period
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contact Name</TableHead>
+                      <TableHead>Business</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Close Date</TableHead>
+                      <TableHead className="text-right">Setup Fee</TableHead>
+                      <TableHead className="text-right">MRR</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLeads
+                      .filter(lead => lead.status === 'Closed')
+                      .sort((a, b) => new Date(b.closedAt || 0).getTime() - new Date(a.closedAt || 0).getTime())
+                      .slice(0, 10)
+                      .map((lead) => {
+                        const owner = users.find(u => u.id === lead.ownerId);
+                        return (
+                          <TableRow key={lead.id} className="border-b hover:bg-muted/50">
+                            <TableCell>{lead.contactName}</TableCell>
+                            <TableCell>{lead.businessName}</TableCell>
+                            <TableCell>{owner?.name || 'Unknown'}</TableCell>
+                            <TableCell>{lead.closedAt ? format(new Date(lead.closedAt), 'MMM d, yyyy') : 'N/A'}</TableCell>
+                            <TableCell className="text-right">${lead.setupFee.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">${lead.mrr.toLocaleString()}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    {filteredLeads.filter(lead => lead.status === 'Closed').length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Table of recent closed deals */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Closed Deals</CardTitle>
-            <CardDescription>
-              Showing the most recently closed deals in the selected time period
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-3 text-left font-medium">Contact Name</th>
-                    <th className="py-3 text-left font-medium">Business</th>
-                    <th className="py-3 text-left font-medium">Close Date</th>
-                    <th className="py-3 text-right font-medium">Setup Fee</th>
-                    <th className="py-3 text-right font-medium">MRR</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredLeads
-                    .filter(lead => lead.status === 'Closed')
-                    .sort((a, b) => new Date(b.closedAt || 0).getTime() - new Date(a.closedAt || 0).getTime())
-                    .slice(0, 5)
-                    .map((lead) => (
-                      <tr key={lead.id} className="border-b hover:bg-muted/50">
-                        <td className="py-3">{lead.contactName}</td>
-                        <td className="py-3">{lead.businessName}</td>
-                        <td className="py-3">{lead.closedAt ? format(new Date(lead.closedAt), 'MMM d, yyyy') : 'N/A'}</td>
-                        <td className="py-3 text-right">${lead.setupFee.toLocaleString()}</td>
-                        <td className="py-3 text-right">${lead.mrr.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  {filteredLeads.filter(lead => lead.status === 'Closed').length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
       </main>
+    </div>
+  );
+};
+
+// Custom chart tooltip component to fix TypeScript errors
+const CustomTooltip = (props: any) => {
+  if (!props.active || !props.payload || !props.payload.length) {
+    return null;
+  }
+
+  return (
+    <div className="bg-background border p-2 rounded-md shadow-md">
+      {props.payload.map((entry: any, index: number) => (
+        <div key={`item-${index}`} className="flex items-center gap-2">
+          <div 
+            className="w-3 h-3 rounded-sm" 
+            style={{ background: entry.color }}
+          />
+          <span>{entry.name || ''}: {entry.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Custom chart legend component to fix TypeScript errors
+const CustomChartLegend = ({ 
+  data, 
+  colors 
+}: { 
+  data: Array<{ name: string; value: number }>; 
+  colors: string[] 
+}) => {
+  return (
+    <div className="flex flex-wrap justify-center gap-4 mt-4">
+      {data.map((item, index) => (
+        <div key={`legend-${index}`} className="flex items-center gap-2">
+          <div 
+            className="w-3 h-3 rounded-sm" 
+            style={{ backgroundColor: colors[index % colors.length] }} 
+          />
+          <span className="text-sm">{item.name}</span>
+        </div>
+      ))}
     </div>
   );
 };

@@ -1,18 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React from 'react';
+import { User, CommissionRule } from '../types';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, CommissionRule } from '../types';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { Trash2, Plus, Minus } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2, PlusCircle, MinusCircle } from 'lucide-react';
-import { toast } from "@/components/ui/use-toast";
 
 interface UserEditFormProps {
-  user: User | null;
+  user: User;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedUser: User) => void;
+  onSave: (user: User) => void;
   onDelete: (userId: string) => void;
   currentUser: User;
 }
@@ -25,272 +27,229 @@ const UserEditForm: React.FC<UserEditFormProps> = ({
   onDelete,
   currentUser
 }) => {
-  const [formData, setFormData] = useState<User | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        ...user,
-        commissionRules: user.commissionRules ? [...user.commissionRules] : [
-          { threshold: 0, amount: 100 },
-          { threshold: 10, amount: 150 }
-        ]
-      });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  
+  // Initialize with existing commission rules or create a default one
+  const initialRules = user.commissionRules && user.commissionRules.length > 0 
+    ? user.commissionRules.sort((a, b) => a.threshold - b.threshold)
+    : [{ threshold: 0, amount: 100 }];
+    
+  const form = useForm({
+    defaultValues: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      commissionRules: initialRules,
+      closedDeals: user.closedDeals || 0,
+      totalCommission: user.totalCommission || 0
     }
-  }, [user]);
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (!formData) return;
-    
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  const handleCommissionRuleChange = (index: number, field: keyof CommissionRule, value: number) => {
-    if (!formData || !formData.commissionRules) return;
-    
-    const updatedRules = [...formData.commissionRules];
-    updatedRules[index][field] = value;
-    
-    setFormData({
-      ...formData,
-      commissionRules: updatedRules
-    });
+  const commissionRules = form.watch('commissionRules') || [];
+  
+  const handleSubmit = (data: User) => {
+    // Ensure commission rules are sorted by threshold
+    data.commissionRules = data.commissionRules?.sort((a, b) => a.threshold - b.threshold);
+    onSave(data);
   };
 
   const addCommissionRule = () => {
-    if (!formData || !formData.commissionRules) return;
+    const currentRules = form.getValues('commissionRules') || [];
+    // Determine a reasonable next threshold based on existing rules
+    const nextThreshold = currentRules.length > 0 
+      ? Math.max(...currentRules.map(r => r.threshold)) + 10 
+      : 10;
     
-    // Find the highest threshold and add a new rule with threshold + 5
-    const highestThreshold = Math.max(...formData.commissionRules.map(rule => rule.threshold));
-    const newRule: CommissionRule = {
-      threshold: highestThreshold + 5,
-      amount: formData.commissionRules[formData.commissionRules.length - 1].amount + 50
-    };
-    
-    setFormData({
-      ...formData,
-      commissionRules: [...formData.commissionRules, newRule]
-    });
+    form.setValue('commissionRules', [
+      ...currentRules, 
+      { threshold: nextThreshold, amount: 150 }
+    ]);
   };
 
   const removeCommissionRule = (index: number) => {
-    if (!formData || !formData.commissionRules || formData.commissionRules.length <= 1) return;
-    
-    const updatedRules = formData.commissionRules.filter((_, i) => i !== index);
-    setFormData({
-      ...formData,
-      commissionRules: updatedRules
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData) return;
-
-    // Check for valid email
-    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+    const currentRules = form.getValues('commissionRules') || [];
+    // Don't remove the last rule
+    if (currentRules.length <= 1) {
       toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
+        title: "Cannot remove rule",
+        description: "You must have at least one commission rule.",
         variant: "destructive"
       });
       return;
     }
-
-    // Validate commission rules
-    if (formData.commissionRules) {
-      // Sort rules by threshold
-      const sortedRules = [...formData.commissionRules].sort((a, b) => a.threshold - b.threshold);
-      
-      // Check first rule has threshold 0
-      if (sortedRules[0].threshold !== 0) {
-        toast({
-          title: "Invalid commission structure",
-          description: "The first rule must have a threshold of 0",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      formData.commissionRules = sortedRules;
-    }
-
-    onSave(formData);
-    onClose();
+    
+    const newRules = currentRules.filter((_, i) => i !== index);
+    form.setValue('commissionRules', newRules);
   };
 
   const handleDelete = () => {
-    if (user) {
-      if (user.id === currentUser.id) {
-        toast({
-          title: "Cannot delete your own account",
-          description: "You cannot delete your own user account.",
-          variant: "destructive"
-        });
-        setDeleteDialogOpen(false);
-        return;
-      }
-      
-      onDelete(user.id);
-      setDeleteDialogOpen(false);
-      onClose();
-    }
+    onDelete(user.id);
+    onClose();
   };
 
-  if (!formData) return null;
-
-  // Only allow admin to change admin status
-  const canChangeAdminStatus = currentUser.isAdmin;
-  
-  // Can't edit own admin status
-  const canToggleAdminStatus = canChangeAdminStatus && currentUser.id !== user?.id;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Edit User</DialogTitle>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="name">Name</label>
-            <Input 
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-            />
-          </div>
+    <>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Edit User: {user.name}</SheetTitle>
+          </SheetHeader>
           
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="email">Email</label>
-            <Input 
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-          </div>
-          
-          {canChangeAdminStatus && (
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isAdmin"
-                name="isAdmin"
-                checked={formData.isAdmin}
-                onChange={(e) => {
-                  if (canToggleAdminStatus) {
-                    setFormData({
-                      ...formData,
-                      isAdmin: e.target.checked
-                    });
-                  }
-                }}
-                disabled={!canToggleAdminStatus}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
-              />
-              <label htmlFor="isAdmin" className="text-sm font-medium">
-                Admin privileges
-              </label>
-              {!canToggleAdminStatus && user?.id === currentUser.id && (
-                <span className="text-xs text-muted-foreground ml-2">(Cannot change your own admin status)</span>
-              )}
-            </div>
-          )}
-          
-          <div className="pt-2">
-            <h3 className="text-sm font-semibold mb-2">Commission Structure</h3>
-            <div className="space-y-3 mb-2">
-              {formData.commissionRules?.map((rule, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <label className="block text-xs text-muted-foreground mb-1">
-                      {index === 0 ? 'Base threshold (must be 0)' : 'After # of deals'}
-                    </label>
-                    <Input 
-                      type="number"
-                      min={index === 0 ? 0 : 1}
-                      value={rule.threshold}
-                      onChange={(e) => handleCommissionRuleChange(index, 'threshold', parseInt(e.target.value) || 0)}
-                      readOnly={index === 0}  // First rule threshold must be 0
-                    />
+          <div className="py-6">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-base">Commission Rules</FormLabel>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={addCommissionRule}
+                    >
+                      <Plus size={16} className="mr-1" /> Add Rule
+                    </Button>
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-xs text-muted-foreground mb-1">Commission amount ($)</label>
-                    <Input 
-                      type="number"
-                      min={0}
-                      value={rule.amount}
-                      onChange={(e) => handleCommissionRuleChange(index, 'amount', parseInt(e.target.value) || 0)}
-                    />
+                  
+                  <div className="space-y-4">
+                    {commissionRules.map((rule, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-end gap-4 p-3 bg-muted/50 rounded-md"
+                      >
+                        <FormField
+                          control={form.control}
+                          name={`commissionRules.${index}.threshold`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>
+                                {index === 0 ? 'Base Rate (Threshold: 0)' : 'After # Closes'}
+                              </FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  {...field}
+                                  disabled={index === 0} // Base rate always has threshold 0
+                                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name={`commissionRules.${index}.amount`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>Amount ($) per Close</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon"
+                          className="mb-0.5"
+                          onClick={() => removeCommissionRule(index)}
+                          disabled={index === 0} // Cannot remove base rate
+                        >
+                          <Minus size={16} />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="isAdmin"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          disabled={user.id === currentUser.id} // Cannot remove admin from yourself
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal">Admin privileges</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-between gap-4 pt-4">
                   <Button 
                     type="button" 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => removeCommissionRule(index)}
-                    disabled={index === 0 || formData.commissionRules?.length === 1}
-                    className="self-end mb-0.5"
+                    variant="destructive"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    disabled={user.id === currentUser.id} // Cannot delete yourself
                   >
-                    <MinusCircle size={18} />
+                    <Trash2 size={16} className="mr-2" />
+                    Delete User
+                  </Button>
+                  <Button type="submit" className="flex-1">
+                    Save Changes
                   </Button>
                 </div>
-              ))}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addCommissionRule}
-              className="mt-2"
-            >
-              <PlusCircle size={16} className="mr-1" />
-              Add Tier
-            </Button>
-            <div className="text-xs text-muted-foreground mt-2">
-              Commission tiers are applied in order. For example, if a user has 15 closes in a month and the tiers are set at 0 and 10, 
-              they would receive the first-tier amount for the first 10 closes and the second-tier amount for the remaining 5.
-            </div>
+              </form>
+            </Form>
           </div>
-          
-          <DialogFooter className="flex justify-between items-center pt-4">
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-              <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive">
-                  <Trash2 size={16} className="mr-1" />
-                  Delete User
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete {formData.name}'s user account. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Save Changes</Button>
-            </div>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {user.name}'s account. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

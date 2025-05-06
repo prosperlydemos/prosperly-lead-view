@@ -106,27 +106,36 @@ export type Database = {
       }
       profiles: {
         Row: {
+          closed_deals: number | null
+          commission_rules: Json | null
           created_at: string
           email: string | null
           id: string
           is_admin: boolean
           name: string | null
+          total_commission: number | null
           updated_at: string
         }
         Insert: {
+          closed_deals?: number | null
+          commission_rules?: Json | null
           created_at?: string
           email?: string | null
           id: string
           is_admin?: boolean
           name?: string | null
+          total_commission?: number | null
           updated_at?: string
         }
         Update: {
+          closed_deals?: number | null
+          commission_rules?: Json | null
           created_at?: string
           email?: string | null
           id?: string
           is_admin?: boolean
           name?: string | null
+          total_commission?: number | null
           updated_at?: string
         }
         Relationships: []
