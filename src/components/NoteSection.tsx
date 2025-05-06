@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Lead, Note as NoteType } from '../types/supabase';
+import { Lead, Note as NoteType, LeadStatus } from '../types';
 import Note from './Note';
 import AddNoteForm from './AddNoteForm';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -56,11 +56,9 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="contacted">Contacted</SelectItem>
-              <SelectItem value="qualified">Qualified</SelectItem>
-              <SelectItem value="proposal">Proposal</SelectItem>
-              <SelectItem value="negotiation">Negotiation</SelectItem>
+              <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+              <SelectItem value="Warm Lead">Warm Lead</SelectItem>
+              <SelectItem value="Hot Lead">Hot Lead</SelectItem>
               <SelectItem value="Closed">Closed</SelectItem>
             </SelectGroup>
           </SelectContent>
