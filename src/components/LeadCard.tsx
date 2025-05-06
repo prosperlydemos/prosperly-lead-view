@@ -55,49 +55,51 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, users })
       onClick={onClick}
     >
       <div className="flex flex-col gap-1">
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-1">
-              <h3 className="font-semibold text-sm">{lead.contactName}</h3>
-              <span className="text-xs text-muted-foreground">
-                ({lead.email}) 
-                <button 
-                  onClick={copyEmail} 
-                  className="ml-1 inline-flex hover:text-primary"
-                  aria-label="Copy email"
-                >
-                  <Copy size={12} />
-                </button>
-              </span>
-            </div>
-            <div className="flex justify-between items-center w-full">
-              <span className="font-medium text-xs">{lead.businessName}</span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <UserRound size={12} />
-                {ownerName}
-              </span>
-            </div>
+        {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-1">
+            <h3 className="font-semibold text-sm">{lead.contactName}</h3>
+            <span className="text-xs text-muted-foreground">
+              ({lead.email}) 
+              <button 
+                onClick={copyEmail} 
+                className="ml-1 inline-flex hover:text-primary"
+                aria-label="Copy email"
+              >
+                <Copy size={12} />
+              </button>
+            </span>
           </div>
-          <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
-            {lead.status}
+          <span className="text-xs flex items-center gap-1">
+            <UserRound size={12} />
+            {ownerName}
           </span>
         </div>
-
+        
+        {/* Second line: Demo date and Next Follow-up date */}
         <div className="grid grid-cols-2 gap-1 text-xs">
+          <div>
+            <span className="text-muted-foreground">Demo Date:</span> {formatDate(lead.demoDate)}
+          </div>
           <div>
             <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.nextFollowUp)}
           </div>
-          <div className="flex justify-between items-center">
-            <span>
-              <span className="text-muted-foreground">MRR:</span> ${lead.mrr}
-            </span>
-          </div>
         </div>
+        
+        {/* Third line: Setup Fee and MRR */}
         <div className="grid grid-cols-2 gap-1 text-xs">
           <div>
             <span className="text-muted-foreground">Setup:</span> ${lead.setupFee}
           </div>
+          <div>
+            <span className="text-muted-foreground">MRR:</span> ${lead.mrr}
+          </div>
         </div>
+        
+        {/* Status tag at the top right */}
+        <span className="absolute top-2 right-2 text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+          {lead.status}
+        </span>
       </div>
     </div>
   );

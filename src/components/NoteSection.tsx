@@ -65,13 +65,30 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
         </Select>
       </div>
 
+      {/* Lead details section with all captured fields */}
       <div className="mb-4 space-y-2 text-sm border-b pb-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-muted-foreground">Business:</span> {lead.businessName || 'Not specified'}
+          </div>
+          <div>
+            <span className="text-muted-foreground">Lead Source:</span> {lead.leadSource || 'Not specified'}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <span className="text-muted-foreground">Signup Date:</span> {formatDate(lead.signupDate)}
           </div>
           <div>
             <span className="text-muted-foreground">CRM:</span> {lead.crm || 'Not specified'}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-muted-foreground">Status:</span> {lead.status}
+          </div>
+          <div>
+            <span className="text-muted-foreground">Demo Date:</span> {formatDate(lead.demoDate)}
           </div>
         </div>
       </div>
