@@ -26,9 +26,17 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
   const mrr = typeof supabaseLead.mrr === 'number' ? supabaseLead.mrr : 0;
   const value = typeof supabaseLead.value === 'number' ? supabaseLead.value : 0;
   
-  // Format dates correctly - strip the time component
-  const demoDate = supabaseLead.demo_date ? supabaseLead.demo_date.split('T')[0] : null;
-  const signupDate = supabaseLead.signup_date ? supabaseLead.signup_date.split('T')[0] : null;
+  // Format dates consistently - ISO format without time component
+  const formatDate = (dateStr: string | null | undefined): string | null => {
+    if (!dateStr) return null;
+    try {
+      // Strip time component and ensure YYYY-MM-DD format
+      return new Date(dateStr).toISOString().split('T')[0];
+    } catch (e) {
+      console.error("Invalid date format:", dateStr);
+      return null;
+    }
+  };
   
   return {
     id: supabaseLead.id,
@@ -38,12 +46,12 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     leadSource: supabaseLead.lead_source || '', 
     setupFee: setupFee,
     mrr: mrr,
-    demoDate: demoDate,
-    signupDate: signupDate,
+    demoDate: formatDate(supabaseLead.demo_date),
+    signupDate: formatDate(supabaseLead.signup_date),
     status: supabaseLead.status as import('./index').LeadStatus,
     ownerId: supabaseLead.owner_id,
-    closedAt: supabaseLead.closing_date || undefined,
-    nextFollowUp: supabaseLead.next_follow_up || null,
+    closedAt: formatDate(supabaseLead.closing_date),
+    nextFollowUp: formatDate(supabaseLead.next_follow_up),
     crm: supabaseLead.crm || '',
     value: value
   };
