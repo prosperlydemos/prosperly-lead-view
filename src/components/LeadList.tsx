@@ -14,7 +14,7 @@ interface LeadListProps {
   onEditLead: (leadId: string) => void;
   onAddLead: (lead: Omit<Lead, 'id'>) => void;
   users: User[];
-  currentUser: User;
+  currentUser: User | undefined;
   onAddUser: (user: Omit<User, 'id'>) => void;
   onUpdateUser: (user: User) => void;
   onDeleteUser: (userId: string) => void;

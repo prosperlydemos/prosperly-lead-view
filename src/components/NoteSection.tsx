@@ -5,7 +5,8 @@ import Note from './Note';
 import AddNoteForm from './AddNoteForm';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
+import { Edit, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface NoteSectionProps {
   lead: Lead | null;
@@ -33,9 +34,15 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
     onStatusChange(lead.id, value);
   };
 
+  // Format date for display
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Not set';
+    return format(new Date(dateString), 'MMM d, yyyy');
+  };
+
   return (
     <div className="h-[calc(100vh-100px)] overflow-y-auto pl-2">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold">{lead.contactName}</h2>
           <Button variant="ghost" size="sm" onClick={() => onEditLead(lead.id)}>
@@ -56,6 +63,17 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
             </SelectGroup>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="mb-4 space-y-2 text-sm border-b pb-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-muted-foreground">Signup Date:</span> {formatDate(lead.signupDate)}
+          </div>
+          <div>
+            <span className="text-muted-foreground">CRM:</span> {lead.crm || 'Not specified'}
+          </div>
+        </div>
       </div>
 
       <div className="mb-8">
