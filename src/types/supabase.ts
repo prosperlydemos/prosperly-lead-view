@@ -26,23 +26,19 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
   const mrr = typeof supabaseLead.mrr === 'number' ? supabaseLead.mrr : 0;
   const value = typeof supabaseLead.value === 'number' ? supabaseLead.value : 0;
   
-  // Format dates consistently as YYYY-MM-DD strings
+  // Format dates consistently as YYYY-MM-DD strings without timezone adjustment
   const formatDate = (dateStr: string | null | undefined): string | null => {
     if (!dateStr) return null;
     try {
-      // Handle various date formats by creating a Date object first
+      // Parse the date string
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) {
         console.error("Invalid date format:", dateStr);
         return null;
       }
       
-      // Format as YYYY-MM-DD
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}`;
+      // Format as YYYY-MM-DD without timezone adjustment
+      return dateStr.split('T')[0];
     } catch (e) {
       console.error("Error formatting date:", dateStr, e);
       return null;
@@ -87,10 +83,11 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
   crm?: string | null;
   phone?: string | null;
 } => {
-  // Ensure dates are formatted properly for Supabase
+  // Ensure date format is consistent for Supabase
   const formatDateForSupabase = (dateStr: string | null | undefined): string | null => {
     if (!dateStr) return null;
-    return dateStr;  // Keep YYYY-MM-DD format that Supabase expects
+    // Make sure we're sending a clean date string in YYYY-MM-DD format
+    return dateStr;
   };
 
   return {
