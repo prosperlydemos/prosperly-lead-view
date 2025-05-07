@@ -1,5 +1,5 @@
 
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 // Eastern Time Zone identifier
@@ -43,34 +43,31 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
   }
 };
 
-// Simple function to standardize date formats for storing in database
-export const formatDateForStorage = (dateStr: string | null | undefined): string | null => {
-  if (!dateStr) return null;
+export const parseDateToISO = (date: Date | string | null): string | null => {
+  if (!date) return null;
   
   try {
-    // Parse the date and ensure it's in YYYY-MM-DD format
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
-      console.error("Invalid date for storage:", dateStr);
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) {
+      console.error("Invalid date for ISO conversion:", date);
       return null;
     }
     
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    // Convert to Eastern Time
+    const easternDate = toZonedTime(dateObj, TIMEZONE);
     
-    return `${year}-${month}-${day}`;
+    // Create date in Eastern timezone
+    const year = easternDate.getFullYear();
+    const month = String(easternDate.getMonth() + 1).padStart(2, '0');
+    const day = String(easternDate.getDate()).padStart(2, '0');
+    
+    // Format as YYYY-MM-DD
+    const isoDate = `${year}-${month}-${day}`;
+    console.log(`Converting date: ${dateObj} to Eastern Time ISO format: ${isoDate}`);
+    
+    return isoDate;
   } catch (e) {
-    console.error("Error formatting date for storage:", e);
+    console.error("Error parsing date to ISO:", e);
     return null;
   }
-};
-
-// Parse a Date object to ISO string format (YYYY-MM-DD)
-export const parseDateToISO = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
 };
