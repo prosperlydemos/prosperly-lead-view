@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import LeadForm from './LeadForm';
 import { Lead, User } from '../../types';
@@ -46,14 +47,16 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
   const [formKey, setFormKey] = useState(Date.now());
+  const [currentLead, setCurrentLead] = useState<Lead>(lead);
   
-  // Reset form key when dialog opens to force re-render
+  // Reset form key when dialog opens to force re-render with fresh data
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && lead) {
       console.log('Loading lead data:', lead);
+      setCurrentLead(lead);
       setFormKey(Date.now());
     }
-  }, [lead, isOpen]);
+  }, [isOpen, lead]);
 
   const handleSubmit = async (formData: Partial<Lead>) => {
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
@@ -64,11 +67,11 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
       
       // Create updated lead object with proper type handling
       const updatedLead: Lead = {
-        ...lead,
+        ...currentLead,
         ...formData,
-        setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : 0,
-        mrr: typeof formData.mrr === 'number' ? formData.mrr : 0,
-        value: typeof formData.value === 'number' ? formData.value : 0,
+        setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : currentLead.setupFee,
+        mrr: typeof formData.mrr === 'number' ? formData.mrr : currentLead.mrr,
+        value: typeof formData.value === 'number' ? formData.value : currentLead.value,
       };
       
       console.log('Updated lead:', updatedLead);
@@ -151,6 +154,9 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Lead</DialogTitle>
+            <DialogDescription>
+              Make changes to lead information and click Save when done.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex justify-between mb-4">
             {onDelete && (
@@ -165,7 +171,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete {lead.contactName}'s contact record and all
+                      This will permanently delete {currentLead.contactName}'s contact record and all
                       associated notes. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -179,7 +185,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
           </div>
           <LeadForm
             key={formKey}
-            initialData={lead}
+            initialData={currentLead}
             users={users}
             currentUser={currentUser}
             onSubmit={handleSubmit}

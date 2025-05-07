@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -42,19 +41,23 @@ const LeadForm: React.FC<LeadFormProps> = ({
     ...(initialData || {}) // Spread initialData if available
   }));
 
-  // Debugging log for initial data
-  useEffect(() => {
-    console.log('LeadForm initialData:', initialData);
-    console.log('LeadForm formData after init:', formData);
-  }, []);
+  // Log form data when it changes
+  console.log('Current formData in LeadForm:', formData);
 
   // Handle text input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-    console.log(`Field ${name} changed to: ${value}`);
+    
+    // For number inputs, convert to proper number values
+    const processedValue = type === 'number' ? 
+      (value === '' ? 0 : parseFloat(value)) : 
+      value;
+    
+    console.log(`Field ${name} changed to:`, processedValue, typeof processedValue);
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? (value === '' ? 0 : Number(value)) : value
+      [name]: processedValue
     }));
   };
 
@@ -238,7 +241,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             id="setupFee"
             name="setupFee"
             type="number"
-            value={formData.setupFee || 0}
+            value={formData.setupFee?.toString() || "0"}
             onChange={handleInputChange}
           />
         </div>
@@ -251,7 +254,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             id="mrr"
             name="mrr"
             type="number"
-            value={formData.mrr || 0}
+            value={formData.mrr?.toString() || "0"}
             onChange={handleInputChange}
           />
         </div>
