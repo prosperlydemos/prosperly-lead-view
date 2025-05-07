@@ -36,15 +36,13 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   const [formData, setFormData] = React.useState<Partial<Lead>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   
-  // Initialize form data when lead changes
+  // Initialize form data when lead changes or dialog opens
   React.useEffect(() => {
     if (lead) {
-      // Create a deep copy to avoid reference issues
-      const leadCopy = JSON.parse(JSON.stringify(lead));
-      setFormData(leadCopy);
-      console.log("Loaded lead data:", leadCopy);
+      console.log("Loading lead data:", lead);
+      setFormData(JSON.parse(JSON.stringify(lead)));
     }
-  }, [lead]);
+  }, [lead, isOpen]);
   
   // Watch for status changes to update closedAt date and signupDate
   React.useEffect(() => {
@@ -58,15 +56,26 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   }, [formData.status, lead]);
 
-  // Input field handler - ensure this properly updates the state
+  // Input field handler with direct value setting to ensure updates
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     console.log(`Field ${name} changed to: ${value}`);
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'setupFee' || name === 'mrr' ? parseFloat(value) : value
-    }));
+    if (name === 'setupFee' || name === 'mrr') {
+      const numValue = value === '' ? 0 : parseFloat(value);
+      setFormData({
+        ...formData,
+        [name]: numValue
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+    
+    // Debug to verify state updates
+    setTimeout(() => console.log(`Updated ${name} in formData:`, formData), 10);
   };
 
   // Status field handler
@@ -80,22 +89,24 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       updates.signupDate = now; 
     }
     
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      ...formData,
       ...updates
-    }));
+    });
   };
 
   // Owner change handler
   const handleOwnerChange = (ownerId: string) => {
     console.log(`Owner changed to: ${ownerId}`);
-    setFormData(prev => ({ ...prev, ownerId }));
+    setFormData({
+      ...formData,
+      ownerId
+    });
   };
 
   // Date change handler - completely revised to fix date saving issues
   const handleDateChange = (fieldName: string, value: string) => {
     try {
-      // Log input value
       console.log(`Setting ${fieldName} with input value:`, value);
       
       let dateValue = null;
@@ -106,11 +117,14 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
         console.log(`Converted ${fieldName} to:`, dateValue);
       }
       
-      // Update formData with the new date value (or null)
-      setFormData(prev => ({
-        ...prev,
+      // Use direct object assignment instead of functional updates to ensure immediate update
+      setFormData({
+        ...formData,
         [fieldName]: dateValue
-      }));
+      });
+      
+      // Debug to verify state updates
+      setTimeout(() => console.log(`Updated ${fieldName} in formData:`, formData), 10);
       
       // If updating signupDate and the lead is closed, also update closedAt
       if (fieldName === 'signupDate' && formData.status === 'Closed') {
@@ -141,17 +155,29 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     e.preventDefault();
     
     if (lead && formData) {
+      // Deep clone to avoid reference issues
+      const clonedFormData = JSON.parse(JSON.stringify(formData));
+      
       // Log what we're about to save
-      console.log('Saving lead with data:', formData);
+      console.log('Saving lead with data:', clonedFormData);
       console.log('Saving lead with dates:', {
-        demoDate: formData.demoDate,
-        signupDate: formData.signupDate,
-        nextFollowUp: formData.nextFollowUp,
-        closedAt: formData.closedAt
+        demoDate: clonedFormData.demoDate,
+        signupDate: clonedFormData.signupDate,
+        nextFollowUp: clonedFormData.nextFollowUp,
+        closedAt: clonedFormData.closedAt
       });
       
-      // Create a new object to ensure we don't have reference issues
-      const updatedLead = { ...lead, ...formData } as Lead;
+      // Create a new object by combining the original lead with form data
+      const updatedLead = { 
+        ...lead,
+        ...clonedFormData,
+        // Ensure numeric fields are numbers not strings
+        setupFee: typeof clonedFormData.setupFee === 'string' ? parseFloat(clonedFormData.setupFee) : clonedFormData.setupFee,
+        mrr: typeof clonedFormData.mrr === 'string' ? parseFloat(clonedFormData.mrr) : clonedFormData.mrr
+      } as Lead;
+      
+      console.log('Final lead being saved:', updatedLead);
+      
       onSave(updatedLead);
       onClose();
       
@@ -190,9 +216,12 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) onClose();
-    }}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Lead</DialogTitle>
