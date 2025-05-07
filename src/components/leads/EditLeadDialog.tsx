@@ -50,14 +50,14 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [currentLead, setCurrentLead] = useState<Lead>(lead);
   
   // Reset form key when dialog opens to force re-render with fresh data
-  // But only update the currentLead when the dialog opens, not on every lead change
+  // Add back the lead dependency to ensure the form is updated when lead changes
   useEffect(() => {
     if (isOpen && lead) {
       console.log('Dialog opened with lead data:', lead);
       setCurrentLead(lead);
       setFormKey(Date.now());
     }
-  }, [isOpen]);  // Only depend on isOpen, not on lead
+  }, [isOpen, lead]);  // Depend on both isOpen and lead
 
   const handleSubmit = async (formData: Partial<Lead>) => {
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
@@ -65,6 +65,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
     try {
       setIsSubmitting(true);
       console.log('Form data before update:', formData);
+      console.log('Current lead data:', currentLead);
       
       // Create updated lead object with proper type handling
       const updatedLead: Lead = {

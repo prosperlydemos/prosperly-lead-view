@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -41,10 +42,15 @@ const LeadForm: React.FC<LeadFormProps> = ({
     ...(initialData || {}) // Spread initialData if available
   }));
 
+  // Add a useEffect to log when initialData changes
+  useEffect(() => {
+    console.log('LeadForm initialData changed:', initialData);
+  }, [initialData]);
+
   // Log form data when it changes
   console.log('Current formData in LeadForm:', formData);
 
-  // Handle text input changes
+  // Handle text input changes with enhanced logging
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     
@@ -54,11 +60,16 @@ const LeadForm: React.FC<LeadFormProps> = ({
       value;
     
     console.log(`Field ${name} changed to:`, processedValue, typeof processedValue);
+    console.log('Previous form data:', formData);
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: processedValue
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: processedValue
+      };
+      console.log('New form data:', newData);
+      return newData;
+    });
   };
 
   // Handle date changes
