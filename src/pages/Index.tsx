@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
