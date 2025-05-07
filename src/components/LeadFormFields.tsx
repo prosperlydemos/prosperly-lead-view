@@ -43,8 +43,13 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
   // Log form data to help debug
   console.log("LeadFormFields formData:", formData);
 
+  const handleStopPropagation = (e: React.MouseEvent) => {
+    console.log("Stopping event propagation on form field");
+    e.stopPropagation();
+  };
+
   return (
-    <div className="space-y-4 pointer-events-auto">
+    <div className="space-y-4 pointer-events-auto" onClick={handleStopPropagation}>
       <div>
         <label className="block text-sm font-medium mb-1" htmlFor="contactName">Contact Name</label>
         <Input 
@@ -104,10 +109,10 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
           value={formData.status || 'Demo Scheduled'} 
           onValueChange={(value) => onStatusChange(value as LeadStatus)}
         >
-          <SelectTrigger>
+          <SelectTrigger className="pointer-events-auto">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="pointer-events-auto">
             <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
             <SelectItem value="Warm Lead">Warm Lead</SelectItem>
             <SelectItem value="Hot Lead">Hot Lead</SelectItem>
@@ -180,10 +185,10 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
             value={formData.ownerId || ''} 
             onValueChange={onOwnerChange}
           >
-            <SelectTrigger>
+            <SelectTrigger className="pointer-events-auto">
               <SelectValue placeholder="Select team member" />
             </SelectTrigger>
-            <SelectContent className="z-[200]">
+            <SelectContent className="z-[200] pointer-events-auto">
               {users.map(user => (
                 <SelectItem key={user.id} value={user.id}>
                   {user.name} {user.id === currentUser.id ? '(You)' : ''}

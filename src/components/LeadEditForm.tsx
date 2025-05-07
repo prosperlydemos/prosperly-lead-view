@@ -137,6 +137,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   };
 
+  const handleDialogClick = (e: React.MouseEvent) => {
+    // Prevent event from closing the dialog
+    e.stopPropagation();
+  };
+
   if (!lead) return null;
 
   // Only admin can edit ownership
@@ -149,12 +154,15 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent 
+        className="sm:max-w-[500px] pointer-events-auto overflow-y-auto max-h-[90vh]"
+        onClick={handleDialogClick}
+      >
         <DialogHeader>
           <DialogTitle>Edit Lead</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pointer-events-auto">
           <LeadFormFields 
             formData={formData}
             onChange={handleFieldChange}
@@ -166,31 +174,42 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             canEditOwnership={canEditOwnership}
           />
           
-          <DialogFooter className="flex justify-between items-center pt-4">
+          <DialogFooter className="flex justify-between items-center pt-4 pointer-events-auto">
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive">
+                <Button 
+                  type="button" 
+                  variant="destructive"
+                  className="pointer-events-auto"
+                >
                   <Trash2 size={16} className="mr-1" />
                   Delete Contact
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="pointer-events-auto">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete {lead.contactName}'s contact record and all associated notes. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                <AlertDialogFooter className="pointer-events-auto">
+                  <AlertDialogCancel className="pointer-events-auto">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="pointer-events-auto">Delete</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
             
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Save Changes</Button>
+            <div className="flex gap-2 pointer-events-auto">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                className="pointer-events-auto"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="pointer-events-auto">Save Changes</Button>
             </div>
           </DialogFooter>
         </form>

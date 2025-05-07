@@ -23,21 +23,31 @@ const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const handleDateSelect = (selectedDate: Date | undefined) => {
     console.log("Date selected in DatePicker:", selectedDate);
-    // Prevent event propagation to ensure the dialog doesn't close
     onSelect(selectedDate);
+  };
+
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    console.log("DatePicker trigger clicked");
+    e.stopPropagation();
+  };
+
+  const handleCalendarClick = (e: React.MouseEvent) => {
+    console.log("Calendar clicked");
+    e.stopPropagation();
   };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant={"outline"}
+          variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal",
+            "w-full justify-start text-left font-normal pointer-events-auto",
             !date && "text-muted-foreground"
           )}
           disabled={disabled}
-          type="button" // Explicitly set type to button to prevent form submission
+          type="button"
+          onClick={handleTriggerClick}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? formatDateForDisplay(date.toISOString()) : <span>{placeholder}</span>}
@@ -47,6 +57,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
         className="w-auto p-0 z-[200]" 
         align="start"
         sideOffset={4}
+        onOpenAutoFocus={(e) => {
+          // Prevent auto focus to avoid closing the popover
+          e.preventDefault();
+        }}
+        onClick={handleCalendarClick}
       >
         <div 
           className="pointer-events-auto"
