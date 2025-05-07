@@ -65,3 +65,12 @@ export const formatDateForStorage = (dateStr: string | null | undefined): string
     return null;
   }
 };
+
+// Parse a Date object to ISO string format (YYYY-MM-DD)
+export const parseDateToISO = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};

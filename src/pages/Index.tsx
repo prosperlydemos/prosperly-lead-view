@@ -90,6 +90,103 @@ const Index: React.FC = () => {
     fetchData();
   }, [currentUser]);
 
+  // Handle user management functions
+  const handleAddUser = async (userData: Omit<User, 'id'>) => {
+    if (!currentUser?.is_admin) return;
+    
+    try {
+      // Convert app user format to Supabase profile format
+      const profileData = {
+        name: userData.name,
+        email: userData.email,
+        is_admin: userData.isAdmin,
+        commission_rules: userData.commissionRules || []
+      };
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert(profileData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      setUsers(prev => [...prev, data]);
+      return data;
+    } catch (error) {
+      console.error('Error adding user:', error);
+      toast({
+        title: "Error adding user",
+        description: "Failed to add new user",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+  
+  const handleUpdateUser = async (updatedUser: User) => {
+    if (!currentUser?.is_admin) return;
+    
+    try {
+      // Convert app user format to Supabase profile format
+      const profileData = {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        is_admin: updatedUser.isAdmin,
+        commission_rules: updatedUser.commissionRules || []
+      };
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', updatedUser.id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      setUsers(prev => 
+        prev.map(user => user.id === updatedUser.id ? data : user)
+      );
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error updating user",
+        description: "Failed to update user information",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+  
+  const handleDeleteUser = async (userId: string) => {
+    if (!currentUser?.is_admin) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      
+      toast({
+        title: "User deleted",
+        description: "User has been permanently deleted."
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error deleting user",
+        description: "Failed to delete the user",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   // Update todo items whenever leads change
   useEffect(() => {
     if (!currentUser) return;
@@ -381,9 +478,9 @@ const Index: React.FC = () => {
               {currentUser?.is_admin && (
                 <UserManagement 
                   users={appUsers}
-                  onAddUser={onAddUser}
-                  onUpdateUser={onUpdateUser}
-                  onDeleteUser={onDeleteUser}
+                  onAddUser={handleAddUser}
+                  onUpdateUser={handleUpdateUser}
+                  onDeleteUser={handleDeleteUser}
                   currentUser={appCurrentUser}
                 />
               )}
