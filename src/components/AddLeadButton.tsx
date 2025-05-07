@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead, User } from '../types';
-import { PlusCircle, UserRound, Calendar, Clock } from 'lucide-react';
+import { PlusCircle, UserRound } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AddLeadButtonProps {
@@ -46,13 +46,26 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     }));
   };
 
-  const handleDateChange = (field: string, dateValue: string) => {
-    console.log(`Setting ${field} to:`, dateValue);
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      [field]: dateValue || null 
-    }));
+  // New date change handler with improved date handling
+  const handleDateChange = (field: string, value: string) => {
+    try {
+      console.log(`Setting ${field} with input value:`, value);
+      
+      let dateValue = null;
+      
+      if (value && value.trim() !== '') {
+        // Parse the datetime-local input value and convert to ISO string
+        dateValue = new Date(value).toISOString();
+        console.log(`Converted ${field} to:`, dateValue);
+      }
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: dateValue
+      }));
+    } catch (error) {
+      console.error(`Error processing date for ${field}:`, error);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,6 +100,19 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     });
     
     setIsOpen(false);
+  };
+
+  // Helper function to format date for datetime-local input
+  const formatDateForInput = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      // Format as YYYY-MM-DDThh:mm (format required by datetime-local)
+      return date.toISOString().slice(0, 16);
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return '';
+    }
   };
 
   return (
@@ -174,8 +200,8 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
               </label>
               <Input
                 type="datetime-local"
-                value={formData.demoDate ? formData.demoDate.slice(0, 16) : ''}
-                onChange={(e) => handleDateChange('demoDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
+                value={formatDateForInput(formData.demoDate)}
+                onChange={(e) => handleDateChange('demoDate', e.target.value)}
                 className="w-full"
               />
             </div>
@@ -186,8 +212,8 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
               </label>
               <Input
                 type="datetime-local"
-                value={formData.signupDate ? formData.signupDate.slice(0, 16) : ''}
-                onChange={(e) => handleDateChange('signupDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
+                value={formatDateForInput(formData.signupDate)}
+                onChange={(e) => handleDateChange('signupDate', e.target.value)}
                 className="w-full"
               />
             </div>
@@ -199,8 +225,8 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
             </label>
             <Input
               type="datetime-local"
-              value={formData.nextFollowUp ? formData.nextFollowUp.slice(0, 16) : ''}
-              onChange={(e) => handleDateChange('nextFollowUp', e.target.value ? new Date(e.target.value).toISOString() : '')}
+              value={formatDateForInput(formData.nextFollowUp)}
+              onChange={(e) => handleDateChange('nextFollowUp', e.target.value)}
               className="w-full"
             />
           </div>

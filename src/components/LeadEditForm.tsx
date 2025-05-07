@@ -87,28 +87,47 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
-  // Date change handler
-  const handleDateChange = (fieldName: string, dateValue: string) => {
-    console.log(`Setting ${fieldName} to:`, dateValue);
-    
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: dateValue
-    }));
-    
-    // If changing signupDate and the lead is closed, also update closedAt
-    if (fieldName === 'signupDate' && formData.status === 'Closed') {
+  // Date change handler - completely revised to fix date saving issues
+  const handleDateChange = (fieldName: string, value: string) => {
+    try {
+      // Log input value
+      console.log(`Setting ${fieldName} with input value:`, value);
+      
+      let dateValue = null;
+      
+      if (value && value.trim() !== '') {
+        // Parse the datetime-local input value and convert to ISO string
+        dateValue = new Date(value).toISOString();
+        console.log(`Converted ${fieldName} to:`, dateValue);
+      }
+      
+      // Update formData with the new date value (or null)
       setFormData(prev => ({
         ...prev,
-        closedAt: dateValue
+        [fieldName]: dateValue
       }));
-    }
-    // If changing closedAt and the lead is closed, also update signupDate
-    else if (fieldName === 'closedAt' && formData.status === 'Closed') {
-      setFormData(prev => ({
-        ...prev,
-        signupDate: dateValue
-      }));
+      
+      // If updating signupDate and the lead is closed, also update closedAt
+      if (fieldName === 'signupDate' && formData.status === 'Closed') {
+        setFormData(prev => ({
+          ...prev,
+          closedAt: dateValue
+        }));
+      }
+      // If updating closedAt and the lead is closed, also update signupDate
+      else if (fieldName === 'closedAt' && formData.status === 'Closed') {
+        setFormData(prev => ({
+          ...prev,
+          signupDate: dateValue
+        }));
+      }
+    } catch (error) {
+      console.error(`Error processing date for ${fieldName}:`, error);
+      toast({
+        title: "Invalid date format",
+        description: "Please enter a valid date and time",
+        variant: "destructive"
+      });
     }
   };
 
@@ -151,11 +170,13 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Only admin or the lead owner can edit ownership
   const canEditOwnership = currentUser.isAdmin;
   
-  // Simplified function to format a date string for display
-  const formatDate = (dateStr: string | null | undefined): string => {
+  // Helper function to format date for datetime-local input
+  const formatDateForInput = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
     try {
-      return new Date(dateStr).toLocaleString();
+      const date = new Date(dateStr);
+      // Format as YYYY-MM-DDThh:mm (format required by datetime-local)
+      return date.toISOString().slice(0, 16);
     } catch (e) {
       console.error("Error formatting date:", e);
       return '';
@@ -249,8 +270,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               <div className="flex gap-2">
                 <Input
                   type="datetime-local"
-                  value={formData.demoDate ? formData.demoDate.slice(0, 16) : ''}
-                  onChange={(e) => handleDateChange('demoDate', new Date(e.target.value).toISOString())}
+                  value={formatDateForInput(formData.demoDate)}
+                  onChange={(e) => handleDateChange('demoDate', e.target.value)}
                   className="w-full"
                 />
                 {formData.demoDate && (
@@ -273,8 +294,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               <div className="flex gap-2">
                 <Input
                   type="datetime-local"
-                  value={formData.signupDate ? formData.signupDate.slice(0, 16) : ''}
-                  onChange={(e) => handleDateChange('signupDate', new Date(e.target.value).toISOString())}
+                  value={formatDateForInput(formData.signupDate)}
+                  onChange={(e) => handleDateChange('signupDate', e.target.value)}
                   className="w-full"
                 />
                 {formData.signupDate && (
@@ -298,8 +319,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             <div className="flex gap-2">
               <Input
                 type="datetime-local"
-                value={formData.nextFollowUp ? formData.nextFollowUp.slice(0, 16) : ''}
-                onChange={(e) => handleDateChange('nextFollowUp', new Date(e.target.value).toISOString())}
+                value={formatDateForInput(formData.nextFollowUp)}
+                onChange={(e) => handleDateChange('nextFollowUp', e.target.value)}
                 className="w-full"
               />
               {formData.nextFollowUp && (
