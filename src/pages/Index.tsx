@@ -38,9 +38,15 @@ const Index: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
 
+  // Get selected lead with added logging
   const selectedLead = selectedLeadId 
     ? leads.find(lead => lead.id === selectedLeadId) 
     : null;
+
+  // Add effect to log when selectedLead changes
+  useEffect(() => {
+    console.log('Selected lead changed:', selectedLead);
+  }, [selectedLead]);
 
   // Fetch leads and notes
   useEffect(() => {
@@ -203,6 +209,7 @@ const Index: React.FC = () => {
   };
 
   const handleEditLead = (leadId: string) => {
+    console.log('Edit lead clicked:', leadId);
     setSelectedLeadId(leadId);
     setIsEditModalOpen(true);
   };
@@ -314,8 +321,9 @@ const Index: React.FC = () => {
     );
   }
   
-  // Convert Supabase leads to App leads for EditLeadDialog
+  // Convert Supabase leads to App leads for EditLeadDialog with logging
   const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
+  console.log('Mapped lead data:', { selectedLead, appSelectedLead });
   
   // Map Supabase profiles to App users
   const appUsers: User[] = users.map(profile => ({
