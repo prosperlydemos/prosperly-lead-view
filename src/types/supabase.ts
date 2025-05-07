@@ -1,5 +1,6 @@
 
 import { Database as SupabaseDatabase } from '@/integrations/supabase/types';
+import { parseDateToISO, formatDateForInput } from '@/utils/dateUtils';
 
 // Directly use Supabase generated types
 export type Profile = SupabaseDatabase['public']['Tables']['profiles']['Row'];
@@ -83,11 +84,10 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
   crm?: string | null;
   phone?: string | null;
 } => {
-  // Ensure date format is consistent for Supabase
+  // Use parseDateToISO for consistent date formatting for Supabase
   const formatDateForSupabase = (dateStr: string | null | undefined): string | null => {
     if (!dateStr) return null;
-    // Make sure we're sending a clean date string in YYYY-MM-DD format
-    return dateStr;
+    return parseDateToISO(new Date(dateStr));
   };
 
   return {

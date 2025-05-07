@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Lead, LeadStatus, User } from '../../types';
 import { UserRound } from 'lucide-react';
+import { formatDateForInput } from '@/utils/dateUtils';
 
 interface LeadFormProps {
   initialData?: Partial<Lead>;
@@ -181,7 +182,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             id="demoDate"
             name="demoDate"
             type="date"
-            value={formData.demoDate || ''}
+            value={formData.demoDate ? formatDateForInput(formData.demoDate) : ''}
             onChange={(e) => handleDateChange('demoDate', e.target.value || null)}
           />
         </div>
@@ -194,7 +195,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             id="signupDate"
             name="signupDate"
             type="date"
-            value={formData.signupDate || ''}
+            value={formData.signupDate ? formatDateForInput(formData.signupDate) : ''}
             onChange={(e) => handleDateChange('signupDate', e.target.value || null)}
           />
         </div>
@@ -208,7 +209,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
           id="nextFollowUp"
           name="nextFollowUp"
           type="date"
-          value={formData.nextFollowUp || ''}
+          value={formData.nextFollowUp ? formatDateForInput(formData.nextFollowUp) : ''}
           onChange={(e) => handleDateChange('nextFollowUp', e.target.value || null)}
         />
       </div>
