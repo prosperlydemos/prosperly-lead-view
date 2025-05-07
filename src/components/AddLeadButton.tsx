@@ -50,22 +50,36 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     }));
   };
 
+  // Improved date handling function
   const handleDateChange = (field: string, date: Date | undefined) => {
-    if (date) {
-      // Format the date to match the expected format
-      const formattedDate = new Date(date);
-      formattedDate.setHours(12, 0, 0, 0);
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        [field]: formattedDate.toISOString() 
-      }));
-    } else {
+    if (!date) {
       setFormData(prev => ({ 
         ...prev, 
         [field]: null 
       }));
+      return;
     }
+
+    try {
+      // Format as YYYY-MM-DD string consistently
+      const formattedDate = formatDateToString(date);
+      console.log(`Setting ${field} to: ${formattedDate}`);
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        [field]: formattedDate 
+      }));
+    } catch (error) {
+      console.error(`Error formatting date for ${field}:`, error);
+    }
+  };
+
+  // Helper function to format Date to YYYY-MM-DD string
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,7 +109,21 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
   // Format date for display in the date picker
   const formatDateForPicker = (dateString: string | null | undefined) => {
     if (!dateString) return undefined;
-    return new Date(dateString);
+    
+    try {
+      // For YYYY-MM-DD format
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dateString.split('-').map(Number);
+        return new Date(year, month - 1, day);
+      }
+      
+      // Try as ISO string
+      const date = new Date(dateString);
+      return isNaN(date.getTime()) ? undefined : date;
+    } catch (error) {
+      console.error("Error parsing date:", dateString, error);
+      return undefined;
+    }
   };
 
   return (
@@ -184,6 +212,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
@@ -192,7 +221,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.demoDate ? (
-                      format(new Date(formData.demoDate), 'PPP')
+                      format(formatDateForPicker(formData.demoDate) || new Date(), 'PPP')
                     ) : (
                       <span>Select date</span>
                     )}
@@ -204,6 +233,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                     selected={formatDateForPicker(formData.demoDate)}
                     onSelect={(date) => handleDateChange('demoDate', date)}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -216,6 +246,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
@@ -224,7 +255,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.signupDate ? (
-                      format(new Date(formData.signupDate), 'PPP')
+                      format(formatDateForPicker(formData.signupDate) || new Date(), 'PPP')
                     ) : (
                       <span>Select date</span>
                     )}
@@ -236,6 +267,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                     selected={formatDateForPicker(formData.signupDate)}
                     onSelect={(date) => handleDateChange('signupDate', date)}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -249,6 +281,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
             <Popover>
               <PopoverTrigger asChild>
                 <Button
+                  type="button"
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
@@ -257,7 +290,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {formData.nextFollowUp ? (
-                    format(new Date(formData.nextFollowUp), 'PPP')
+                    format(formatDateForPicker(formData.nextFollowUp) || new Date(), 'PPP')
                   ) : (
                     <span>Schedule follow-up</span>
                   )}
@@ -269,6 +302,7 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                   selected={formatDateForPicker(formData.nextFollowUp)}
                   onSelect={(date) => handleDateChange('nextFollowUp', date)}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
