@@ -56,7 +56,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
       setCurrentLead(lead);
       setFormKey(Date.now());
     }
-  }, [isOpen, lead.id]); // Only depend on isOpen and lead.id to prevent unnecessary updates
+  }, [isOpen]); // Removed lead.id from dependencies
 
   const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
