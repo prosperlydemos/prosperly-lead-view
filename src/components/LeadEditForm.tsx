@@ -55,38 +55,23 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Watch for status changes to update closedAt date and signupDate when status changes to Closed
   React.useEffect(() => {
     if (formData.status === 'Closed' && lead && lead.status !== 'Closed') {
-      const today = new Date();
-      const formattedDate = formatDateToString(today);
+      const now = new Date();
+      const isoString = now.toISOString();
       
       setFormData(prev => ({
         ...prev,
-        closedAt: formattedDate,
-        signupDate: formattedDate // Set signup date to the same date as closedAt
+        closedAt: isoString,
+        signupDate: isoString // Set signup date to the same date as closedAt
       }));
     }
   }, [formData.status, lead]);
 
-  // Helper function to format Date object to YYYY-MM-DD string
-  const formatDateToString = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  // Helper function to parse string date to Date object
-  const parseDateString = (dateString: string | null | undefined): Date | undefined => {
+  // Parse date string to Date object
+  const parseDate = (dateString: string | null | undefined): Date | undefined => {
     if (!dateString) return undefined;
     
     try {
-      // Handle ISO format YYYY-MM-DD
-      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = dateString.split('-').map(Number);
-        // Create date in local timezone without time component
-        return new Date(year, month - 1, day);
-      }
-      
-      // Try parsing with Date constructor as fallback
+      // Parse ISO string to Date
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? undefined : date;
     } catch (error) {
@@ -109,9 +94,10 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     const updates: Partial<Lead> = { status };
     
     if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
-      const currentDate = formatDateToString(new Date());
-      updates.closedAt = currentDate;
-      updates.signupDate = currentDate; // Set signup date to the same date
+      const now = new Date();
+      const isoString = now.toISOString();
+      updates.closedAt = isoString;
+      updates.signupDate = isoString; // Set signup date to the same date
     }
     
     setFormData(prev => ({
@@ -125,7 +111,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
-  // Date change handler - completely rewritten for reliability
+  // Date change handler with time support
   const handleDateChange = (fieldName: string, date: Date | undefined) => {
     if (!date) {
       console.log(`Clearing date field: ${fieldName}`);
@@ -137,22 +123,22 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
     
     try {
-      // Format as YYYY-MM-DD string consistently
-      const formattedDate = formatDateToString(date);
-      console.log(`Setting ${fieldName} to: ${formattedDate} from date object:`, date);
+      // Store the full date with time as ISO string
+      const isoString = date.toISOString();
+      console.log(`Setting ${fieldName} to: ${isoString} from date object:`, date);
       
       // Only update the specific field that was changed
       const updates: Partial<Record<string, string>> = {
-        [fieldName]: formattedDate
+        [fieldName]: isoString
       };
       
       // If changing signupDate and the lead is closed, also update closedAt to match
       if (fieldName === 'signupDate' && formData.status === 'Closed') {
-        updates.closedAt = formattedDate;
+        updates.closedAt = isoString;
       }
       // If changing closedAt and the lead is closed, also update signupDate to match
       else if (fieldName === 'closedAt' && formData.status === 'Closed') {
-        updates.signupDate = formattedDate;
+        updates.signupDate = isoString;
       }
       
       setFormData(prev => ({
@@ -209,15 +195,15 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Only admin or the lead owner can edit ownership
   const canEditOwnership = currentUser.isAdmin;
 
-  // Format a date for display
+  // Format a date for display with time
   const formatDateForDisplay = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'Select a date';
+    if (!dateString) return 'Select a date and time';
     
     try {
-      const dateObj = parseDateString(dateString);
-      if (!dateObj) return 'Select a date';
+      const dateObj = parseDate(dateString);
+      if (!dateObj) return 'Select a date and time';
       
-      return format(dateObj, 'PP'); // Localized date format
+      return format(dateObj, 'PPP p'); // Localized date and time format
     } catch (error) {
       console.error("Error formatting date for display:", dateString, error);
       return 'Invalid date';
@@ -323,12 +309,51 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={parseDateString(formData.demoDate)}
-                    onSelect={(date) => handleDateChange('demoDate', date)}
-                    initialFocus
-                  />
+                  <div className="p-3">
+                    <CalendarComponent
+                      mode="single"
+                      selected={parseDate(formData.demoDate)}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Preserve time if there was a previous date selection
+                          const prevDate = parseDate(formData.demoDate);
+                          if (prevDate) {
+                            date.setHours(prevDate.getHours(), prevDate.getMinutes());
+                          } else {
+                            // Default to current time
+                            const now = new Date();
+                            date.setHours(now.getHours(), now.getMinutes());
+                          }
+                          handleDateChange('demoDate', date);
+                        } else {
+                          handleDateChange('demoDate', undefined);
+                        }
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                    {parseDate(formData.demoDate) && (
+                      <div className="mt-3 border-t pt-3">
+                        <Input
+                          type="time"
+                          onChange={(e) => {
+                            const timeValue = e.target.value;
+                            const [hours, minutes] = timeValue.split(':').map(Number);
+                            const date = parseDate(formData.demoDate);
+                            if (date) {
+                              date.setHours(hours, minutes);
+                              handleDateChange('demoDate', date);
+                            }
+                          }}
+                          value={parseDate(formData.demoDate) ? 
+                            format(parseDate(formData.demoDate) || new Date(), 'HH:mm') : 
+                            ''
+                          }
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
@@ -351,12 +376,51 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={parseDateString(formData.signupDate)}
-                    onSelect={(date) => handleDateChange('signupDate', date)}
-                    initialFocus
-                  />
+                  <div className="p-3">
+                    <CalendarComponent
+                      mode="single"
+                      selected={parseDate(formData.signupDate)}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Preserve time if there was a previous date selection
+                          const prevDate = parseDate(formData.signupDate);
+                          if (prevDate) {
+                            date.setHours(prevDate.getHours(), prevDate.getMinutes());
+                          } else {
+                            // Default to current time
+                            const now = new Date();
+                            date.setHours(now.getHours(), now.getMinutes());
+                          }
+                          handleDateChange('signupDate', date);
+                        } else {
+                          handleDateChange('signupDate', undefined);
+                        }
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                    {parseDate(formData.signupDate) && (
+                      <div className="mt-3 border-t pt-3">
+                        <Input
+                          type="time"
+                          onChange={(e) => {
+                            const timeValue = e.target.value;
+                            const [hours, minutes] = timeValue.split(':').map(Number);
+                            const date = parseDate(formData.signupDate);
+                            if (date) {
+                              date.setHours(hours, minutes);
+                              handleDateChange('signupDate', date);
+                            }
+                          }}
+                          value={parseDate(formData.signupDate) ? 
+                            format(parseDate(formData.signupDate) || new Date(), 'HH:mm') : 
+                            ''
+                          }
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
@@ -380,12 +444,51 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={parseDateString(formData.nextFollowUp)}
-                  onSelect={(date) => handleDateChange('nextFollowUp', date)}
-                  initialFocus
-                />
+                <div className="p-3">
+                  <CalendarComponent
+                    mode="single"
+                    selected={parseDate(formData.nextFollowUp)}
+                    onSelect={(date) => {
+                      if (date) {
+                        // Preserve time if there was a previous date selection
+                        const prevDate = parseDate(formData.nextFollowUp);
+                        if (prevDate) {
+                          date.setHours(prevDate.getHours(), prevDate.getMinutes());
+                        } else {
+                          // Default to current time
+                          const now = new Date();
+                          date.setHours(now.getHours(), now.getMinutes());
+                        }
+                        handleDateChange('nextFollowUp', date);
+                      } else {
+                        handleDateChange('nextFollowUp', undefined);
+                      }
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                  {parseDate(formData.nextFollowUp) && (
+                    <div className="mt-3 border-t pt-3">
+                      <Input
+                        type="time"
+                        onChange={(e) => {
+                          const timeValue = e.target.value;
+                          const [hours, minutes] = timeValue.split(':').map(Number);
+                          const date = parseDate(formData.nextFollowUp);
+                          if (date) {
+                            date.setHours(hours, minutes);
+                            handleDateChange('nextFollowUp', date);
+                          }
+                        }}
+                        value={parseDate(formData.nextFollowUp) ? 
+                          format(parseDate(formData.nextFollowUp) || new Date(), 'HH:mm') : 
+                          ''
+                        }
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
               </PopoverContent>
             </Popover>
           </div>

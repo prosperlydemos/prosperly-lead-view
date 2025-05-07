@@ -50,7 +50,6 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     }));
   };
 
-  // Improved date handling function
   const handleDateChange = (field: string, date: Date | undefined) => {
     if (!date) {
       setFormData(prev => ({ 
@@ -61,25 +60,17 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     }
 
     try {
-      // Format as YYYY-MM-DD string consistently
-      const formattedDate = formatDateToString(date);
-      console.log(`Setting ${field} to: ${formattedDate}`);
+      // Store the full date object with time as an ISO string
+      const isoDateString = date.toISOString();
+      console.log(`Setting ${field} to: ${isoDateString}`);
       
       setFormData(prev => ({ 
         ...prev, 
-        [field]: formattedDate 
+        [field]: isoDateString
       }));
     } catch (error) {
       console.error(`Error formatting date for ${field}:`, error);
     }
-  };
-
-  // Helper function to format Date to YYYY-MM-DD string
-  const formatDateToString = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,18 +97,12 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     setIsOpen(false);
   };
 
-  // Format date for display in the date picker
-  const formatDateForPicker = (dateString: string | null | undefined) => {
+  // Parse date string to Date object
+  const parseDate = (dateString: string | null | undefined): Date | undefined => {
     if (!dateString) return undefined;
     
     try {
-      // For YYYY-MM-DD format
-      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = dateString.split('-').map(Number);
-        return new Date(year, month - 1, day);
-      }
-      
-      // Try as ISO string
+      // Parse ISO string to Date
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? undefined : date;
     } catch (error) {
@@ -221,20 +206,58 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.demoDate ? (
-                      format(formatDateForPicker(formData.demoDate) || new Date(), 'PPP')
+                      format(parseDate(formData.demoDate) || new Date(), 'PPP p')
                     ) : (
-                      <span>Select date</span>
+                      <span>Select date and time</span>
                     )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={formatDateForPicker(formData.demoDate)}
-                    onSelect={(date) => handleDateChange('demoDate', date)}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
+                  <div className="p-3">
+                    <CalendarComponent
+                      mode="single"
+                      selected={parseDate(formData.demoDate)}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Preserve time if there was a previous date selection
+                          const prevDate = parseDate(formData.demoDate);
+                          if (prevDate) {
+                            date.setHours(prevDate.getHours(), prevDate.getMinutes());
+                          } else {
+                            // Default to current time
+                            const now = new Date();
+                            date.setHours(now.getHours(), now.getMinutes());
+                          }
+                          handleDateChange('demoDate', date);
+                        } else {
+                          handleDateChange('demoDate', undefined);
+                        }
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                    {parseDate(formData.demoDate) && (
+                      <div className="mt-3 border-t pt-3">
+                        <Input
+                          type="time"
+                          onChange={(e) => {
+                            const timeValue = e.target.value;
+                            const [hours, minutes] = timeValue.split(':').map(Number);
+                            const date = parseDate(formData.demoDate);
+                            if (date) {
+                              date.setHours(hours, minutes);
+                              handleDateChange('demoDate', date);
+                            }
+                          }}
+                          value={parseDate(formData.demoDate) ? 
+                            format(parseDate(formData.demoDate) || new Date(), 'HH:mm') : 
+                            ''
+                          }
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
@@ -255,20 +278,58 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {formData.signupDate ? (
-                      format(formatDateForPicker(formData.signupDate) || new Date(), 'PPP')
+                      format(parseDate(formData.signupDate) || new Date(), 'PPP p')
                     ) : (
-                      <span>Select date</span>
+                      <span>Select date and time</span>
                     )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={formatDateForPicker(formData.signupDate)}
-                    onSelect={(date) => handleDateChange('signupDate', date)}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
+                  <div className="p-3">
+                    <CalendarComponent
+                      mode="single"
+                      selected={parseDate(formData.signupDate)}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Preserve time if there was a previous date selection
+                          const prevDate = parseDate(formData.signupDate);
+                          if (prevDate) {
+                            date.setHours(prevDate.getHours(), prevDate.getMinutes());
+                          } else {
+                            // Default to current time
+                            const now = new Date();
+                            date.setHours(now.getHours(), now.getMinutes());
+                          }
+                          handleDateChange('signupDate', date);
+                        } else {
+                          handleDateChange('signupDate', undefined);
+                        }
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                    {parseDate(formData.signupDate) && (
+                      <div className="mt-3 border-t pt-3">
+                        <Input
+                          type="time"
+                          onChange={(e) => {
+                            const timeValue = e.target.value;
+                            const [hours, minutes] = timeValue.split(':').map(Number);
+                            const date = parseDate(formData.signupDate);
+                            if (date) {
+                              date.setHours(hours, minutes);
+                              handleDateChange('signupDate', date);
+                            }
+                          }}
+                          value={parseDate(formData.signupDate) ? 
+                            format(parseDate(formData.signupDate) || new Date(), 'HH:mm') : 
+                            ''
+                          }
+                          className="w-full"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
@@ -290,20 +351,58 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {formData.nextFollowUp ? (
-                    format(formatDateForPicker(formData.nextFollowUp) || new Date(), 'PPP')
+                    format(parseDate(formData.nextFollowUp) || new Date(), 'PPP p')
                   ) : (
                     <span>Schedule follow-up</span>
                   )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={formatDateForPicker(formData.nextFollowUp)}
-                  onSelect={(date) => handleDateChange('nextFollowUp', date)}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
+                <div className="p-3">
+                  <CalendarComponent
+                    mode="single"
+                    selected={parseDate(formData.nextFollowUp)}
+                    onSelect={(date) => {
+                      if (date) {
+                        // Preserve time if there was a previous date selection
+                        const prevDate = parseDate(formData.nextFollowUp);
+                        if (prevDate) {
+                          date.setHours(prevDate.getHours(), prevDate.getMinutes());
+                        } else {
+                          // Default to current time
+                          const now = new Date();
+                          date.setHours(now.getHours(), now.getMinutes());
+                        }
+                        handleDateChange('nextFollowUp', date);
+                      } else {
+                        handleDateChange('nextFollowUp', undefined);
+                      }
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                  {parseDate(formData.nextFollowUp) && (
+                    <div className="mt-3 border-t pt-3">
+                      <Input
+                        type="time"
+                        onChange={(e) => {
+                          const timeValue = e.target.value;
+                          const [hours, minutes] = timeValue.split(':').map(Number);
+                          const date = parseDate(formData.nextFollowUp);
+                          if (date) {
+                            date.setHours(hours, minutes);
+                            handleDateChange('nextFollowUp', date);
+                          }
+                        }}
+                        value={parseDate(formData.nextFollowUp) ? 
+                          format(parseDate(formData.nextFollowUp) || new Date(), 'HH:mm') : 
+                          ''
+                        }
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
               </PopoverContent>
             </Popover>
           </div>
