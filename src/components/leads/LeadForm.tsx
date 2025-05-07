@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,8 +24,12 @@ const LeadForm: React.FC<LeadFormProps> = ({
   onCancel,
   isSubmitting = false
 }) => {
+  console.log('=== LEAD FORM DEBUG ===');
+  console.log('1. Form mounted with initialData:', initialData);
+  
   // Initialize form data only once when component mounts
   const [formData, setFormData] = useState<Partial<Lead>>(() => {
+    console.log('2. Initializing form data');
     const defaultData: Partial<Lead> = {
       contactName: '',
       email: '',
@@ -51,6 +56,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   // Handle text input changes with enhanced logging
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
+    console.log('3. Input changed:', { name, value, type });
     
     // For number inputs, convert to proper number values
     const processedValue = type === 'number' ? 
@@ -64,7 +70,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
         ...prev,
         [name]: processedValue
       };
-      console.log('New form data:', newData);
+      console.log('4. New form data:', newData);
       return newData;
     });
   }, []);

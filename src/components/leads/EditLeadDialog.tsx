@@ -43,6 +43,9 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   onClose,
   isOpen,
 }) => {
+  console.log('=== EDIT DIALOG DEBUG ===');
+  console.log('1. Dialog props:', { lead, isOpen });
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -51,6 +54,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   
   // Only update when dialog opens to prevent re-render loops
   useEffect(() => {
+    console.log('2. Dialog effect triggered:', { isOpen, lead });
     if (isOpen) {
       console.log('Dialog opened with lead data:', lead);
       setCurrentLead(lead);
@@ -59,6 +63,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   }, [isOpen]); // Removed lead.id from dependencies
 
   const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
+    console.log('3. Form submission:', { formData, currentLead });
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
     
     try {
@@ -75,7 +80,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         value: typeof formData.value === 'number' ? formData.value : currentLead.value,
       };
       
-      console.log('Updated lead:', updatedLead);
+      console.log('4. Sending to parent:', updatedLead);
       
       // Save the updated lead
       await onSave(updatedLead);

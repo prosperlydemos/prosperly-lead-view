@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import TodoList from '../components/TodoList';
@@ -222,8 +222,11 @@ const Index: React.FC = () => {
   };
 
   const handleSaveLead = async (updatedLead: AppLead) => {
+    console.log('=== SAVE LEAD DEBUG ===');
+    console.log('1. Save initiated with lead:', updatedLead);
     try {
       const supabaseUpdatedLead = mapAppLeadToSupabaseLead(updatedLead);
+      console.log('2. Mapped to Supabase format:', supabaseUpdatedLead);
       
       const { data, error } = await supabase
         .from('leads')
@@ -234,9 +237,14 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      setLeads(prev => 
-        prev.map(lead => lead.id === updatedLead.id ? data : lead)
-      );
+      console.log('3. Supabase response:', data);
+      
+      setLeads(prev => {
+        console.log('4. Previous leads state:', prev);
+        const newLeads = prev.map(lead => lead.id === updatedLead.id ? data : lead);
+        console.log('5. New leads state:', newLeads);
+        return newLeads;
+      });
       
       setIsEditModalOpen(false);
       
