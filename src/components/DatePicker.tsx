@@ -21,6 +21,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
   disabled = false,
   placeholder = "Select date"
 }) => {
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    console.log("Date selected in DatePicker:", selectedDate);
+    onSelect(selectedDate);
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -36,11 +41,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
           {date ? formatDateForDisplay(date.toISOString()) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 z-50" align="start">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={onSelect}
+          onSelect={handleDateSelect}
           initialFocus
           className="pointer-events-auto"
         />

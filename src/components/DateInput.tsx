@@ -21,6 +21,7 @@ const DateInput: React.FC<DateInputProps> = ({
   const dateValue = value ? new Date(value) : undefined;
   
   const handleChange = (date: Date | undefined) => {
+    console.log("DateInput handleChange called with date:", date);
     if (!date) {
       onChange(null);
       return;
@@ -28,10 +29,12 @@ const DateInput: React.FC<DateInputProps> = ({
     
     // Convert date to ISO string at midnight UTC
     const isoDate = parseDateToISO(date);
+    console.log("Converted to ISO:", isoDate);
     onChange(isoDate);
   };
 
   const handleClear = () => {
+    console.log("DateInput clearing value");
     onChange(null);
   };
 
@@ -54,7 +57,7 @@ const DateInput: React.FC<DateInputProps> = ({
             onClick={handleClear}
           >
             <span className="sr-only">Clear</span>
-            <span>×</span>
+            <span aria-hidden="true">×</span>
           </Button>
         )}
       </div>
