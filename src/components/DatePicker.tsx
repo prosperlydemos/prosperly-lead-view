@@ -36,19 +36,26 @@ const DatePicker: React.FC<DatePickerProps> = ({
             !date && "text-muted-foreground"
           )}
           disabled={disabled}
+          type="button" // Explicitly set type to button to prevent form submission
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? formatDateForDisplay(date.toISOString()) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 z-50" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={handleDateSelect}
-          initialFocus
-          className="pointer-events-auto"
-        />
+      <PopoverContent 
+        className="w-auto p-0 z-[100]" 
+        align="start"
+        sideOffset={4}
+      >
+        <div onClick={(e) => e.stopPropagation()}>
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={handleDateSelect}
+            initialFocus
+            className="pointer-events-auto"
+          />
+        </div>
       </PopoverContent>
     </Popover>
   );

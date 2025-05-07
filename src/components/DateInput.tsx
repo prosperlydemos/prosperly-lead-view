@@ -33,7 +33,9 @@ const DateInput: React.FC<DateInputProps> = ({
     onChange(isoDate);
   };
 
-  const handleClear = () => {
+  const handleClear = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log("DateInput clearing value");
     onChange(null);
   };
@@ -55,6 +57,7 @@ const DateInput: React.FC<DateInputProps> = ({
             variant="outline" 
             size="icon"
             onClick={handleClear}
+            tabIndex={0}
           >
             <span className="sr-only">Clear</span>
             <span aria-hidden="true">×</span>
