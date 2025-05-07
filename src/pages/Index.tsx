@@ -1,46 +1,49 @@
+
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import TodoList from '../components/TodoList';
-import { Note, Lead, mapSupabaseLeadToAppLead, mapAppLeadToSupabaseLead, Profile } from '../types/supabase';
+import { Note, Lead, Profile } from '../types/supabase';
 import { toast } from "@/components/ui/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ListTodo } from 'lucide-react';
-import { isToday, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
-import { Lead as AppLead, LeadStatus, User } from '../types/index';
+import { User } from '../types/index';
 import UserManagement from '../components/UserManagement';
 import AddLeadDialog from '../components/AddLeadDialog';
 import EditLeadDialog from '../components/EditLeadDialog';
-
-interface TodoItem {
-  id: string;
-  leadId: string;
-  contactName: string;
-  businessName: string;
-  dueDate: string;
-  completed: boolean;
-}
+import { useTodos } from '../hooks/useTodos';
+import { useLeads } from '../hooks/useLeads';
+import { useUserManagement } from '../hooks/useUserManagement';
 
 const Index: React.FC = () => {
   const { profile: currentUser } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'All'>('All');
-  const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all');
   const [isTodoListOpen, setIsTodoListOpen] = useState(false);
-  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<Profile[]>([]);
 
-  const selectedLead = selectedLeadId 
-    ? leads.find(lead => lead.id === selectedLeadId) 
-    : null;
+  // Initialize hooks
+  const { todoItems, setTodoItems, handleMarkTodoComplete, activeTodoCount } = useTodos(leads, currentUser);
+  
+  const { 
+    selectedLeadId, setSelectedLeadId,
+    isEditModalOpen, setIsEditModalOpen,
+    selectedStatus, selectedUserId,
+    appSelectedLead,
+    handleLeadSelect, handleStatusChange, handleEditLead,
+    handleAddLead, handleSaveLead, handleDeleteLead,
+    handleStatusFilterChange, handleUserFilterChange
+  } = useLeads(leads, notes, setNotes);
+
+  const {
+    users, setUsers,
+    handleAddUser, handleUpdateUser, handleDeleteUser, 
+    handleUsersLoaded
+  } = useUserManagement();
 
   // Fetch leads and notes
   useEffect(() => {
@@ -90,341 +93,22 @@ const Index: React.FC = () => {
     fetchData();
   }, [currentUser]);
 
-  // Handle user management functions
-  const handleAddUser = async (userData: Omit<User, 'id'>) => {
-    if (!currentUser?.is_admin) return;
-    
-    try {
-      // Convert app user format to Supabase profile format
-      const profileData = {
-        name: userData.name,
-        email: userData.email,
-        is_admin: userData.isAdmin,
-        // Convert the commission rules to a JSON-compatible format
-        commission_rules: userData.commissionRules ? JSON.parse(JSON.stringify(userData.commissionRules)) : null
-      };
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert(profileData)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setUsers(prev => [...prev, data]);
-      return data;
-    } catch (error) {
-      console.error('Error adding user:', error);
-      toast({
-        title: "Error adding user",
-        description: "Failed to add new user",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-  
-  const handleUpdateUser = async (updatedUser: User) => {
-    if (!currentUser?.is_admin) return;
-    
-    try {
-      // Convert app user format to Supabase profile format
-      const profileData = {
-        name: updatedUser.name,
-        email: updatedUser.email,
-        is_admin: updatedUser.isAdmin,
-        // Convert the commission rules to a JSON-compatible format
-        commission_rules: updatedUser.commissionRules ? JSON.parse(JSON.stringify(updatedUser.commissionRules)) : null
-      };
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('id', updatedUser.id)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setUsers(prev => 
-        prev.map(user => user.id === updatedUser.id ? data : user)
-      );
-    } catch (error) {
-      console.error('Error updating user:', error);
-      toast({
-        title: "Error updating user",
-        description: "Failed to update user information",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-  
-  const handleDeleteUser = async (userId: string) => {
-    if (!currentUser?.is_admin) return;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-        
-      if (error) throw error;
-      
-      setUsers(prev => prev.filter(user => user.id !== userId));
-      
-      toast({
-        title: "User deleted",
-        description: "User has been permanently deleted."
-      });
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast({
-        title: "Error deleting user",
-        description: "Failed to delete the user",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  // Update todo items whenever leads change
-  useEffect(() => {
-    if (!currentUser) return;
-    
-    const newTodoItems: TodoItem[] = [];
-    
-    leads.forEach(lead => {
-      // Only consider leads assigned to the current user
-      if (lead.owner_id === currentUser.id && lead.next_follow_up) {
-        // Check if the next follow-up is today
-        const followUpDate = parseISO(lead.next_follow_up);
-        if (isToday(followUpDate)) {
-          newTodoItems.push({
-            id: `todo-${lead.id}-${Date.now()}`,
-            leadId: lead.id,
-            contactName: lead.contact_name,
-            businessName: lead.business_name || '',
-            dueDate: lead.next_follow_up,
-            completed: false
-          });
-        }
-      }
-    });
-    
-    // Filter out completed items and add new ones
-    const filteredItems = todoItems.filter(item => 
-      !item.completed && 
-      !newTodoItems.some(newItem => newItem.leadId === item.leadId)
-    );
-    
-    setTodoItems([...filteredItems, ...newTodoItems]);
-  }, [leads, currentUser]);
-
-  const handleLeadSelect = (leadId: string) => {
-    setSelectedLeadId(leadId);
-  };
-
-  const handleAddNote = async (leadId: string, content: string) => {
+  // Handle adding note with todo completion
+  const handleAddNoteWithTodo = async (leadId: string, content: string) => {
     if (!currentUser) return;
     
     try {
-      const newNote = {
-        lead_id: leadId,
-        user_id: currentUser.id,
-        content
-      };
-      
-      const { data, error } = await supabase
-        .from('notes')
-        .insert(newNote)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setNotes(prev => [...prev, data]);
+      await handleAddNote(leadId, content, currentUser.id);
       
       // Mark todo item for this lead as completed when a note is added
       setTodoItems(todoItems.map(item => 
         item.leadId === leadId ? { ...item, completed: true } : item
       ));
-      
-      toast({
-        title: "Note added",
-        description: "Your note has been saved successfully."
-      });
     } catch (error) {
-      console.error('Error adding note:', error);
-      toast({
-        title: "Error adding note",
-        description: "Failed to save your note",
-        variant: "destructive"
-      });
+      console.error('Error in handleAddNoteWithTodo:', error);
     }
   };
 
-  const handleStatusChange = async (leadId: string, status: string) => {
-    try {
-      // If changing to Closed status, update the closing_date
-      const updates: Partial<Lead> = { status };
-      
-      if (status === 'Closed') {
-        updates.closing_date = new Date().toISOString();
-      }
-      
-      const { data, error } = await supabase
-        .from('leads')
-        .update(updates)
-        .eq('id', leadId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setLeads(prev => 
-        prev.map(lead => lead.id === leadId ? data : lead)
-      );
-      
-      toast({
-        title: "Status updated",
-        description: `Lead status changed to ${status}`
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Error updating status",
-        description: "Failed to update the lead status",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleEditLead = (leadId: string) => {
-    setSelectedLeadId(leadId);
-    setIsEditModalOpen(true);
-  };
-
-  const handleAddLead = async (newLeadData: Omit<AppLead, 'id'>) => {
-    if (!currentUser) return;
-    
-    try {
-      // Prepare data for Supabase
-      const supabaseNewLead = mapAppLeadToSupabaseLead({
-        ...newLeadData as AppLead,
-        id: '' // Placeholder ID that will be replaced by Supabase
-      });
-      
-      const { data, error } = await supabase
-        .from('leads')
-        .insert(supabaseNewLead)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setLeads(prev => [...prev, data]);
-      
-      return data;
-    } catch (error) {
-      console.error('Error adding lead:', error);
-      toast({
-        title: "Error adding lead",
-        description: "Failed to add new lead",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  const handleSaveLead = async (updatedLead: AppLead) => {
-    try {
-      const supabaseUpdatedLead = mapAppLeadToSupabaseLead(updatedLead);
-      
-      const { data, error } = await supabase
-        .from('leads')
-        .update(supabaseUpdatedLead)
-        .eq('id', updatedLead.id)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setLeads(prev => 
-        prev.map(lead => lead.id === updatedLead.id ? data : lead)
-      );
-    } catch (error) {
-      console.error('Error updating lead:', error);
-      toast({
-        title: "Error updating lead",
-        description: "Failed to update the lead information",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-  
-  const handleDeleteLead = async (leadId: string) => {
-    try {
-      const { error } = await supabase
-        .from('leads')
-        .delete()
-        .eq('id', leadId);
-        
-      if (error) throw error;
-      
-      setLeads(prev => prev.filter(lead => lead.id !== leadId));
-      // Notes will be automatically deleted due to cascade delete
-      setNotes(prev => prev.filter(note => note.lead_id !== leadId));
-      
-      if (selectedLeadId === leadId) {
-        setSelectedLeadId(null);
-      }
-      
-      toast({
-        title: "Lead deleted",
-        description: "Lead and associated notes have been deleted."
-      });
-    } catch (error) {
-      console.error('Error deleting lead:', error);
-      toast({
-        title: "Error deleting lead",
-        description: "Failed to delete the lead",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-  
-  const handleStatusFilterChange = (status: LeadStatus | 'All') => {
-    setSelectedStatus(status);
-  };
-  
-  const handleUserFilterChange = (userId: string | 'all') => {
-    setSelectedUserId(userId);
-  };
-
-  const handleUsersLoaded = (loadedUsers: Profile[]) => {
-    setUsers(loadedUsers);
-  };
-  
-  const handleMarkTodoComplete = (todoId: string) => {
-    setTodoItems(todoItems.map(item => 
-      item.id === todoId ? { ...item, completed: true } : item
-    ));
-    
-    toast({
-      title: "Task completed",
-      description: "Follow-up task marked as completed."
-    });
-  };
-  
-  // Get the number of active todo items for the current user
-  const activeTodoCount = todoItems.filter(
-    item => !item.completed && item.leadId
-  ).length;
-  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -432,9 +116,6 @@ const Index: React.FC = () => {
       </div>
     );
   }
-  
-  // Convert Supabase leads to App leads for LeadEditForm
-  const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
   
   // Map Supabase profiles to App users
   const appUsers: User[] = users.map(profile => ({
@@ -532,7 +213,7 @@ const Index: React.FC = () => {
             <NoteSection 
               lead={appSelectedLead}
               notes={notes.filter(note => note.lead_id === selectedLeadId)}
-              onAddNote={handleAddNote}
+              onAddNote={handleAddNoteWithTodo}
               onStatusChange={handleStatusChange}
               onEditLead={handleEditLead}
             />
