@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -50,7 +49,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   console.log('Current formData in LeadForm:', formData);
 
   // Handle text input changes with enhanced logging
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     
     // For number inputs, convert to proper number values
@@ -59,7 +58,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
       value;
     
     console.log(`Field ${name} changed to:`, processedValue, typeof processedValue);
-    console.log('Previous form data:', formData);
     
     setFormData(prev => {
       const newData = {
@@ -69,37 +67,37 @@ const LeadForm: React.FC<LeadFormProps> = ({
       console.log('New form data:', newData);
       return newData;
     });
-  };
+  }, []);
 
   // Handle date changes
-  const handleDateChange = (field: string, value: string | null) => {
+  const handleDateChange = useCallback((field: string, value: string | null) => {
     console.log(`Date field ${field} changed to: ${value}`);
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
+  }, []);
 
   // Handle status changes
-  const handleStatusChange = (status: LeadStatus) => {
+  const handleStatusChange = useCallback((status: LeadStatus) => {
     console.log(`Status changed to: ${status}`);
     setFormData(prev => ({
       ...prev,
       status
     }));
-  };
+  }, []);
 
   // Handle owner changes
-  const handleOwnerChange = (ownerId: string) => {
+  const handleOwnerChange = useCallback((ownerId: string) => {
     console.log(`Owner changed to: ${ownerId}`);
     setFormData(prev => ({
       ...prev,
       ownerId
     }));
-  };
+  }, []);
 
   // Form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form data before submission:', formData);
     
@@ -113,7 +111,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
     console.log('Submitting form data:', submissionData);
     
     onSubmit(submissionData);
-  };
+  }, [formData, onSubmit]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

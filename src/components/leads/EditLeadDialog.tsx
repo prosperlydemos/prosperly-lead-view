@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -57,7 +58,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
     }
   }, [isOpen, lead.id]); // Only depend on isOpen and lead.id to prevent unnecessary updates
 
-  const handleSubmit = async (formData: Partial<Lead>) => {
+  const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
     
     try {
@@ -104,9 +105,9 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         setIsSubmitting(false);
       }
     }
-  };
+  }, [isOpen, currentLead, onSave, onClose, toast]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!onDelete || !lead || !isOpen) return;
     
     try {
@@ -139,14 +140,14 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         setIsSubmitting(false);
       }
     }
-  };
+  }, [isOpen, lead, onDelete, onClose, toast]);
 
   // Safe close function that checks submission state
-  const handleDialogClose = () => {
+  const handleDialogClose = useCallback(() => {
     if (!isSubmitting) {
       onClose();
     }
-  };
+  }, [isSubmitting, onClose]);
 
   return (
     <>

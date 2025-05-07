@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import TodoList from '../components/TodoList';
@@ -38,10 +39,17 @@ const Index: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
 
-  // Get selected lead with added logging
-  const selectedLead = selectedLeadId 
-    ? leads.find(lead => lead.id === selectedLeadId) 
-    : null;
+  // Memoize the selected lead to prevent unnecessary recalculations
+  const selectedLead = useMemo(() => 
+    selectedLeadId ? leads.find(lead => lead.id === selectedLeadId) : null,
+    [selectedLeadId, leads]
+  );
+
+  // Memoize the app selected lead
+  const appSelectedLead = useMemo(() => 
+    selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null,
+    [selectedLead]
+  );
 
   // Add effect to log when selectedLead changes
   useEffect(() => {
