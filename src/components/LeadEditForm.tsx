@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead, User, LeadStatus } from '../types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2, UserRound, Calendar } from 'lucide-react';
+import { Trash2, UserRound, Calendar, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -34,52 +35,29 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   const [formData, setFormData] = React.useState<Partial<Lead>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   
-  // Debug state changes
-  React.useEffect(() => {
-    console.log("Form data updated:", formData);
-  }, [formData]);
-
   // Initialize form data when lead changes
   React.useEffect(() => {
     if (lead) {
       // Create a deep copy to avoid reference issues
       const leadCopy = JSON.parse(JSON.stringify(lead));
       setFormData(leadCopy);
-      
-      // Debug initial data
-      console.log("Initial lead data:", leadCopy);
+      console.log("Loaded lead data:", leadCopy);
     }
   }, [lead]);
   
-  // Watch for status changes to update closedAt date and signupDate when status changes to Closed
+  // Watch for status changes to update closedAt date and signupDate
   React.useEffect(() => {
     if (formData.status === 'Closed' && lead && lead.status !== 'Closed') {
-      const now = new Date();
-      const isoString = now.toISOString();
-      
+      const now = new Date().toISOString();
       setFormData(prev => ({
         ...prev,
-        closedAt: isoString,
-        signupDate: isoString // Set signup date to the same date as closedAt
+        closedAt: now,
+        signupDate: now
       }));
     }
   }, [formData.status, lead]);
 
-  // Parse date string to Date object
-  const parseDate = (dateString: string | null | undefined): Date | undefined => {
-    if (!dateString) return undefined;
-    
-    try {
-      // Parse ISO string to Date
-      const date = new Date(dateString);
-      return isNaN(date.getTime()) ? undefined : date;
-    } catch (error) {
-      console.error("Error parsing date string:", dateString, error);
-      return undefined;
-    }
-  };
-
-  // Standard input field handler
+  // Input field handler
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -93,10 +71,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     const updates: Partial<Lead> = { status };
     
     if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
-      const now = new Date();
-      const isoString = now.toISOString();
-      updates.closedAt = isoString;
-      updates.signupDate = isoString; // Set signup date to the same date
+      const now = new Date().toISOString();
+      updates.closedAt = now;
+      updates.signupDate = now; 
     }
     
     setFormData(prev => ({
@@ -110,47 +87,28 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
-  // Date change handler with time support
-  const handleDateChange = (fieldName: string, date: Date | undefined) => {
-    if (!date) {
-      console.log(`Clearing date field: ${fieldName}`);
-      setFormData(prev => ({
-        ...prev,
-        [fieldName]: null
-      }));
-      return;
-    }
+  // Date change handler
+  const handleDateChange = (fieldName: string, dateValue: string) => {
+    console.log(`Setting ${fieldName} to:`, dateValue);
     
-    try {
-      // Store the full date with time as ISO string
-      const isoString = date.toISOString();
-      console.log(`Setting ${fieldName} to: ${isoString} from date object:`, date);
-      
-      // Only update the specific field that was changed
-      const updates: Partial<Record<string, string>> = {
-        [fieldName]: isoString
-      };
-      
-      // If changing signupDate and the lead is closed, also update closedAt to match
-      if (fieldName === 'signupDate' && formData.status === 'Closed') {
-        updates.closedAt = isoString;
-      }
-      // If changing closedAt and the lead is closed, also update signupDate to match
-      else if (fieldName === 'closedAt' && formData.status === 'Closed') {
-        updates.signupDate = isoString;
-      }
-      
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: dateValue
+    }));
+    
+    // If changing signupDate and the lead is closed, also update closedAt
+    if (fieldName === 'signupDate' && formData.status === 'Closed') {
       setFormData(prev => ({
         ...prev,
-        ...updates
+        closedAt: dateValue
       }));
-    } catch (error) {
-      console.error(`Error formatting date for ${fieldName}:`, error);
-      toast({
-        title: "Date Error",
-        description: "There was an error processing the date. Please try again.",
-        variant: "destructive"
-      });
+    }
+    // If changing closedAt and the lead is closed, also update signupDate
+    else if (fieldName === 'closedAt' && formData.status === 'Closed') {
+      setFormData(prev => ({
+        ...prev,
+        signupDate: dateValue
+      }));
     }
   };
 
@@ -159,7 +117,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     e.preventDefault();
     
     if (lead && formData) {
-      // Log what we're about to save for debugging
+      // Log what we're about to save
       console.log('Saving lead with dates:', {
         demoDate: formData.demoDate,
         signupDate: formData.signupDate,
@@ -172,7 +130,6 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       onSave(updatedLead);
       onClose();
       
-      // Show success message
       toast({
         title: "Lead updated successfully",
         description: `Updated ${updatedLead.contactName}'s information`,
@@ -193,19 +150,15 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
 
   // Only admin or the lead owner can edit ownership
   const canEditOwnership = currentUser.isAdmin;
-
-  // Format a date for display with time
-  const formatDateForDisplay = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'Select a date and time';
-    
+  
+  // Simplified function to format a date string for display
+  const formatDate = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
     try {
-      const dateObj = parseDate(dateString);
-      if (!dateObj) return 'Select a date and time';
-      
-      return format(dateObj, 'PPP p'); // Localized date and time format
-    } catch (error) {
-      console.error("Error formatting date for display:", dateString, error);
-      return 'Invalid date';
+      return new Date(dateStr).toLocaleString();
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return '';
     }
   };
 
@@ -293,203 +246,74 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             {/* Demo Date */}
             <div>
               <label className="block text-sm font-medium mb-1">Demo Date</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.demoDate && "text-muted-foreground"
-                    )}
+              <div className="flex gap-2">
+                <Input
+                  type="datetime-local"
+                  value={formData.demoDate ? formData.demoDate.slice(0, 16) : ''}
+                  onChange={(e) => handleDateChange('demoDate', new Date(e.target.value).toISOString())}
+                  className="w-full"
+                />
+                {formData.demoDate && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => handleDateChange('demoDate', '')}
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {formatDateForDisplay(formData.demoDate)}
+                    <span className="sr-only">Clear</span>
+                    <span>×</span>
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <div className="p-3">
-                    <CalendarComponent
-                      mode="single"
-                      selected={parseDate(formData.demoDate)}
-                      onSelect={(date) => {
-                        if (date) {
-                          // Preserve time if there was a previous date selection
-                          const prevDate = parseDate(formData.demoDate);
-                          if (prevDate) {
-                            date.setHours(prevDate.getHours(), prevDate.getMinutes());
-                          } else {
-                            // Default to current time
-                            const now = new Date();
-                            date.setHours(now.getHours(), now.getMinutes());
-                          }
-                          handleDateChange('demoDate', date);
-                        } else {
-                          handleDateChange('demoDate', undefined);
-                        }
-                      }}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                    {parseDate(formData.demoDate) && (
-                      <div className="mt-3 border-t pt-3">
-                        <Input
-                          type="time"
-                          onChange={(e) => {
-                            const timeValue = e.target.value;
-                            const [hours, minutes] = timeValue.split(':').map(Number);
-                            const date = parseDate(formData.demoDate);
-                            if (date) {
-                              date.setHours(hours, minutes);
-                              handleDateChange('demoDate', date);
-                            }
-                          }}
-                          value={parseDate(formData.demoDate) ? 
-                            format(parseDate(formData.demoDate) || new Date(), 'HH:mm') : 
-                            ''
-                          }
-                          className="w-full"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                )}
+              </div>
             </div>
             
             {/* Signup Date */}
             <div>
               <label className="block text-sm font-medium mb-1">Signup Date</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.signupDate && "text-muted-foreground"
-                    )}
+              <div className="flex gap-2">
+                <Input
+                  type="datetime-local"
+                  value={formData.signupDate ? formData.signupDate.slice(0, 16) : ''}
+                  onChange={(e) => handleDateChange('signupDate', new Date(e.target.value).toISOString())}
+                  className="w-full"
+                />
+                {formData.signupDate && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => handleDateChange('signupDate', '')}
                   >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {formatDateForDisplay(formData.signupDate)}
+                    <span className="sr-only">Clear</span>
+                    <span>×</span>
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <div className="p-3">
-                    <CalendarComponent
-                      mode="single"
-                      selected={parseDate(formData.signupDate)}
-                      onSelect={(date) => {
-                        if (date) {
-                          // Preserve time if there was a previous date selection
-                          const prevDate = parseDate(formData.signupDate);
-                          if (prevDate) {
-                            date.setHours(prevDate.getHours(), prevDate.getMinutes());
-                          } else {
-                            // Default to current time
-                            const now = new Date();
-                            date.setHours(now.getHours(), now.getMinutes());
-                          }
-                          handleDateChange('signupDate', date);
-                        } else {
-                          handleDateChange('signupDate', undefined);
-                        }
-                      }}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                    {parseDate(formData.signupDate) && (
-                      <div className="mt-3 border-t pt-3">
-                        <Input
-                          type="time"
-                          onChange={(e) => {
-                            const timeValue = e.target.value;
-                            const [hours, minutes] = timeValue.split(':').map(Number);
-                            const date = parseDate(formData.signupDate);
-                            if (date) {
-                              date.setHours(hours, minutes);
-                              handleDateChange('signupDate', date);
-                            }
-                          }}
-                          value={parseDate(formData.signupDate) ? 
-                            format(parseDate(formData.signupDate) || new Date(), 'HH:mm') : 
-                            ''
-                          }
-                          className="w-full"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                )}
+              </div>
             </div>
           </div>
           
           {/* Next Follow-Up */}
           <div>
             <label className="block text-sm font-medium mb-1">Next Follow-Up</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.nextFollowUp && "text-muted-foreground"
-                  )}
+            <div className="flex gap-2">
+              <Input
+                type="datetime-local"
+                value={formData.nextFollowUp ? formData.nextFollowUp.slice(0, 16) : ''}
+                onChange={(e) => handleDateChange('nextFollowUp', new Date(e.target.value).toISOString())}
+                className="w-full"
+              />
+              {formData.nextFollowUp && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => handleDateChange('nextFollowUp', '')}
                 >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {formatDateForDisplay(formData.nextFollowUp)}
+                  <span className="sr-only">Clear</span>
+                  <span>×</span>
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <div className="p-3">
-                  <CalendarComponent
-                    mode="single"
-                    selected={parseDate(formData.nextFollowUp)}
-                    onSelect={(date) => {
-                      if (date) {
-                        // Preserve time if there was a previous date selection
-                        const prevDate = parseDate(formData.nextFollowUp);
-                        if (prevDate) {
-                          date.setHours(prevDate.getHours(), prevDate.getMinutes());
-                        } else {
-                          // Default to current time
-                          const now = new Date();
-                          date.setHours(now.getHours(), now.getMinutes());
-                        }
-                        handleDateChange('nextFollowUp', date);
-                      } else {
-                        handleDateChange('nextFollowUp', undefined);
-                      }
-                    }}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                  {parseDate(formData.nextFollowUp) && (
-                    <div className="mt-3 border-t pt-3">
-                      <Input
-                        type="time"
-                        onChange={(e) => {
-                          const timeValue = e.target.value;
-                          const [hours, minutes] = timeValue.split(':').map(Number);
-                          const date = parseDate(formData.nextFollowUp);
-                          if (date) {
-                            date.setHours(hours, minutes);
-                            handleDateChange('nextFollowUp', date);
-                          }
-                        }}
-                        value={parseDate(formData.nextFollowUp) ? 
-                          format(parseDate(formData.nextFollowUp) || new Date(), 'HH:mm') : 
-                          ''
-                        }
-                        className="w-full"
-                      />
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+              )}
+            </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
