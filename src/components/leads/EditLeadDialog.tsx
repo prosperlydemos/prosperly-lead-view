@@ -45,11 +45,13 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [formKey, setFormKey] = useState(Date.now()); // Add a key to force re-render
 
-  // Add logging when lead data changes
+  // Add logging when lead data changes and reset form key when dialog opens
   useEffect(() => {
     if (lead && isOpen) {
       console.log('Loading lead data:', lead);
+      setFormKey(Date.now()); // Reset form key when dialog opens to force re-render
     }
   }, [lead, isOpen]);
 
@@ -138,6 +140,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
             )}
           </div>
           <LeadForm
+            key={formKey} // Add key to force re-render when lead changes
             initialData={lead}
             users={users}
             currentUser={currentUser}

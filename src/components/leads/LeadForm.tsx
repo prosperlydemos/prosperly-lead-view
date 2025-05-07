@@ -24,7 +24,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   onCancel,
   isSubmitting = false
 }) => {
-  // Initialize state with callback function to properly merge initialData
+  // Initialize form data directly from initialData
   const [formData, setFormData] = useState<Partial<Lead>>(() => ({
     contactName: '',
     email: '',
@@ -39,19 +39,14 @@ const LeadForm: React.FC<LeadFormProps> = ({
     crm: '',
     nextFollowUp: null,
     value: 0,
-    ...initialData
+    ...(initialData || {}) // Spread initialData if available
   }));
 
-  // Update form data when initialData changes
+  // Debugging log for initial data
   useEffect(() => {
-    if (initialData) {
-      console.log('Initial data provided:', initialData);
-      setFormData(prev => ({
-        ...prev,
-        ...initialData
-      }));
-    }
-  }, [initialData]);
+    console.log('LeadForm initialData:', initialData);
+    console.log('LeadForm formData after init:', formData);
+  }, []);
 
   // Handle text input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
