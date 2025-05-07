@@ -40,6 +40,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   }, [lead, isOpen]);
 
+  // Prevent click events from closing the dialog
+  const handleStopPropagation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   // Generic field change handler for text and numeric fields
   const handleFieldChange = (field: string, value: any) => {
     console.log(`Field ${field} changed to:`, value);
@@ -165,57 +170,59 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           <DialogTitle>Edit Lead</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <LeadFormFields 
-            formData={formData}
-            onChange={handleFieldChange}
-            onStatusChange={handleStatusChange}
-            onOwnerChange={handleOwnerChange}
-            onDateChange={handleDateChange}
-            users={users}
-            currentUser={currentUser}
-            canEditOwnership={canEditOwnership}
-          />
-          
-          <DialogFooter className="flex justify-between items-center pt-4">
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-              <AlertDialogTrigger asChild>
+        <div className="space-y-4 pointer-events-auto" onClick={handleStopPropagation}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <LeadFormFields 
+              formData={formData}
+              onChange={handleFieldChange}
+              onStatusChange={handleStatusChange}
+              onOwnerChange={handleOwnerChange}
+              onDateChange={handleDateChange}
+              users={users}
+              currentUser={currentUser}
+              canEditOwnership={canEditOwnership}
+            />
+            
+            <DialogFooter className="flex justify-between items-center pt-4">
+              <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    type="button" 
+                    variant="destructive"
+                  >
+                    <Trash2 size={16} className="mr-1" />
+                    Delete Contact
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete {lead.contactName}'s contact record and all associated notes. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              <div className="flex gap-2">
                 <Button 
                   type="button" 
-                  variant="destructive"
+                  variant="outline" 
+                  onClick={onClose}
                 >
-                  <Trash2 size={16} className="mr-1" />
-                  Delete Contact
+                  Cancel
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete {lead.contactName}'s contact record and all associated notes. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            
-            <div className="flex gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </DialogFooter>
-        </form>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
