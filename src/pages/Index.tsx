@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
-import LeadEditForm from '../components/LeadEditForm';
 import TodoList from '../components/TodoList';
 import { Note, Lead, mapSupabaseLeadToAppLead, mapAppLeadToSupabaseLead, Profile } from '../types/supabase';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ListTodo } from 'lucide-react';
@@ -13,8 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
 import { Lead as AppLead, LeadStatus, User } from '../types/index';
-import AddLeadButton from '../components/AddLeadButton';
 import UserManagement from '../components/UserManagement';
+import AddLeadDialog from '@/components/leads/AddLeadDialog';
+import EditLeadDialog from '@/components/leads/EditLeadDialog';
 
 interface TodoItem {
   id: string;
@@ -314,7 +315,7 @@ const Index: React.FC = () => {
     );
   }
   
-  // Convert Supabase leads to App leads for LeadEditForm
+  // Convert Supabase leads to App leads for EditLeadDialog
   const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
   
   // Map Supabase profiles to App users
@@ -508,7 +509,7 @@ const Index: React.FC = () => {
       
       <main className="container py-6">
         <div className="flex justify-end mb-4">
-          <AddLeadButton 
+          <AddLeadDialog 
             onAddLead={handleAddLead}
             users={appUsers}
             currentUser={appCurrentUser} 
@@ -521,7 +522,7 @@ const Index: React.FC = () => {
               selectedLeadId={selectedLeadId}
               onLeadSelect={handleLeadSelect}
               onEditLead={handleEditLead}
-              onAddLead={() => {}} // This will be replaced by AddLeadButton
+              onAddLead={() => {}} // This will be replaced by AddLeadDialog
               selectedStatus={selectedStatus}
               onStatusChange={handleStatusFilterChange}
               selectedUserId={selectedUserId}
@@ -541,15 +542,18 @@ const Index: React.FC = () => {
         </div>
       </main>
 
-      <LeadEditForm
-        lead={appSelectedLead}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSave={handleSaveLead}
-        onDelete={handleDeleteLead}
-        users={appUsers}
-        currentUser={appCurrentUser} 
-      />
+      {/* Use the new EditLeadDialog component */}
+      {appSelectedLead && (
+        <EditLeadDialog
+          lead={appSelectedLead}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={handleSaveLead}
+          onDelete={handleDeleteLead}
+          users={appUsers}
+          currentUser={appCurrentUser} 
+        />
+      )}
       
       <TodoList
         isOpen={isTodoListOpen}
