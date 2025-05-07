@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Lead, User } from '../types';
 import { PlusCircle, UserRound } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import DateInput from './DateInput';
 
 interface AddLeadButtonProps {
   onAddLead: (lead: Omit<Lead, 'id'>) => void;
@@ -49,26 +50,13 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     }));
   };
 
-  // Improved date change handler
-  const handleDateChange = (field: string, value: string) => {
-    try {
-      console.log(`Setting ${field} with input value:`, value);
-      
-      let dateValue = null;
-      
-      if (value && value.trim() !== '') {
-        // Parse the datetime-local input value and convert to ISO string
-        dateValue = new Date(value).toISOString();
-        console.log(`Converted ${field} to:`, dateValue);
-      }
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        [field]: dateValue
-      }));
-    } catch (error) {
-      console.error(`Error processing date for ${field}:`, error);
-    }
+  // Date change handler
+  const handleDateChange = (field: string, value: string | null) => {
+    console.log(`Setting ${field} with value:`, value);
+    setFormData(prev => ({ 
+      ...prev, 
+      [field]: value
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,19 +94,6 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
     });
     
     setIsOpen(false);
-  };
-
-  // Helper function to format date for datetime-local input
-  const formatDateForInput = (dateStr: string | null | undefined): string => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      // Format as YYYY-MM-DDThh:mm (format required by datetime-local)
-      return date.toISOString().slice(0, 16);
-    } catch (e) {
-      console.error("Error formatting date:", e);
-      return '';
-    }
   };
 
   return (
@@ -200,42 +175,24 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="demoDate">
-                Demo Date
-              </label>
-              <Input
-                type="datetime-local"
-                value={formatDateForInput(formData.demoDate)}
-                onChange={(e) => handleDateChange('demoDate', e.target.value)}
-                className="w-full"
-              />
-            </div>
+            <DateInput
+              label="Demo Date"
+              value={formData.demoDate}
+              onChange={(value) => handleDateChange('demoDate', value)}
+            />
 
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="signupDate">
-                Signup Date
-              </label>
-              <Input
-                type="datetime-local"
-                value={formatDateForInput(formData.signupDate)}
-                onChange={(e) => handleDateChange('signupDate', e.target.value)}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="nextFollowUp">
-              Next Follow-Up
-            </label>
-            <Input
-              type="datetime-local"
-              value={formatDateForInput(formData.nextFollowUp)}
-              onChange={(e) => handleDateChange('nextFollowUp', e.target.value)}
-              className="w-full"
+            <DateInput
+              label="Signup Date"
+              value={formData.signupDate}
+              onChange={(value) => handleDateChange('signupDate', value)}
             />
           </div>
+
+          <DateInput
+            label="Next Follow-Up"
+            value={formData.nextFollowUp}
+            onChange={(value) => handleDateChange('nextFollowUp', value)}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div>

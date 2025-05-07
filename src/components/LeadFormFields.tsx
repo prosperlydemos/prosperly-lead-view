@@ -37,6 +37,9 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
     }
   };
 
+  // Log form data to help debug
+  console.log("LeadFormFields formData:", formData);
+
   return (
     <div className="space-y-4">
       <div>
@@ -115,20 +118,29 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
         <DateInput 
           label="Demo Date"
           value={formData.demoDate}
-          onChange={(value) => onDateChange('demoDate', value)}
+          onChange={(value) => {
+            console.log("Demo date changing to:", value);
+            onDateChange('demoDate', value);
+          }}
         />
         
         <DateInput 
           label="Signup Date"
           value={formData.signupDate}
-          onChange={(value) => onDateChange('signupDate', value)}
+          onChange={(value) => {
+            console.log("Signup date changing to:", value);
+            onDateChange('signupDate', value);
+          }}
         />
       </div>
       
       <DateInput 
         label="Next Follow-Up"
         value={formData.nextFollowUp}
-        onChange={(value) => onDateChange('nextFollowUp', value)}
+        onChange={(value) => {
+          console.log("Next follow-up changing to:", value);
+          onDateChange('nextFollowUp', value);
+        }}
       />
       
       <div className="grid grid-cols-2 gap-4">
