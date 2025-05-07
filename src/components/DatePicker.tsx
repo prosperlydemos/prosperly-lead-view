@@ -46,7 +46,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
           selected={date}
           onSelect={onSelect}
           initialFocus
-          className="pointer-events-auto"
         />
       </PopoverContent>
     </Popover>
