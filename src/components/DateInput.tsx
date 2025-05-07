@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import DatePicker from './DatePicker';
 import { parseDateToISO } from '@/utils/dateUtils';
 
@@ -33,35 +32,15 @@ const DateInput: React.FC<DateInputProps> = ({
     onChange(isoDate);
   };
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log("DateInput clearing value");
-    onChange(null);
-  };
-
   return (
     <div className={className}>
       <label className="block text-sm font-medium mb-1">{label}</label>
-      <div className="flex gap-2">
-        <div className="w-full">
-          <DatePicker
-            date={dateValue}
-            onSelect={handleChange}
-            placeholder="Select date"
-          />
-        </div>
-        {value && (
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="icon"
-            onClick={handleClear}
-            tabIndex={0}
-          >
-            <span className="sr-only">Clear</span>
-            <span aria-hidden="true">×</span>
-          </Button>
-        )}
+      <div className="w-full">
+        <DatePicker
+          date={dateValue}
+          onSelect={handleChange}
+          placeholder="Select date"
+        />
       </div>
     </div>
   );
