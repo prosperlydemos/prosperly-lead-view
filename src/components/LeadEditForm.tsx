@@ -170,8 +170,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           <DialogTitle>Edit Lead</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 pointer-events-auto" onClick={handleStopPropagation}>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4" onClick={handleStopPropagation}>
+          <form onSubmit={handleSubmit} className="space-y-4" onClick={handleStopPropagation}>
             <LeadFormFields 
               formData={formData}
               onChange={handleFieldChange}

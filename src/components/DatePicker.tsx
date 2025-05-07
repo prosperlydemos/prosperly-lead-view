@@ -21,14 +21,12 @@ const DatePicker: React.FC<DatePickerProps> = ({
   placeholder = "Select date"
 }) => {
   const handleSelect = (newDate: Date | undefined) => {
-    // Stop event propagation
     if (newDate) {
-      // Ensure we're working with local timezone
+      // Create date in local timezone
       const localDate = new Date(
         newDate.getFullYear(),
         newDate.getMonth(),
-        newDate.getDate(),
-        0, 0, 0, 0
+        newDate.getDate()
       );
       onSelect(localDate);
     } else {
@@ -50,12 +48,12 @@ const DatePicker: React.FC<DatePickerProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? formatDateForDisplay(date.toISOString()) : <span>{placeholder}</span>}
+          {date ? formatDateForDisplay(date.toISOString()) : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent 
         className="w-auto p-0" 
-        align="start"
+        align="start" 
         sideOffset={4}
         onClick={(e) => e.stopPropagation()}
       >

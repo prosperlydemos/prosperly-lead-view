@@ -18,7 +18,7 @@ const DateInput: React.FC<DateInputProps> = ({
   className 
 }) => {
   // Convert ISO string (YYYY-MM-DD) to Date object for the DatePicker
-  const dateValue = value ? new Date(value + 'T00:00:00') : undefined;
+  const dateValue = value ? new Date(value) : undefined;
   
   const handleChange = (date: Date | undefined) => {
     if (!date) {
@@ -32,7 +32,7 @@ const DateInput: React.FC<DateInputProps> = ({
   };
 
   return (
-    <div className={className}>
+    <div className={className} onClick={(e) => e.stopPropagation()}>
       <label className="block text-sm font-medium mb-1">{label}</label>
       <div className="flex gap-2">
         <div className="w-full">
@@ -47,7 +47,10 @@ const DateInput: React.FC<DateInputProps> = ({
             type="button" 
             variant="outline" 
             size="icon"
-            onClick={() => onChange(null)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(null);
+            }}
           >
             <span className="sr-only">Clear</span>
             <span aria-hidden="true">×</span>
