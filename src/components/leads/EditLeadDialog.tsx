@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -49,15 +48,14 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [formKey, setFormKey] = useState(Date.now());
   const [currentLead, setCurrentLead] = useState<Lead>(lead);
   
-  // Reset form key when dialog opens to force re-render with fresh data
-  // Add back the lead dependency to ensure the form is updated when lead changes
+  // Only update when dialog opens to prevent re-render loops
   useEffect(() => {
-    if (isOpen && lead) {
+    if (isOpen) {
       console.log('Dialog opened with lead data:', lead);
       setCurrentLead(lead);
       setFormKey(Date.now());
     }
-  }, [isOpen, lead]);  // Depend on both isOpen and lead
+  }, [isOpen, lead.id]); // Only depend on isOpen and lead.id to prevent unnecessary updates
 
   const handleSubmit = async (formData: Partial<Lead>) => {
     if (!isOpen) return; // Prevent submission if dialog is closing/closed

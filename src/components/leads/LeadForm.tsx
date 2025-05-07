@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -24,30 +23,29 @@ const LeadForm: React.FC<LeadFormProps> = ({
   onCancel,
   isSubmitting = false
 }) => {
-  // Initialize form data directly from initialData
-  const [formData, setFormData] = useState<Partial<Lead>>(() => ({
-    contactName: '',
-    email: '',
-    businessName: '',
-    leadSource: '',
-    setupFee: 0,
-    mrr: 0,
-    demoDate: null,
-    signupDate: null,
-    status: 'Demo Scheduled',
-    ownerId: currentUser.id,
-    crm: '',
-    nextFollowUp: null,
-    value: 0,
-    ...(initialData || {}) // Spread initialData if available
-  }));
+  // Initialize form data only once when component mounts
+  const [formData, setFormData] = useState<Partial<Lead>>(() => {
+    const defaultData = {
+      contactName: '',
+      email: '',
+      businessName: '',
+      leadSource: '',
+      setupFee: 0,
+      mrr: 0,
+      demoDate: null,
+      signupDate: null,
+      status: 'Demo Scheduled',
+      ownerId: currentUser.id,
+      crm: '',
+      nextFollowUp: null,
+      value: 0,
+    };
+    
+    // Merge initialData with defaultData
+    return initialData ? { ...defaultData, ...initialData } : defaultData;
+  });
 
-  // Add a useEffect to log when initialData changes
-  useEffect(() => {
-    console.log('LeadForm initialData changed:', initialData);
-  }, [initialData]);
-
-  // Log form data when it changes
+  // Log form data when it changes for debugging
   console.log('Current formData in LeadForm:', formData);
 
   // Handle text input changes with enhanced logging
