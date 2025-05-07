@@ -17,7 +17,7 @@ const DateInput: React.FC<DateInputProps> = ({
   onChange,
   className 
 }) => {
-  // Convert ISO string (YYYY-MM-DD) to Date object for the DatePicker
+  // Convert ISO string to Date object for the DatePicker
   const dateValue = value ? new Date(value) : undefined;
   
   const handleChange = (date: Date | undefined) => {
