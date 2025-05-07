@@ -33,20 +33,23 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    console.log(`Field ${name} changed to: ${value}`);
+    
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'setupFee' || name === 'mrr' ? Number(value) : value
+      [name]: name === 'setupFee' || name === 'mrr' ? parseFloat(value) : value
     }));
   };
 
   const handleOwnerChange = (ownerId: string) => {
+    console.log(`Owner changed to: ${ownerId}`);
     setFormData(prev => ({
       ...prev,
       ownerId
     }));
   };
 
-  // New date change handler with improved date handling
+  // Improved date change handler
   const handleDateChange = (field: string, value: string) => {
     try {
       console.log(`Setting ${field} with input value:`, value);
@@ -71,15 +74,18 @@ const AddLeadButton: React.FC<AddLeadButtonProps> = ({ onAddLead, users, current
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Calculate value based on MRR if not set
+    const calculatedValue = formData.value || (formData.mrr ? formData.mrr * 12 : 0);
+    
     // Log what we're about to save
-    console.log('Adding lead with dates:', {
-      demoDate: formData.demoDate,
-      signupDate: formData.signupDate,
-      nextFollowUp: formData.nextFollowUp
+    console.log('Adding lead with data:', {
+      ...formData,
+      value: calculatedValue
     });
     
     onAddLead({
       ...formData,
+      value: calculatedValue,
       status: 'Demo Scheduled' // Ensure status is always Demo Scheduled for new leads
     });
     

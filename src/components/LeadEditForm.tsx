@@ -12,6 +12,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 
 interface LeadEditFormProps {
   lead: Lead | null;
@@ -57,17 +58,20 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   }, [formData.status, lead]);
 
-  // Input field handler
+  // Input field handler - ensure this properly updates the state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    console.log(`Field ${name} changed to: ${value}`);
+    
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'setupFee' || name === 'mrr' ? Number(value) : value
+      [name]: name === 'setupFee' || name === 'mrr' ? parseFloat(value) : value
     }));
   };
 
   // Status field handler
   const handleStatusChange = (status: LeadStatus) => {
+    console.log(`Status changed to: ${status}`);
     const updates: Partial<Lead> = { status };
     
     if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
@@ -84,6 +88,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
 
   // Owner change handler
   const handleOwnerChange = (ownerId: string) => {
+    console.log(`Owner changed to: ${ownerId}`);
     setFormData(prev => ({ ...prev, ownerId }));
   };
 
@@ -137,6 +142,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     
     if (lead && formData) {
       // Log what we're about to save
+      console.log('Saving lead with data:', formData);
       console.log('Saving lead with dates:', {
         demoDate: formData.demoDate,
         signupDate: formData.signupDate,
@@ -145,7 +151,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       });
       
       // Create a new object to ensure we don't have reference issues
-      const updatedLead = { ...lead, ...JSON.parse(JSON.stringify(formData)) };
+      const updatedLead = { ...lead, ...formData } as Lead;
       onSave(updatedLead);
       onClose();
       
@@ -184,7 +190,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Lead</DialogTitle>
@@ -247,7 +255,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           <div>
             <label className="block text-sm font-medium mb-1">Lead Status</label>
             <Select 
-              value={formData.status} 
+              value={formData.status || 'Demo Scheduled'} 
               onValueChange={(value) => handleStatusChange(value as LeadStatus)}
             >
               <SelectTrigger>
@@ -344,7 +352,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 id="setupFee"
                 name="setupFee"
                 type="number"
-                value={formData.setupFee || 0}
+                value={formData.setupFee !== undefined ? formData.setupFee : 0}
                 onChange={handleChange}
               />
             </div>
@@ -355,7 +363,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 id="mrr"
                 name="mrr"
                 type="number"
-                value={formData.mrr || 0}
+                value={formData.mrr !== undefined ? formData.mrr : 0}
                 onChange={handleChange}
               />
             </div>
