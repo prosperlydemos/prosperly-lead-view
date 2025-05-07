@@ -100,7 +100,8 @@ const Index: React.FC = () => {
         name: userData.name,
         email: userData.email,
         is_admin: userData.isAdmin,
-        commission_rules: userData.commissionRules || []
+        // Convert the commission rules to a JSON-compatible format
+        commission_rules: userData.commissionRules ? JSON.parse(JSON.stringify(userData.commissionRules)) : null
       };
       
       const { data, error } = await supabase
@@ -133,7 +134,8 @@ const Index: React.FC = () => {
         name: updatedUser.name,
         email: updatedUser.email,
         is_admin: updatedUser.isAdmin,
-        commission_rules: updatedUser.commissionRules || []
+        // Convert the commission rules to a JSON-compatible format
+        commission_rules: updatedUser.commissionRules ? JSON.parse(JSON.stringify(updatedUser.commissionRules)) : null
       };
       
       const { data, error } = await supabase
