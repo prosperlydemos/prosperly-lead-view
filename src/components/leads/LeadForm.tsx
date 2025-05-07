@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,7 +26,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
 }) => {
   // Initialize form data only once when component mounts
   const [formData, setFormData] = useState<Partial<Lead>>(() => {
-    const defaultData = {
+    const defaultData: Partial<Lead> = {
       contactName: '',
       email: '',
       businessName: '',
@@ -34,7 +35,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
       mrr: 0,
       demoDate: null,
       signupDate: null,
-      status: 'Demo Scheduled',
+      status: 'Demo Scheduled' as LeadStatus,
       ownerId: currentUser.id,
       crm: '',
       nextFollowUp: null,
