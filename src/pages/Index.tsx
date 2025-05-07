@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
-import LeadEditForm from '../components/LeadEditForm';
 import TodoList from '../components/TodoList';
 import { Note, Lead, mapSupabaseLeadToAppLead, mapAppLeadToSupabaseLead, Profile } from '../types/supabase';
 import { toast } from "@/components/ui/use-toast";
@@ -13,8 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
 import { Lead as AppLead, LeadStatus, User } from '../types/index';
-import AddLeadButton from '../components/AddLeadButton';
 import UserManagement from '../components/UserManagement';
+import AddLeadDialog from '../components/AddLeadDialog';
+import EditLeadDialog from '../components/EditLeadDialog';
 
 interface TodoItem {
   id: string;
@@ -207,6 +207,38 @@ const Index: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
+  const handleAddLead = async (newLeadData: Omit<AppLead, 'id'>) => {
+    if (!currentUser) return;
+    
+    try {
+      // Prepare data for Supabase
+      const supabaseNewLead = mapAppLeadToSupabaseLead({
+        ...newLeadData as AppLead,
+        id: '' // Placeholder ID that will be replaced by Supabase
+      });
+      
+      const { data, error } = await supabase
+        .from('leads')
+        .insert(supabaseNewLead)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      setLeads(prev => [...prev, data]);
+      
+      return data;
+    } catch (error) {
+      console.error('Error adding lead:', error);
+      toast({
+        title: "Error adding lead",
+        description: "Failed to add new lead",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const handleSaveLead = async (updatedLead: AppLead) => {
     try {
       const supabaseUpdatedLead = mapAppLeadToSupabaseLead(updatedLead);
@@ -223,13 +255,6 @@ const Index: React.FC = () => {
       setLeads(prev => 
         prev.map(lead => lead.id === updatedLead.id ? data : lead)
       );
-      
-      setIsEditModalOpen(false);
-      
-      toast({
-        title: "Lead updated",
-        description: "Lead information has been updated successfully."
-      });
     } catch (error) {
       console.error('Error updating lead:', error);
       toast({
@@ -237,6 +262,7 @@ const Index: React.FC = () => {
         description: "Failed to update the lead information",
         variant: "destructive"
       });
+      throw error;
     }
   };
   
@@ -268,6 +294,7 @@ const Index: React.FC = () => {
         description: "Failed to delete the lead",
         variant: "destructive"
       });
+      throw error;
     }
   };
   
@@ -299,13 +326,6 @@ const Index: React.FC = () => {
     item => !item.completed && item.leadId
   ).length;
   
-  // Count leads by status
-  const leadStatusCounts = leads.reduce((acc, lead) => {
-    if (!acc[lead.status]) acc[lead.status] = 0;
-    acc[lead.status]++;
-    return acc;
-  }, {} as Record<string, number>);
-  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -333,130 +353,6 @@ const Index: React.FC = () => {
     isAdmin: currentUser?.is_admin || false
   };
   
-  const handleAddLead = async (newLead: Omit<AppLead, 'id'>) => {
-    if (!currentUser) return;
-    
-    try {
-      // Ensure all required fields are set for Supabase schema
-      const leadToInsert = {
-        ...newLead as AppLead,
-        id: undefined, // Let Supabase generate the ID
-        contactName: newLead.contactName || 'New Contact', // Ensure this is never empty
-        status: newLead.status || 'Demo Scheduled' as LeadStatus, // Ensure status is set
-        ownerId: newLead.ownerId || currentUser.id, // Ensure owner is set
-        value: newLead.value || (newLead.mrr ? newLead.mrr * 12 : 0) // Calculate value if not provided
-      };
-      
-      const supabaseNewLead = mapAppLeadToSupabaseLead(leadToInsert);
-      
-      const { data, error } = await supabase
-        .from('leads')
-        .insert(supabaseNewLead)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      
-      setLeads(prev => [...prev, data]);
-      
-      toast({
-        title: "Lead added",
-        description: "New lead has been added successfully."
-      });
-    } catch (error) {
-      console.error('Error adding lead:', error);
-      toast({
-        title: "Error adding lead",
-        description: "Failed to add new lead",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const onAddUser = async (userData: Omit<User, 'id'>) => {
-    try {
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        email_confirm: true,
-        user_metadata: { name: userData.name, is_admin: userData.isAdmin }
-      });
-      
-      if (error) throw error;
-      
-      // Refresh users list
-      const { data: updatedUsers } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (updatedUsers) {
-        setUsers(updatedUsers);
-      }
-      
-      return data.user;
-    } catch (error) {
-      console.error('Error adding user:', error);
-      toast({
-        title: "Error adding user",
-        description: `Failed to add user: ${(error as Error).message}`,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const onUpdateUser = async (updatedUser: User) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          name: updatedUser.name,
-          is_admin: updatedUser.isAdmin
-        })
-        .eq('id', updatedUser.id);
-        
-      if (error) throw error;
-      
-      // Refresh users list
-      const { data: updatedUsers } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (updatedUsers) {
-        setUsers(updatedUsers);
-      }
-    } catch (error) {
-      console.error('Error updating user:', error);
-      toast({
-        title: "Error updating user",
-        description: `Failed to update user: ${(error as Error).message}`,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const onDeleteUser = async (userId: string) => {
-    try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (error) throw error;
-      
-      // Refresh users list
-      const { data: updatedUsers } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (updatedUsers) {
-        setUsers(updatedUsers);
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      toast({
-        title: "Error deleting user",
-        description: `Failed to delete user: ${(error as Error).message}`,
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -465,11 +361,15 @@ const Index: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold">Prosperly Lead View</h1>
               <div className="flex gap-2 mt-2">
-                {Object.entries(leadStatusCounts).map(([status, count]) => (
+                {Object.entries(leads.reduce((acc, lead) => {
+                  if (!acc[lead.status]) acc[lead.status] = 0;
+                  acc[lead.status]++;
+                  return acc;
+                }, {} as Record<string, number>)).map(([status, count]) => (
                   <Badge key={status} variant="outline" className={
                     status === 'Demo Scheduled' ? 'bg-white border' : 
-                    status === 'Warm' ? 'bg-blue-50' :
-                    status === 'Hot' ? 'bg-red-50' :
+                    status === 'Warm Lead' ? 'bg-blue-50' :
+                    status === 'Hot Lead' ? 'bg-red-50' :
                     status === 'Closed' ? 'bg-green-50' : ''
                   }>
                     {status}: {count}
@@ -508,7 +408,7 @@ const Index: React.FC = () => {
       
       <main className="container py-6">
         <div className="flex justify-end mb-4">
-          <AddLeadButton 
+          <AddLeadDialog
             onAddLead={handleAddLead}
             users={appUsers}
             currentUser={appCurrentUser} 
@@ -531,7 +431,7 @@ const Index: React.FC = () => {
           </div>
           <div className="border-l pl-6">
             <NoteSection 
-              lead={selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null}
+              lead={appSelectedLead}
               notes={notes.filter(note => note.lead_id === selectedLeadId)}
               onAddNote={handleAddNote}
               onStatusChange={handleStatusChange}
@@ -541,7 +441,7 @@ const Index: React.FC = () => {
         </div>
       </main>
 
-      <LeadEditForm
+      <EditLeadDialog
         lead={appSelectedLead}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
