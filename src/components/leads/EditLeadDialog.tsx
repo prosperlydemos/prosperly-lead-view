@@ -45,20 +45,24 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
-  const [formKey, setFormKey] = useState(Date.now()); // Add a key to force re-render
-
-  // Add logging when lead data changes and reset form key when dialog opens
+  const [formKey, setFormKey] = useState(Date.now());
+  
+  // Reset form key when dialog opens to force re-render
   useEffect(() => {
-    if (lead && isOpen) {
+    if (isOpen) {
       console.log('Loading lead data:', lead);
-      setFormKey(Date.now()); // Reset form key when dialog opens to force re-render
+      setFormKey(Date.now());
     }
   }, [lead, isOpen]);
 
   const handleSubmit = async (formData: Partial<Lead>) => {
+    if (!isOpen) return; // Prevent submission if dialog is closing/closed
+    
     try {
       setIsSubmitting(true);
       console.log('Form data before update:', formData);
+      
+      // Create updated lead object with proper type handling
       const updatedLead: Lead = {
         ...lead,
         ...formData,
@@ -66,50 +70,84 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         mrr: typeof formData.mrr === 'number' ? formData.mrr : 0,
         value: typeof formData.value === 'number' ? formData.value : 0,
       };
+      
       console.log('Updated lead:', updatedLead);
       
+      // Save the updated lead
       await onSave(updatedLead);
-      onClose();
-      toast({
-        title: 'Lead updated successfully',
-        description: `Updated ${updatedLead.contactName}'s information`,
-      });
+      
+      // Only proceed with toast and close if the component is still mounted
+      if (isOpen) {
+        toast({
+          title: 'Lead updated successfully',
+          description: `Updated ${updatedLead.contactName}'s information`,
+        });
+        onClose();
+      }
     } catch (error) {
       console.error('Error updating lead:', error);
-      toast({
-        title: 'Error updating lead',
-        description: 'There was a problem updating the lead information',
-        variant: 'destructive',
-      });
+      
+      // Only show toast if the component is still mounted
+      if (isOpen) {
+        toast({
+          title: 'Error updating lead',
+          description: 'There was a problem updating the lead information',
+          variant: 'destructive',
+        });
+      }
     } finally {
-      setIsSubmitting(false);
+      // Only update state if the component is still mounted
+      if (isOpen) {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleDelete = async () => {
-    if (onDelete && lead) {
-      try {
-        await onDelete(lead.id);
+    if (!onDelete || !lead || !isOpen) return;
+    
+    try {
+      setIsSubmitting(true);
+      await onDelete(lead.id);
+      
+      // Only proceed with UI updates if component is still mounted
+      if (isOpen) {
         setDeleteDialogOpen(false);
-        onClose();
         toast({
           title: 'Lead deleted',
           description: `${lead.contactName}'s information has been removed`,
         });
-      } catch (error) {
-        console.error('Error deleting lead:', error);
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      
+      // Only show toast if the component is still mounted
+      if (isOpen) {
         toast({
           title: 'Error deleting lead',
           description: 'There was a problem deleting the lead',
           variant: 'destructive',
         });
       }
+    } finally {
+      // Only update state if the component is still mounted
+      if (isOpen) {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  // Safe close function that checks submission state
+  const handleDialogClose = () => {
+    if (!isSubmitting) {
+      onClose();
     }
   };
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleDialogClose()}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Lead</DialogTitle>
@@ -118,7 +156,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
             {onDelete && (
               <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive">
+                  <Button variant="destructive" disabled={isSubmitting}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete Lead
                   </Button>
@@ -133,19 +171,19 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDelete} disabled={isSubmitting}>Delete</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             )}
           </div>
           <LeadForm
-            key={formKey} // Add key to force re-render when lead changes
+            key={formKey}
             initialData={lead}
             users={users}
             currentUser={currentUser}
             onSubmit={handleSubmit}
-            onCancel={onClose}
+            onCancel={handleDialogClose}
             isSubmitting={isSubmitting}
           />
         </DialogContent>
