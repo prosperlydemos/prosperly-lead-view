@@ -37,7 +37,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-auto p-0 z-[200]" 
+        className="w-auto p-0" 
         align="start"
         sideOffset={4}
       >
