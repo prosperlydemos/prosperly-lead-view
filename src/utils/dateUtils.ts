@@ -1,5 +1,9 @@
 
 import { format, parse } from "date-fns";
+import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+
+// Eastern Time Zone identifier
+const TIMEZONE = "America/New_York";
 
 export const formatDateForInput = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '';
@@ -10,7 +14,10 @@ export const formatDateForInput = (dateStr: string | null | undefined): string =
       console.error("Invalid date format:", dateStr);
       return '';
     }
-    return format(date, "yyyy-MM-dd");
+    
+    // Convert to Eastern Time
+    const easternDate = utcToZonedTime(date, TIMEZONE);
+    return format(easternDate, "yyyy-MM-dd");
   } catch (e) {
     console.error("Error formatting date:", e);
     return '';
@@ -26,7 +33,10 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
       console.error("Invalid date format for display:", dateStr);
       return '';
     }
-    return format(date, "MMM d, yyyy");
+    
+    // Convert to Eastern Time
+    const easternDate = utcToZonedTime(date, TIMEZONE);
+    return format(easternDate, "MMM d, yyyy");
   } catch (e) {
     console.error("Error formatting date for display:", e);
     return '';
@@ -43,14 +53,17 @@ export const parseDateToISO = (date: Date | string | null): string | null => {
       return null;
     }
     
-    // Create date in local timezone
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
+    // Convert to Eastern Time
+    const easternDate = utcToZonedTime(dateObj, TIMEZONE);
+    
+    // Create date in Eastern timezone
+    const year = easternDate.getFullYear();
+    const month = String(easternDate.getMonth() + 1).padStart(2, '0');
+    const day = String(easternDate.getDate()).padStart(2, '0');
     
     // Format as YYYY-MM-DD
     const isoDate = `${year}-${month}-${day}`;
-    console.log(`Converting date: ${dateObj} to ISO format: ${isoDate}`);
+    console.log(`Converting date: ${dateObj} to Eastern Time ISO format: ${isoDate}`);
     
     return isoDate;
   } catch (e) {
