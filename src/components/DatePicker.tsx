@@ -23,6 +23,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const handleDateSelect = (selectedDate: Date | undefined) => {
     console.log("Date selected in DatePicker:", selectedDate);
+    // Prevent event propagation to ensure the dialog doesn't close
     onSelect(selectedDate);
   };
 
@@ -43,11 +44,14 @@ const DatePicker: React.FC<DatePickerProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-auto p-0 z-[100]" 
+        className="w-auto p-0 z-[200]" 
         align="start"
         sideOffset={4}
       >
-        <div onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Calendar
             mode="single"
             selected={date}

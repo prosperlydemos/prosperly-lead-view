@@ -44,7 +44,7 @@ const DateInput: React.FC<DateInputProps> = ({
     <div className={className}>
       <label className="block text-sm font-medium mb-1">{label}</label>
       <div className="flex gap-2">
-        <div className="w-full">
+        <div className="w-full pointer-events-auto">
           <DatePicker
             date={dateValue}
             onSelect={handleChange}
@@ -58,6 +58,7 @@ const DateInput: React.FC<DateInputProps> = ({
             size="icon"
             onClick={handleClear}
             tabIndex={0}
+            className="pointer-events-auto"
           >
             <span className="sr-only">Clear</span>
             <span aria-hidden="true">×</span>

@@ -40,7 +40,7 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
       console.error("Invalid date format for display:", dateStr);
       return '';
     }
-    return format(date, "PPP"); // e.g., "May 7, 2025"
+    return format(date, "MMM d, yyyy"); // e.g., "May 7, 2025"
   } catch (e) {
     console.error("Error formatting date for display:", e);
     return '';
@@ -56,6 +56,7 @@ export const parseDateToISO = (date: Date | string | null): string | null => {
   if (!date) return null;
   
   try {
+    console.log("parseDateToISO input:", date);
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(dateObj.getTime())) {
       console.error("Invalid date for ISO conversion:", date);

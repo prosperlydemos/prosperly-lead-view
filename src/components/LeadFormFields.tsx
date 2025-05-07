@@ -30,6 +30,9 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     
+    // Add debugging logs
+    console.log(`Input change on field ${name}, value: ${value}, type: ${type}`);
+    
     if (type === 'number') {
       onChange(name, value === '' ? 0 : Number(value));
     } else {
@@ -41,7 +44,7 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
   console.log("LeadFormFields formData:", formData);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pointer-events-auto">
       <div>
         <label className="block text-sm font-medium mb-1" htmlFor="contactName">Contact Name</label>
         <Input 
@@ -180,7 +183,7 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
             <SelectTrigger>
               <SelectValue placeholder="Select team member" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[200]">
               {users.map(user => (
                 <SelectItem key={user.id} value={user.id}>
                   {user.name} {user.id === currentUser.id ? '(You)' : ''}

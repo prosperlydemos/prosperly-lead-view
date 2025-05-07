@@ -94,6 +94,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   // Form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     
     if (lead && formData) {
       try {
