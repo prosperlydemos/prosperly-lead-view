@@ -5,14 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lead, User, LeadStatus } from '../types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Trash2, UserRound, Calendar, Clock } from 'lucide-react';
+import { Trash2, UserRound } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 
 interface LeadEditFormProps {
   lead: Lead | null;
@@ -40,143 +35,97 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   React.useEffect(() => {
     if (lead) {
       console.log("Loading lead data:", lead);
+      // Create a deep clone of the lead to avoid reference issues
       setFormData(JSON.parse(JSON.stringify(lead)));
     }
-  }, [lead, isOpen]);
-  
-  // Watch for status changes to update closedAt date and signupDate
-  React.useEffect(() => {
-    if (formData.status === 'Closed' && lead && lead.status !== 'Closed') {
-      const now = new Date().toISOString();
+  }, [lead]);
+
+  // Handle input change for text and number fields
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+    console.log(`Field ${name} changed to:`, value);
+    
+    // For numeric fields, convert to number
+    if (type === 'number') {
       setFormData(prev => ({
         ...prev,
-        closedAt: now,
-        signupDate: now
+        [name]: value === '' ? 0 : Number(value)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
       }));
     }
-  }, [formData.status, lead]);
-
-  // Input field handler with direct value setting to ensure updates
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    console.log(`Field ${name} changed to: ${value}`);
-    
-    if (name === 'setupFee' || name === 'mrr') {
-      const numValue = value === '' ? 0 : parseFloat(value);
-      setFormData({
-        ...formData,
-        [name]: numValue
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
-    }
-    
-    // Debug to verify state updates
-    setTimeout(() => console.log(`Updated ${name} in formData:`, formData), 10);
   };
 
-  // Status field handler
+  // Handle status change
   const handleStatusChange = (status: LeadStatus) => {
     console.log(`Status changed to: ${status}`);
-    const updates: Partial<Lead> = { status };
     
-    if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
-      const now = new Date().toISOString();
-      updates.closedAt = now;
-      updates.signupDate = now; 
-    }
-    
-    setFormData({
-      ...formData,
-      ...updates
+    setFormData(prev => {
+      const updates: Partial<Lead> = { ...prev, status };
+      
+      // If changing to Closed status, update closedAt and signupDate
+      if (status === 'Closed' && (!prev.closedAt || prev.status !== 'Closed')) {
+        const now = new Date().toISOString();
+        updates.closedAt = now;
+        updates.signupDate = now;
+      }
+      
+      return updates;
     });
   };
 
-  // Owner change handler
+  // Handle owner change
   const handleOwnerChange = (ownerId: string) => {
     console.log(`Owner changed to: ${ownerId}`);
-    setFormData({
-      ...formData,
+    
+    setFormData(prev => ({
+      ...prev,
       ownerId
-    });
+    }));
   };
 
-  // Date change handler - completely revised to fix date saving issues
+  // Handle date change
   const handleDateChange = (fieldName: string, value: string) => {
-    try {
-      console.log(`Setting ${fieldName} with input value:`, value);
-      
-      let dateValue = null;
-      
-      if (value && value.trim() !== '') {
-        // Parse the datetime-local input value and convert to ISO string
-        dateValue = new Date(value).toISOString();
-        console.log(`Converted ${fieldName} to:`, dateValue);
-      }
-      
-      // Use direct object assignment instead of functional updates to ensure immediate update
-      setFormData({
-        ...formData,
-        [fieldName]: dateValue
-      });
-      
-      // Debug to verify state updates
-      setTimeout(() => console.log(`Updated ${fieldName} in formData:`, formData), 10);
-      
-      // If updating signupDate and the lead is closed, also update closedAt
-      if (fieldName === 'signupDate' && formData.status === 'Closed') {
-        setFormData(prev => ({
-          ...prev,
-          closedAt: dateValue
-        }));
-      }
-      // If updating closedAt and the lead is closed, also update signupDate
-      else if (fieldName === 'closedAt' && formData.status === 'Closed') {
-        setFormData(prev => ({
-          ...prev,
-          signupDate: dateValue
-        }));
-      }
-    } catch (error) {
-      console.error(`Error processing date for ${fieldName}:`, error);
-      toast({
-        title: "Invalid date format",
-        description: "Please enter a valid date and time",
-        variant: "destructive"
-      });
+    console.log(`Setting ${fieldName} with input value:`, value);
+    
+    let dateValue = null;
+    if (value && value.trim() !== '') {
+      dateValue = new Date(value).toISOString();
+      console.log(`Converted ${fieldName} to:`, dateValue);
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: dateValue
+    }));
+    
+    // Synchronize signupDate and closedAt for closed leads
+    if (fieldName === 'signupDate' && formData.status === 'Closed') {
+      setFormData(prev => ({
+        ...prev,
+        closedAt: dateValue
+      }));
+    } 
+    else if (fieldName === 'closedAt' && formData.status === 'Closed') {
+      setFormData(prev => ({
+        ...prev,
+        signupDate: dateValue
+      }));
     }
   };
 
-  // Form submission handler
+  // Form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (lead && formData) {
-      // Deep clone to avoid reference issues
-      const clonedFormData = JSON.parse(JSON.stringify(formData));
+      // Create a deep clone to avoid reference issues
+      const updatedLead = JSON.parse(JSON.stringify(formData)) as Lead;
       
-      // Log what we're about to save
-      console.log('Saving lead with data:', clonedFormData);
-      console.log('Saving lead with dates:', {
-        demoDate: clonedFormData.demoDate,
-        signupDate: clonedFormData.signupDate,
-        nextFollowUp: clonedFormData.nextFollowUp,
-        closedAt: clonedFormData.closedAt
-      });
-      
-      // Create a new object by combining the original lead with form data
-      const updatedLead = { 
-        ...lead,
-        ...clonedFormData,
-        // Ensure numeric fields are numbers not strings
-        setupFee: typeof clonedFormData.setupFee === 'string' ? parseFloat(clonedFormData.setupFee) : clonedFormData.setupFee,
-        mrr: typeof clonedFormData.mrr === 'string' ? parseFloat(clonedFormData.mrr) : clonedFormData.mrr
-      } as Lead;
-      
-      console.log('Final lead being saved:', updatedLead);
+      console.log('Saving lead with data:', updatedLead);
       
       onSave(updatedLead);
       onClose();
@@ -188,7 +137,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   };
 
-  // Delete lead handler
+  // Delete lead
   const handleDelete = () => {
     if (lead) {
       onDelete(lead.id);
@@ -207,8 +156,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     if (!dateStr) return '';
     try {
       const date = new Date(dateStr);
-      // Format as YYYY-MM-DDThh:mm (format required by datetime-local)
-      return date.toISOString().slice(0, 16);
+      return date.toISOString().slice(0, 16); // Format as YYYY-MM-DDThh:mm
     } catch (e) {
       console.error("Error formatting date:", e);
       return '';
@@ -234,7 +182,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               id="contactName"
               name="contactName"
               value={formData.contactName || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
             />
           </div>
           
@@ -245,7 +193,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               name="email"
               type="email"
               value={formData.email || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
             />
           </div>
           
@@ -255,7 +203,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               id="businessName"
               name="businessName"
               value={formData.businessName || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
             />
           </div>
           
@@ -265,7 +213,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               id="crm"
               name="crm"
               value={formData.crm || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
               placeholder="e.g. Salesforce, HubSpot, etc."
             />
           </div>
@@ -276,7 +224,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               id="leadSource"
               name="leadSource"
               value={formData.leadSource || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
             />
           </div>
           
@@ -382,7 +330,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 name="setupFee"
                 type="number"
                 value={formData.setupFee !== undefined ? formData.setupFee : 0}
-                onChange={handleChange}
+                onChange={handleInputChange}
               />
             </div>
             
@@ -393,7 +341,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
                 name="mrr"
                 type="number"
                 value={formData.mrr !== undefined ? formData.mrr : 0}
-                onChange={handleChange}
+                onChange={handleInputChange}
               />
             </div>
           </div>
