@@ -66,12 +66,15 @@ export const useReportsData = (
       const endDate = endOfMonth(new Date(dateFilter.year, dateFilter.month));
       
       filtered = leads.filter(lead => {
-        // Check if the lead was created in the selected month/year
-        const createdDate = lead.created_at ? new Date(lead.created_at) : null;
+        // Check if the lead has relevant dates that fall within the filter range
+        // Use signupDate or demoDate instead of created_at since those are in our type definition
+        const demoDate = lead.demoDate ? new Date(lead.demoDate) : null;
+        const signupDate = lead.signupDate ? new Date(lead.signupDate) : null;
         const closedDate = lead.closedAt ? new Date(lead.closedAt) : null;
         
-        // Include if either created or closed in the selected month
-        return (createdDate && isWithinInterval(createdDate, { start: startDate, end: endDate })) || 
+        // Include if any relevant date is in the selected month
+        return (demoDate && isWithinInterval(demoDate, { start: startDate, end: endDate })) || 
+               (signupDate && isWithinInterval(signupDate, { start: startDate, end: endDate })) ||
                (closedDate && isWithinInterval(closedDate, { start: startDate, end: endDate }));
       });
       
