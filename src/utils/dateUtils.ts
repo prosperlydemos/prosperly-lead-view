@@ -48,9 +48,9 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
 };
 
 /**
- * Parse a date and convert to ISO format at midnight UTC
+ * Parse a date and convert to ISO format YYYY-MM-DD (without time component)
  * @param date Date object or string
- * @returns ISO date string at midnight UTC or null if invalid
+ * @returns ISO date string format YYYY-MM-DD or null if invalid
  */
 export const parseDateToISO = (date: Date | string | null): string | null => {
   if (!date) return null;
@@ -63,16 +63,16 @@ export const parseDateToISO = (date: Date | string | null): string | null => {
       return null;
     }
     
-    // Create date at midnight UTC - strip time component
+    // Create date in local timezone
     const year = dateObj.getFullYear();
-    const month = dateObj.getMonth();
-    const day = dateObj.getDate();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
     
-    // This creates a date at midnight UTC for the specified date
-    const utcDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-    console.log(`Converting date: ${dateObj} to UTC midnight: ${utcDate.toISOString()}`);
+    // Format as YYYY-MM-DD
+    const isoDate = `${year}-${month}-${day}`;
+    console.log(`Converting date: ${dateObj} to ISO format: ${isoDate}`);
     
-    return utcDate.toISOString();
+    return isoDate;
   } catch (e) {
     console.error("Error parsing date to ISO:", e);
     return null;

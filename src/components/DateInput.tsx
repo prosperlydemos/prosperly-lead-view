@@ -2,6 +2,7 @@
 import React from 'react';
 import DatePicker from './DatePicker';
 import { parseDateToISO } from '@/utils/dateUtils';
+import { Button } from './ui/button';
 
 interface DateInputProps {
   label: string;
@@ -16,8 +17,8 @@ const DateInput: React.FC<DateInputProps> = ({
   onChange,
   className 
 }) => {
-  // Convert ISO string to Date object for the DatePicker
-  const dateValue = value ? new Date(value) : undefined;
+  // Convert ISO string (YYYY-MM-DD) to Date object for the DatePicker
+  const dateValue = value ? new Date(value + 'T00:00:00') : undefined;
   
   const handleChange = (date: Date | undefined) => {
     if (!date) {
@@ -25,7 +26,7 @@ const DateInput: React.FC<DateInputProps> = ({
       return;
     }
     
-    // Convert date to ISO string at midnight UTC
+    // Convert date to ISO string (YYYY-MM-DD format)
     const isoDate = parseDateToISO(date);
     onChange(isoDate);
   };
@@ -33,12 +34,25 @@ const DateInput: React.FC<DateInputProps> = ({
   return (
     <div className={className}>
       <label className="block text-sm font-medium mb-1">{label}</label>
-      <div className="w-full">
-        <DatePicker
-          date={dateValue}
-          onSelect={handleChange}
-          placeholder="Select date"
-        />
+      <div className="flex gap-2">
+        <div className="w-full">
+          <DatePicker
+            date={dateValue}
+            onSelect={handleChange}
+            placeholder="Select date"
+          />
+        </div>
+        {value && (
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="icon"
+            onClick={() => onChange(null)}
+          >
+            <span className="sr-only">Clear</span>
+            <span aria-hidden="true">×</span>
+          </Button>
+        )}
       </div>
     </div>
   );
