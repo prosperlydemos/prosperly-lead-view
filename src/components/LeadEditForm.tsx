@@ -29,6 +29,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Initialize form data when lead changes or dialog opens
   useEffect(() => {
@@ -92,38 +93,49 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   };
 
   // Form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (lead && formData) {
-      try {
-        // Create a complete lead object by merging the original lead with form updates
-        const updatedLead: Lead = {
-          ...lead,
-          ...formData,
-          // Ensure numeric fields are numbers
-          setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : 0,
-          mrr: typeof formData.mrr === 'number' ? formData.mrr : 0,
-          value: typeof formData.value === 'number' ? formData.value : 0,
-        };
-        
-        console.log('Saving lead with data:', updatedLead);
-        
-        onSave(updatedLead);
-        onClose();
-        
-        toast({
-          title: "Lead updated successfully",
-          description: `Updated ${updatedLead.contactName}'s information`,
-        });
-      } catch (error) {
-        console.error("Error saving lead:", error);
-        toast({
-          title: "Error updating lead",
-          description: "There was a problem updating the lead information",
-          variant: "destructive",
-        });
-      }
+    if (!lead || !formData) {
+      toast({
+        title: "Error updating lead",
+        description: "Missing lead data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Create a complete lead object by merging the original lead with form updates
+      const updatedLead: Lead = {
+        ...lead,
+        ...formData,
+        // Ensure numeric fields are numbers
+        setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : 0,
+        mrr: typeof formData.mrr === 'number' ? formData.mrr : 0,
+        value: typeof formData.value === 'number' ? formData.value : 0,
+      };
+      
+      console.log('Saving lead with data:', updatedLead);
+      
+      onSave(updatedLead);
+      onClose();
+      
+      toast({
+        title: "Lead updated successfully",
+        description: `Updated ${updatedLead.contactName}'s information`,
+      });
+    } catch (error) {
+      console.error("Error saving lead:", error);
+      toast({
+        title: "Error updating lead",
+        description: "There was a problem updating the lead information",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -147,11 +159,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      modal={true}
     >
-      <DialogContent 
-        className="sm:max-w-[500px] overflow-y-auto max-h-[90vh] z-50"
-      >
+      <DialogContent className="sm:max-w-[500px] overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Edit Lead</DialogTitle>
         </DialogHeader>
@@ -201,7 +210,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               >
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
             </div>
           </DialogFooter>
         </form>

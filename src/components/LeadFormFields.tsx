@@ -30,18 +30,12 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     
-    // Add debugging logs
-    console.log(`Input change on field ${name}, value: ${value}, type: ${type}`);
-    
     if (type === 'number') {
       onChange(name, value === '' ? 0 : Number(value));
     } else {
       onChange(name, value);
     }
   };
-
-  // Log form data to help debug
-  console.log("LeadFormFields formData:", formData);
 
   return (
     <div className="space-y-4">
@@ -117,36 +111,27 @@ const LeadFormFields: React.FC<LeadFormFieldsProps> = ({
         </Select>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <DateInput 
           label="Demo Date"
           value={formData.demoDate}
-          onChange={(value) => {
-            console.log("Demo date changing to:", value);
-            onDateChange('demoDate', value);
-          }}
+          onChange={(value) => onDateChange('demoDate', value)}
         />
         
         <DateInput 
           label="Signup Date"
           value={formData.signupDate}
-          onChange={(value) => {
-            console.log("Signup date changing to:", value);
-            onDateChange('signupDate', value);
-          }}
+          onChange={(value) => onDateChange('signupDate', value)}
         />
       </div>
       
       <DateInput 
         label="Next Follow-Up"
         value={formData.nextFollowUp}
-        onChange={(value) => {
-          console.log("Next follow-up changing to:", value);
-          onDateChange('nextFollowUp', value);
-        }}
+        onChange={(value) => onDateChange('nextFollowUp', value)}
       />
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1" htmlFor="setupFee">Setup Fee ($)</label>
           <Input 
