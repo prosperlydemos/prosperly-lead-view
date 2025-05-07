@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -46,9 +46,17 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  // Add logging when lead data changes
+  useEffect(() => {
+    if (lead && isOpen) {
+      console.log('Loading lead data:', lead);
+    }
+  }, [lead, isOpen]);
+
   const handleSubmit = async (formData: Partial<Lead>) => {
     try {
       setIsSubmitting(true);
+      console.log('Form data before update:', formData);
       const updatedLead: Lead = {
         ...lead,
         ...formData,
@@ -56,6 +64,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         mrr: typeof formData.mrr === 'number' ? formData.mrr : 0,
         value: typeof formData.value === 'number' ? formData.value : 0,
       };
+      console.log('Updated lead:', updatedLead);
       
       await onSave(updatedLead);
       onClose();
