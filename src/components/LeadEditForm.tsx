@@ -52,7 +52,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     }
   }, [lead]);
   
-  // Watch for status changes to update closedAt date
+  // Watch for status changes to update closedAt date and signupDate when status changes to Closed
   React.useEffect(() => {
     if (formData.status === 'Closed' && lead && lead.status !== 'Closed') {
       const today = new Date();
@@ -60,7 +60,8 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       
       setFormData(prev => ({
         ...prev,
-        closedAt: formattedDate
+        closedAt: formattedDate,
+        signupDate: formattedDate // Set signup date to the same date as closedAt
       }));
     }
   }, [formData.status, lead]);
@@ -108,7 +109,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     const updates: Partial<Lead> = { status };
     
     if (status === 'Closed' && (!lead?.closedAt || lead.status !== 'Closed')) {
-      updates.closedAt = formatDateToString(new Date());
+      const currentDate = formatDateToString(new Date());
+      updates.closedAt = currentDate;
+      updates.signupDate = currentDate; // Set signup date to the same date
     }
     
     setFormData(prev => ({
@@ -139,9 +142,22 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       console.log(`Setting ${fieldName} to: ${formattedDate} from date object:`, date);
       
       // Only update the specific field that was changed
+      const updates: Partial<Record<string, string>> = {
+        [fieldName]: formattedDate
+      };
+      
+      // If changing signupDate and the lead is closed, also update closedAt to match
+      if (fieldName === 'signupDate' && formData.status === 'Closed') {
+        updates.closedAt = formattedDate;
+      }
+      // If changing closedAt and the lead is closed, also update signupDate to match
+      else if (fieldName === 'closedAt' && formData.status === 'Closed') {
+        updates.signupDate = formattedDate;
+      }
+      
       setFormData(prev => ({
         ...prev,
-        [fieldName]: formattedDate
+        ...updates
       }));
     } catch (error) {
       console.error(`Error formatting date for ${fieldName}:`, error);

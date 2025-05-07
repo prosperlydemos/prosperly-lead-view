@@ -86,7 +86,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
             <span className="text-muted-foreground">Status:</span> {lead.status}
           </div>
           <div>
-            <span className="text-muted-foreground">Closing Date:</span> {formatDate(lead.signupDate)}
+            <span className="text-muted-foreground">Signup Date:</span> {formatDate(lead.signupDate)}
           </div>
         </div>
       </div>
