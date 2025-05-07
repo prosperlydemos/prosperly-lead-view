@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -329,8 +328,8 @@ const Index: React.FC = () => {
     );
   }
   
-  // Convert Supabase leads to App leads for EditLeadDialog with logging
-  const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
+  // Remove this duplicate declaration since we now have the memoized version above
+  // const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
   console.log('Mapped lead data:', { selectedLead, appSelectedLead });
   
   // Map Supabase profiles to App users
