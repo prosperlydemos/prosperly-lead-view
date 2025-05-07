@@ -1,6 +1,6 @@
 
 import { format, parse } from "date-fns";
-import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 // Eastern Time Zone identifier
 const TIMEZONE = "America/New_York";
@@ -16,7 +16,7 @@ export const formatDateForInput = (dateStr: string | null | undefined): string =
     }
     
     // Convert to Eastern Time
-    const easternDate = utcToZonedTime(date, TIMEZONE);
+    const easternDate = toZonedTime(date, TIMEZONE);
     return format(easternDate, "yyyy-MM-dd");
   } catch (e) {
     console.error("Error formatting date:", e);
@@ -35,7 +35,7 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
     }
     
     // Convert to Eastern Time
-    const easternDate = utcToZonedTime(date, TIMEZONE);
+    const easternDate = toZonedTime(date, TIMEZONE);
     return format(easternDate, "MMM d, yyyy");
   } catch (e) {
     console.error("Error formatting date for display:", e);
@@ -54,7 +54,7 @@ export const parseDateToISO = (date: Date | string | null): string | null => {
     }
     
     // Convert to Eastern Time
-    const easternDate = utcToZonedTime(dateObj, TIMEZONE);
+    const easternDate = toZonedTime(dateObj, TIMEZONE);
     
     // Create date in Eastern timezone
     const year = easternDate.getFullYear();
