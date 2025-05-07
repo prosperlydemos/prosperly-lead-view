@@ -36,7 +36,8 @@ const Index: React.FC = () => {
     appSelectedLead,
     handleLeadSelect, handleStatusChange, handleEditLead,
     handleAddLead, handleSaveLead, handleDeleteLead,
-    handleStatusFilterChange, handleUserFilterChange
+    handleStatusFilterChange, handleUserFilterChange,
+    handleAddNote
   } = useLeads(leads, notes, setNotes);
 
   const {
