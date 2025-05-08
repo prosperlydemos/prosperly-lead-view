@@ -5,6 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+// Define a type for the app_settings table
+interface AppSetting {
+  key: string;
+  value: string;
+}
+
 const CalendlySync: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -43,7 +49,7 @@ const CalendlySync: React.FC = () => {
       
       // Get the last sync time if the table exists
       const { data, error } = await supabase
-        .from('app_settings')
+        .from<AppSetting>('app_settings')
         .select('value')
         .eq('key', 'calendly_last_sync')
         .maybeSingle();

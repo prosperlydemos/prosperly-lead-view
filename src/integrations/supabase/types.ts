@@ -9,6 +9,21 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           business_name: string | null
@@ -145,6 +160,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_table_exists: {
+        Args: { table_name: string }
+        Returns: boolean
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
