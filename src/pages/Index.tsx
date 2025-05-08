@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import TodoList from '../components/TodoList';
@@ -38,6 +39,8 @@ const Index: React.FC = () => {
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
+  // Define refreshLeads function here, before any conditional returns
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Memoize the selected lead to prevent unnecessary recalculations
   const selectedLead = useMemo(() => 
@@ -55,6 +58,43 @@ const Index: React.FC = () => {
   useEffect(() => {
     console.log('Selected lead changed:', selectedLead);
   }, [selectedLead]);
+
+  // Function to manually refresh leads data - moved up and memoized properly
+  const refreshLeads = useMemo(() => async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch leads based on user's role
+      let query = supabase.from('leads').select('*');
+      
+      // If not admin, only fetch user's leads
+      if (currentUser && !currentUser.is_admin) {
+        query = query.eq('owner_id', currentUser.id);
+      }
+      
+      const { data: leadsData, error: leadsError } = await query;
+      
+      if (leadsError) {
+        throw leadsError;
+      }
+      
+      setLeads(leadsData || []);
+      
+      toast({
+        title: "Leads refreshed",
+        description: "Lead list has been updated with the latest data."
+      });
+    } catch (error) {
+      console.error('Error refreshing leads:', error);
+      toast({
+        title: "Error refreshing leads",
+        description: "Failed to refresh lead data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
   // Fetch leads with real-time subscription
   useEffect(() => {
@@ -144,7 +184,7 @@ const Index: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentUser, isEditModalOpen, selectedLeadId]);
+  }, [currentUser, isEditModalOpen, selectedLeadId, refreshTrigger]);
 
   // Update todo items whenever leads change
   useEffect(() => {
@@ -386,9 +426,13 @@ const Index: React.FC = () => {
       </div>
     );
   }
+
+  // Trigger a refresh of leads
+  const triggerRefresh = () => {
+    refreshLeads();
+    setRefreshTrigger(prev => prev + 1); // Force re-fetch by updating trigger value
+  };
   
-  // Remove this duplicate declaration since we now have the memoized version above
-  // const appSelectedLead = selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null;
   console.log('Mapped lead data:', { selectedLead, appSelectedLead });
   
   // Map Supabase profiles to App users
@@ -531,43 +575,6 @@ const Index: React.FC = () => {
     }
   };
 
-  // Function to manually refresh leads data - can be called after Calendly sync
-  const refreshLeads = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch leads based on user's role
-      let query = supabase.from('leads').select('*');
-      
-      // If not admin, only fetch user's leads
-      if (currentUser && !currentUser.is_admin) {
-        query = query.eq('owner_id', currentUser.id);
-      }
-      
-      const { data: leadsData, error: leadsError } = await query;
-      
-      if (leadsError) {
-        throw leadsError;
-      }
-      
-      setLeads(leadsData || []);
-      
-      toast({
-        title: "Leads refreshed",
-        description: "Lead list has been updated with the latest data."
-      });
-    } catch (error) {
-      console.error('Error refreshing leads:', error);
-      toast({
-        title: "Error refreshing leads",
-        description: "Failed to refresh lead data",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -620,7 +627,7 @@ const Index: React.FC = () => {
       <main className="container py-6">
         <div className="flex justify-between mb-4">
           <div>
-            {currentUser?.is_admin && <CalendlySync onSyncComplete={refreshLeads} />}
+            {currentUser?.is_admin && <CalendlySync onSyncComplete={triggerRefresh} />}
           </div>
           <AddLeadDialog 
             onAddLead={handleAddLead}
