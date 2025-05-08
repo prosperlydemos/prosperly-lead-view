@@ -37,12 +37,16 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
       return '';
     }
     
-    // Use UTC date components
+    // Create a new date at noon UTC to avoid timezone issues
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth();
     const day = date.getUTCDate();
     
-    return format(new Date(Date.UTC(year, month, day)), "MMM d, yyyy");
+    // Create a new date at noon UTC to avoid timezone shifts
+    const utcDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+    
+    // Format the date using the UTC date
+    return format(utcDate, "MMM d, yyyy");
   } catch (e) {
     console.error("Error formatting date for display:", e);
     return '';
