@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';

@@ -76,7 +76,7 @@ const TodoList: React.FC<TodoListProps> = ({
                       ) : (
                         <>
                           <Calendar className="mr-1" size={14} />
-                          Demo with {item.contactName} at {item.time}
+                          Demo with {item.contactName} at {item.time || 'time not set'}
                         </>
                       )}
                     </div>
