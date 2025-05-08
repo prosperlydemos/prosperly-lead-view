@@ -1,10 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Lead, Profile } from '../types/supabase';
-import { format } from 'date-fns';
 import { Copy, UserRound } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { formatDateForDisplay } from '@/utils/dateUtils';
 
 interface LeadCardProps {
   lead: Lead;
@@ -33,12 +33,6 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
     
     fetchOwner();
   }, [lead.owner_id]);
-
-  // Helper function to format date strings for display
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set';
-    return format(new Date(dateString), 'MMM d, yyyy');
-  };
 
   // Get status-specific className
   const getStatusClassName = () => {
@@ -103,10 +97,10 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
         {/* Second line: Demo date and Follow-up date */}
         <div className="text-xs flex justify-between">
           <span>
-            <span className="text-muted-foreground">Demo:</span> {formatDate(lead.demo_date)}
+            <span className="text-muted-foreground">Demo:</span> {formatDateForDisplay(lead.demo_date)}
           </span>
           <span>
-            <span className="text-muted-foreground">Next Follow-up:</span> {formatDate(lead.next_follow_up)}
+            <span className="text-muted-foreground">Next Follow-up:</span> {formatDateForDisplay(lead.next_follow_up)}
           </span>
         </div>
         
