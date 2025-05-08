@@ -82,12 +82,30 @@ Deno.serve(async (req) => {
     // Track new leads added in this sync
     const newLeads = []
     
+    // Extract user email from the token to use for the API call
+    // First, make a request to get the current user's information
+    const meResponse = await fetch('https://api.calendly.com/users/me', {
+      headers: {
+        'Authorization': `Bearer ${calendlyToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!meResponse.ok) {
+      throw new Error(`Error fetching Calendly user info: ${meResponse.status} ${await meResponse.text()}`);
+    }
+    
+    const meData = await meResponse.json();
+    const currentUserUri = meData.resource.uri;
+    
+    // Now use this user URI in the scheduled events request
     // Fetch user's scheduled events from Calendly
     const eventsUrl = 'https://api.calendly.com/scheduled_events'
     const params = new URLSearchParams({
       min_start_time: sevenDaysAgo.toISOString(),
       status: 'active',
-      count: '100' // Max allowed by API
+      count: '100', // Max allowed by API
+      user: currentUserUri // Add the user parameter
     })
     
     const eventsFetchUrl = `${eventsUrl}?${params.toString()}`

@@ -32,10 +32,19 @@ const CalendlySync: React.FC = () => {
   // Get the last sync time from the database
   const getLastSyncTime = async () => {
     try {
-      // Use the correct table name with proper typing
+      // First check if the table exists
+      const { data: tableExists, error: tableError } = await supabase
+        .rpc('check_table_exists', { table_name: 'app_settings' });
+        
+      if (tableError || !tableExists) {
+        console.log('app_settings table may not exist yet');
+        return;
+      }
+      
+      // Get the last sync time if the table exists
       const { data, error } = await supabase
         .from('app_settings')
-        .select('*')
+        .select('value')
         .eq('key', 'calendly_last_sync')
         .maybeSingle();
       
