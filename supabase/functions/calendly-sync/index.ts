@@ -212,6 +212,9 @@ Deno.serve(async (req) => {
           continue
         }
         
+        // Log the start time we're capturing from Calendly
+        console.log(`Demo date/time from Calendly: ${resource.start_time}`)
+        
         // Create the new lead - assigned to adam@prosperly.com
         const newLead = {
           contact_name: inviteeName,
@@ -220,7 +223,7 @@ Deno.serve(async (req) => {
           lead_source: 'Calendly',
           setup_fee: 0, // Default value
           mrr: 0, // Default value
-          demo_date: resource.start_time,
+          demo_date: resource.start_time, // Store the full ISO date string with time
           status: 'Demo Scheduled',
           owner_id: adminId, // Using the admin ID (adam@prosperly.com)
           value: 0, // Default value

@@ -216,8 +216,9 @@ const Index: React.FC = () => {
         if (lead.demo_date) {
           const demoDate = parseISO(lead.demo_date);
           if (isToday(demoDate)) {
-            // Extract time from the demo_date
+            // Extract time from the demo_date with proper formatting
             const demoTime = format(demoDate, 'h:mm a');
+            console.log(`Formatted demo time for ${lead.contact_name}: ${demoTime}, original value: ${lead.demo_date}`);
             
             newTodoItems.push({
               id: `demo-${lead.id}-${Date.now()}`,
