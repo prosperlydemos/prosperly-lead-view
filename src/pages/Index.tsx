@@ -55,11 +55,44 @@ const Index: React.FC = () => {
     console.log('Selected lead changed:', selectedLead);
   }, [selectedLead]);
 
-  // Fetch leads and notes
+  // Fetch leads with real-time subscription
   useEffect(() => {
+    if (!currentUser) return;
+
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('leads_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leads'
+        },
+        (payload) => {
+          console.log('Real-time update:', payload);
+          // Only update if it's not the lead we're currently editing
+          if (isEditModalOpen && payload.new && payload.new.id === selectedLeadId) {
+            console.log('Ignoring update for lead being edited:', payload.new.id);
+            return;
+          }
+
+          setLeads(prev => {
+            if (payload.eventType === 'INSERT') {
+              return [...prev, payload.new as Lead];
+            } else if (payload.eventType === 'UPDATE') {
+              return prev.map(lead => lead.id === payload.new.id ? payload.new as Lead : lead);
+            } else if (payload.eventType === 'DELETE') {
+              return prev.filter(lead => lead.id !== payload.old.id);
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    // Initial fetch
     const fetchData = async () => {
-      if (!currentUser) return;
-      
       try {
         setLoading(true);
         
@@ -101,7 +134,12 @@ const Index: React.FC = () => {
     };
     
     fetchData();
-  }, [currentUser]);
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentUser, isEditModalOpen, selectedLeadId]);
 
   // Update todo items whenever leads change
   useEffect(() => {
@@ -239,10 +277,18 @@ const Index: React.FC = () => {
       
       console.log('3. Supabase response:', data);
       
+      // Manually update the leads array for immediate UI feedback, 
+      // but don't update the selected lead to prevent form resets
       setLeads(prev => {
         console.log('4. Previous leads state:', prev);
-        const newLeads = prev.map(lead => lead.id === updatedLead.id ? data : lead);
-        console.log('5. New leads state:', newLeads);
+        const newLeads = prev.map(lead => {
+          if (lead.id === updatedLead.id) {
+            console.log('5. Updating lead in array:', lead.id);
+            return data;
+          }
+          return lead;
+        });
+        console.log('6. New leads state:', newLeads);
         return newLeads;
       });
       

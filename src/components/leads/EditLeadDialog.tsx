@@ -52,7 +52,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [formKey, setFormKey] = useState(Date.now());
   const [currentLead, setCurrentLead] = useState<Lead>(lead);
   
-  // Only update when dialog opens to prevent re-render loops
+  // Only update lead data when dialog opens to prevent form resets
   useEffect(() => {
     console.log('2. Dialog effect triggered:', { isOpen, lead });
     if (isOpen) {
@@ -60,7 +60,10 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
       setCurrentLead(lead);
       setFormKey(Date.now());
     }
-  }, [isOpen]); // Removed lead.id from dependencies
+  }, [isOpen]); // Only re-run when dialog opens/closes
+  
+  // By removing lead.id from dependencies, we prevent the effect from running
+  // when lead is updated elsewhere in the app
 
   const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
     console.log('3. Form submission:', { formData, currentLead });
