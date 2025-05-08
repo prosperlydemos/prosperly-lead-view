@@ -17,17 +17,23 @@ const DateInput: React.FC<DateInputProps> = ({
   onChange,
   className 
 }) => {
+  console.log(`DateInput rendered for ${label} with value:`, value);
+  
   // Convert ISO string to Date object for the DatePicker
   const dateValue = value ? new Date(value) : undefined;
   
   const handleChange = (date: Date | undefined) => {
+    console.log(`DateInput change for ${label}:`, date);
+    
     if (!date) {
+      console.log(`Setting ${label} to null`);
       onChange(null);
       return;
     }
     
     // Convert date to ISO string (YYYY-MM-DD format)
     const isoDate = parseDateToISO(date);
+    console.log(`Parsed ${label} to ISO:`, isoDate);
     onChange(isoDate);
   };
 
@@ -49,6 +55,7 @@ const DateInput: React.FC<DateInputProps> = ({
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
+              console.log(`Clearing ${label} date`);
               onChange(null);
             }}
           >

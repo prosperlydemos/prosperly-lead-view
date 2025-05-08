@@ -74,13 +74,17 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
       console.log('Form data before update:', formData);
       console.log('Current lead data:', currentLead);
       
-      // Create updated lead object with proper type handling
+      // Create updated lead object with proper type handling and explicit date fields
       const updatedLead: Lead = {
         ...currentLead,
         ...formData,
         setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : currentLead.setupFee,
         mrr: typeof formData.mrr === 'number' ? formData.mrr : currentLead.mrr,
         value: typeof formData.value === 'number' ? formData.value : currentLead.value,
+        // Explicitly set date fields from formData
+        demoDate: formData.demoDate ?? currentLead.demoDate,
+        signupDate: formData.signupDate ?? currentLead.signupDate,
+        nextFollowUp: formData.nextFollowUp ?? currentLead.nextFollowUp,
       };
       
       console.log('4. Sending to parent:', updatedLead);
