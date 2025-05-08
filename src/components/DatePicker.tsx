@@ -6,6 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { formatDateForDisplay } from "@/utils/dateUtils";
+import { toZonedTime } from "date-fns-tz";
 
 interface DatePickerProps {
   date: Date | undefined;
@@ -13,6 +14,9 @@ interface DatePickerProps {
   disabled?: boolean;
   placeholder?: string;
 }
+
+// Eastern Time Zone identifier - should match the one from dateUtils.ts
+const TIMEZONE = "America/New_York";
 
 const DatePicker: React.FC<DatePickerProps> = ({
   date,
@@ -22,13 +26,11 @@ const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const handleSelect = (newDate: Date | undefined) => {
     if (newDate) {
-      // Create date in local timezone
-      const localDate = new Date(
-        newDate.getFullYear(),
-        newDate.getMonth(),
-        newDate.getDate()
-      );
-      onSelect(localDate);
+      console.log('DatePicker selected date:', newDate);
+      // Use toZonedTime to ensure consistent timezone handling
+      const easternDate = toZonedTime(newDate, TIMEZONE);
+      console.log('DatePicker converted to Eastern time:', easternDate);
+      onSelect(easternDate);
     } else {
       onSelect(undefined);
     }

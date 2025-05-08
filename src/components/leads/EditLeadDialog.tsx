@@ -85,6 +85,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         demoDate: formData.demoDate ?? currentLead.demoDate,
         signupDate: formData.signupDate ?? currentLead.signupDate,
         nextFollowUp: formData.nextFollowUp ?? currentLead.nextFollowUp,
+        closedAt: formData.closedAt ?? currentLead.closedAt,
       };
       
       console.log('4. Sending to parent:', updatedLead);
