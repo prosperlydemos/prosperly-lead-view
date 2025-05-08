@@ -53,11 +53,12 @@ export const parseDateToISO = (date: Date | string | null): string | null => {
       return null;
     }
     
-    // Format as YYYY-MM-DD without timezone conversion
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
+    // Get UTC date components to ensure consistent date handling
+    const year = dateObj.getUTCFullYear();
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getUTCDate()).padStart(2, '0');
     
+    // Format as YYYY-MM-DD
     const isoDate = `${year}-${month}-${day}`;
     console.log(`Converting date: ${dateObj} to ISO format: ${isoDate}`);
     
