@@ -15,9 +15,12 @@ export const formatDateForInput = (dateStr: string | null | undefined): string =
       return '';
     }
     
-    // Convert to Eastern Time
-    const easternDate = toZonedTime(date, TIMEZONE);
-    return format(easternDate, "yyyy-MM-dd");
+    // Use UTC date components
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
   } catch (e) {
     console.error("Error formatting date:", e);
     return '';
@@ -34,9 +37,12 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
       return '';
     }
     
-    // Convert to Eastern Time
-    const easternDate = toZonedTime(date, TIMEZONE);
-    return format(easternDate, "MMM d, yyyy");
+    // Use UTC date components
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+    
+    return format(new Date(Date.UTC(year, month, day)), "MMM d, yyyy");
   } catch (e) {
     console.error("Error formatting date for display:", e);
     return '';
