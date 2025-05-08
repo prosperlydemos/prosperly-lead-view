@@ -66,6 +66,15 @@ const Index: React.FC = () => {
     setIsEditLeadOpen(true);
   };
 
+  // Find the selected lead and map it to the app's Lead type
+  const selectedLead = selectedLeadId 
+    ? leads.find(lead => lead.id === selectedLeadId) 
+    : null;
+
+  const mappedSelectedLead = selectedLead 
+    ? mapSupabaseLeadToAppLead(selectedLead)
+    : null;
+
   return (
     <div className="min-h-screen bg-white">
       <UserNavbar />
@@ -111,13 +120,18 @@ const Index: React.FC = () => {
                 <TabsContent value="notes">
                   <NoteSection 
                     leadId={selectedLeadId}
-                    lead={leads?.find(lead => lead.id === selectedLeadId)}
+                    lead={selectedLead}
                   />
                 </TabsContent>
                 
                 <TabsContent value="todos">
                   <TodoList 
-                    leadId={selectedLeadId} 
+                    isOpen={true}
+                    onClose={() => {}}
+                    todoItems={[]}
+                    onMarkComplete={() => {}}
+                    onViewLead={() => {}}
+                    currentUser={null}
                   />
                 </TabsContent>
               </Tabs>
@@ -132,29 +146,28 @@ const Index: React.FC = () => {
       
       {/* Dialogs */}
       <AddLeadDialog
-        isOpen={isAddLeadOpen}
-        setIsOpen={setIsAddLeadOpen}
-        onLeadAdded={() => {
-          refetchLeads();
-          toast({
-            title: "Lead Added",
-            description: "The lead has been successfully added.",
-          });
-        }}
+        onAddLead={() => {}}
+        users={users}
+        currentUser={{ id: '', name: '', email: '', isAdmin: false }}
       />
       
-      <EditLeadDialog
-        isOpen={isEditLeadOpen}
-        setIsOpen={setIsEditLeadOpen}
-        leadId={selectedLeadId}
-        onLeadUpdated={() => {
-          refetchLeads();
-          toast({
-            title: "Lead Updated",
-            description: "The lead has been successfully updated.",
-          });
-        }}
-      />
+      {selectedLead && mappedSelectedLead && (
+        <EditLeadDialog
+          lead={mappedSelectedLead}
+          users={[]}
+          currentUser={{ id: '', name: '', email: '', isAdmin: false }}
+          onSave={() => {
+            refetchLeads();
+            toast({
+              title: "Lead Updated",
+              description: "The lead has been successfully updated.",
+            });
+          }}
+          onDelete={() => {}}
+          onClose={() => setIsEditLeadOpen(false)}
+          isOpen={isEditLeadOpen}
+        />
+      )}
     </div>
   );
 };
