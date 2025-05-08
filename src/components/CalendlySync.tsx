@@ -49,7 +49,7 @@ const CalendlySync: React.FC = () => {
       
       // Get the last sync time if the table exists
       const { data, error } = await supabase
-        .from<AppSetting>('app_settings')
+        .from('app_settings')
         .select('value')
         .eq('key', 'calendly_last_sync')
         .maybeSingle();
