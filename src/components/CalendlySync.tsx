@@ -32,9 +32,10 @@ const CalendlySync: React.FC = () => {
   // Get the last sync time from the database
   const getLastSyncTime = async () => {
     try {
+      // Use the correct table name with proper typing
       const { data, error } = await supabase
         .from('app_settings')
-        .select('value')
+        .select('*')
         .eq('key', 'calendly_last_sync')
         .maybeSingle();
       
@@ -53,11 +54,14 @@ const CalendlySync: React.FC = () => {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
+      // Get the current session using the correct method
+      const { data: sessionData } = await supabase.auth.getSession();
+      
       const response = await fetch('https://mfnaopgzaeewhvhhvxbd.supabase.co/functions/v1/calendly-sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.session()?.access_token}`
+          'Authorization': `Bearer ${sessionData.session?.access_token}`
         }
       });
       
@@ -77,7 +81,7 @@ const CalendlySync: React.FC = () => {
       } else {
         throw new Error(result.message || 'Sync failed with unknown error');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error during manual sync:', error);
       toast({
         title: 'Sync Failed',
