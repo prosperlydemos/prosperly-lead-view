@@ -531,6 +531,43 @@ const Index: React.FC = () => {
     }
   };
 
+  // Function to manually refresh leads data - can be called after Calendly sync
+  const refreshLeads = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch leads based on user's role
+      let query = supabase.from('leads').select('*');
+      
+      // If not admin, only fetch user's leads
+      if (currentUser && !currentUser.is_admin) {
+        query = query.eq('owner_id', currentUser.id);
+      }
+      
+      const { data: leadsData, error: leadsError } = await query;
+      
+      if (leadsError) {
+        throw leadsError;
+      }
+      
+      setLeads(leadsData || []);
+      
+      toast({
+        title: "Leads refreshed",
+        description: "Lead list has been updated with the latest data."
+      });
+    } catch (error) {
+      console.error('Error refreshing leads:', error);
+      toast({
+        title: "Error refreshing leads",
+        description: "Failed to refresh lead data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -583,7 +620,7 @@ const Index: React.FC = () => {
       <main className="container py-6">
         <div className="flex justify-between mb-4">
           <div>
-            {currentUser?.is_admin && <CalendlySync />}
+            {currentUser?.is_admin && <CalendlySync onSyncComplete={refreshLeads} />}
           </div>
           <AddLeadDialog 
             onAddLead={handleAddLead}

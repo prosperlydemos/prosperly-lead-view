@@ -11,7 +11,11 @@ interface AppSetting {
   value: string;
 }
 
-const CalendlySync: React.FC = () => {
+interface CalendlySyncProps {
+  onSyncComplete?: () => void; // New prop for refreshing leads after sync
+}
+
+const CalendlySync: React.FC<CalendlySyncProps> = ({ onSyncComplete }) => {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   
@@ -93,6 +97,11 @@ const CalendlySync: React.FC = () => {
           description: `Created ${result.newLeads?.length || 0} new leads.`,
         });
         getLastSyncTime(); // Refresh the last sync time
+        
+        // Call the onSyncComplete callback to refresh leads if provided
+        if (onSyncComplete && result.newLeads?.length > 0) {
+          onSyncComplete();
+        }
       } else {
         throw new Error(result.message || 'Sync failed with unknown error');
       }
