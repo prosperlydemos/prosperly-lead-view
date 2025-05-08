@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -72,7 +73,7 @@ const Index: React.FC = () => {
         (payload) => {
           console.log('Real-time update:', payload);
           // Only update if it's not the lead we're currently editing
-          if (isEditModalOpen && payload.new && payload.new.id === selectedLeadId) {
+          if (isEditModalOpen && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.id === selectedLeadId) {
             console.log('Ignoring update for lead being edited:', payload.new.id);
             return;
           }
@@ -81,9 +82,13 @@ const Index: React.FC = () => {
             if (payload.eventType === 'INSERT') {
               return [...prev, payload.new as Lead];
             } else if (payload.eventType === 'UPDATE') {
-              return prev.map(lead => lead.id === payload.new.id ? payload.new as Lead : lead);
+              return prev.map(lead => 
+                lead.id === (payload.new as Lead).id ? payload.new as Lead : lead
+              );
             } else if (payload.eventType === 'DELETE') {
-              return prev.filter(lead => lead.id !== payload.old.id);
+              return prev.filter(lead => 
+                lead.id !== (payload.old as { id: string }).id
+              );
             }
             return prev;
           });
