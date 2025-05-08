@@ -1,1 +1,9 @@
+
 project_id = "mfnaopgzaeewhvhhvxbd"
+
+[functions.calendly-sync]
+verify_jwt = false
+
+# For the cron job to work correctly, allow public access
+[functions.calendly-sync.import_map]
+imports = {}

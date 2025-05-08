@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -16,6 +15,7 @@ import { Lead as AppLead, LeadStatus, User } from '../types/index';
 import UserManagement from '../components/UserManagement';
 import AddLeadDialog from '@/components/leads/AddLeadDialog';
 import EditLeadDialog from '@/components/leads/EditLeadDialog';
+import CalendlySync from '@/components/CalendlySync';
 
 interface TodoItem {
   id: string;
@@ -581,7 +581,10 @@ const Index: React.FC = () => {
       </header>
       
       <main className="container py-6">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between mb-4">
+          <div>
+            {currentUser?.is_admin && <CalendlySync />}
+          </div>
           <AddLeadDialog 
             onAddLead={handleAddLead}
             users={appUsers}
@@ -615,7 +618,7 @@ const Index: React.FC = () => {
         </div>
       </main>
 
-      {/* Use the new EditLeadDialog component */}
+      {/* Use the EditLeadDialog component */}
       {appSelectedLead && (
         <EditLeadDialog
           lead={appSelectedLead}
