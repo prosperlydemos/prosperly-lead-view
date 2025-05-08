@@ -94,13 +94,21 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
           </span>
         </div>
         
-        {/* Second line: Demo date and Follow-up date */}
+        {/* Second line: Demo date and Follow-up date or Signup date */}
         <div className="text-xs flex justify-between">
           <span>
             <span className="text-muted-foreground">Demo:</span> {formatDateForDisplay(lead.demo_date)}
           </span>
           <span>
-            <span className="text-muted-foreground">Next Follow-up:</span> {formatDateForDisplay(lead.next_follow_up)}
+            {lead.signup_date ? (
+              <>
+                <span className="text-muted-foreground">Signup Date:</span> {formatDateForDisplay(lead.signup_date)}
+              </>
+            ) : (
+              <>
+                <span className="text-muted-foreground">Next Follow-up:</span> {formatDateForDisplay(lead.next_follow_up)}
+              </>
+            )}
           </span>
         </div>
         

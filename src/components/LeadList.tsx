@@ -37,6 +37,16 @@ const LeadList: React.FC<LeadListProps> = ({
     const userMatch = selectedUserId === 'all' || lead.owner_id === selectedUserId;
     return statusMatch && userMatch;
   });
+  
+  // Sort leads by demo date (oldest first)
+  const sortedLeads = [...filteredLeads].sort((a, b) => {
+    // If no demo date, put at the end
+    if (!a.demo_date) return 1;
+    if (!b.demo_date) return -1;
+    
+    // Sort by demo date (oldest first)
+    return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
+  });
 
   return (
     <div>
@@ -57,8 +67,8 @@ const LeadList: React.FC<LeadListProps> = ({
       </div>
 
       <div className="space-y-2">
-        {filteredLeads.length > 0 ? (
-          filteredLeads.map((lead) => (
+        {sortedLeads.length > 0 ? (
+          sortedLeads.map((lead) => (
             <LeadCard
               key={lead.id}
               lead={lead}
