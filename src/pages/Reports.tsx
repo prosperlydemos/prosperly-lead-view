@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Lead } from '../types';
 import { useAuth } from '@/context/AuthContext';
@@ -15,7 +14,7 @@ import OverviewTab from '@/components/reports/OverviewTab';
 import LeaderboardTab from '@/components/reports/LeaderboardTab';
 import CommissionsTab from '@/components/reports/CommissionsTab';
 import SalesRepFilter from '@/components/SalesRepFilter';
-import { DateRangePicker, DateRangePickerValue } from '@/components/DateRangePicker';
+import { DateRangePicker, DateRangePickerValue, defaultPresets } from '@/components/DateRangePicker';
 
 // Colors for charts - kept here for reference
 const COLORS = ['#9b87f5', '#8E9196', '#F97316', '#0EA5E9'];
@@ -36,11 +35,14 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
   // Sales rep filter
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all');
   
-  // Date range filter
-  const [dateRange, setDateRange] = useState<DateRangePickerValue>({
-    from: undefined,
-    to: undefined
-  });
+  // Date range filter - default to "This month"
+  const thisMonthPreset = defaultPresets.find(preset => preset.name === 'thisMonth');
+  const [dateRange, setDateRange] = useState<DateRangePickerValue>(
+    thisMonthPreset ? thisMonthPreset.value() : {
+      from: undefined,
+      to: undefined
+    }
+  );
 
   // Fetch leads and users data from Supabase
   useEffect(() => {
