@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,7 +6,7 @@ import { Lead, Profile } from '@/types/supabase';
 import { mapSupabaseLeadToAppLead } from '@/types/supabase';
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import UserNavbar from '../components/UserNavbar';
+import { UserNavbar } from '../components/UserNavbar';
 import LeadList from '../components/LeadList';
 import AddLeadDialog from '../components/leads/AddLeadDialog';
 import EditLeadDialog from '../components/leads/EditLeadDialog';
@@ -85,7 +86,7 @@ const Index: React.FC = () => {
           {/* Left sidebar - Lead list */}
           <div className="col-span-12 lg:col-span-4">
             <LeadList 
-              leads={leads as Lead[]}
+              leads={leads}
               selectedLeadId={selectedLeadId}
               onLeadSelect={setSelectedLeadId}
               onEditLead={handleEditLead}
@@ -115,7 +116,9 @@ const Index: React.FC = () => {
                 </TabsContent>
                 
                 <TabsContent value="todos">
-                  <TodoList leadId={selectedLeadId} />
+                  <TodoList 
+                    leadId={selectedLeadId} 
+                  />
                 </TabsContent>
               </Tabs>
             ) : (
@@ -129,8 +132,8 @@ const Index: React.FC = () => {
       
       {/* Dialogs */}
       <AddLeadDialog
-        open={isAddLeadOpen}
-        onOpenChange={setIsAddLeadOpen}
+        isOpen={isAddLeadOpen}
+        setIsOpen={setIsAddLeadOpen}
         onLeadAdded={() => {
           refetchLeads();
           toast({
@@ -141,8 +144,8 @@ const Index: React.FC = () => {
       />
       
       <EditLeadDialog
-        open={isEditLeadOpen}
-        onOpenChange={setIsEditLeadOpen}
+        isOpen={isEditLeadOpen}
+        setIsOpen={setIsEditLeadOpen}
         leadId={selectedLeadId}
         onLeadUpdated={() => {
           refetchLeads();

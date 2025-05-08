@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
@@ -27,13 +28,25 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const action = url.searchParams.get("action");
-
+    let body;
+    
+    // Handle request body for both GET and POST
+    if (req.method === 'POST') {
+      body = await req.json();
+    } else if (req.method === 'GET') {
+      try {
+        body = await req.json();
+      } catch (e) {
+        // For GET requests, body might be empty
+        body = {};
+      }
+    }
+    
     // Handle different actions
-    if (action === "sync") {
+    if (body?.action === "sync" || url.searchParams.get("action") === "sync") {
       return await syncCalendlyEvents(req);
     } else {
-      // Default webhook handler (for backward compatibility)
+      // Default webhook handler (for automatic webhook from Calendly)
       return await handleWebhook(req);
     }
   } catch (error) {
@@ -98,12 +111,12 @@ async function handleWebhook(req: Request) {
   });
 
   // Create a new lead
-  return await createLead(name, email, businessName, leadSource, demoDate, nextFollowUp);
+  return await createLead(name, email, businessName, leadSource, demoDate, nextFollowUp.toISOString());
 }
 
-// New function to sync events from Calendly API
+// Function to sync events from Calendly API
 async function syncCalendlyEvents(req: Request) {
-  // Check if it's a GET request
+  // Check if it's a GET or POST request
   if (req.method !== "GET" && req.method !== "POST") {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
