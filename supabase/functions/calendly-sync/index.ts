@@ -55,30 +55,20 @@ Deno.serve(async (req) => {
     
     console.log('Starting Calendly sync...')
 
-    // Get all active users with email addresses
-    const { data: users, error: usersError } = await supabase
+    // Get admin user ID (adam@prosperly.com) - we'll assign all leads to this user
+    const { data: adminUser, error: adminUserError } = await supabase
       .from('profiles')
-      .select('id, email, name')
-      .not('email', 'is', null)
-
-    if (usersError) {
-      throw new Error(`Error fetching users: ${usersError.message}`)
-    }
-
-    if (!users || users.length === 0) {
-      throw new Error('No users found with email addresses')
-    }
-
-    console.log(`Found ${users.length} users with email addresses`)
+      .select('id')
+      .eq('email', 'adam@prosperly.com')
+      .single()
     
-    // Create a map of emails to user IDs for quick lookup
-    const emailToUserIdMap = new Map()
-    users.forEach(user => {
-      if (user.email) {
-        emailToUserIdMap.set(user.email.toLowerCase(), user.id)
-      }
-    })
-
+    if (adminUserError || !adminUser) {
+      throw new Error(`Error finding admin user: ${adminUserError?.message || 'User not found'}`)
+    }
+    
+    const adminId = adminUser.id
+    console.log(`Found admin user ID: ${adminId}, will assign all leads to this user`)
+    
     // Track new leads added in this sync
     const newLeads = []
     
@@ -211,33 +201,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Determine the owner of this lead based on the calendar owner
-        let ownerId = null
-        if (resource.scheduled_by && resource.scheduled_by.email) {
-          const schedulerEmail = resource.scheduled_by.email.toLowerCase()
-          ownerId = emailToUserIdMap.get(schedulerEmail)
-          
-          if (!ownerId) {
-            console.log(`No matching user found for scheduler email: ${schedulerEmail}`)
-            // If no matching user, assign to first admin user
-            const { data: adminUser } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('is_admin', true)
-              .limit(1)
-              .single()
-              
-            if (adminUser) {
-              ownerId = adminUser.id
-            }
-          }
-        }
-        
-        if (!ownerId) {
-          console.log('No owner ID could be determined, skipping lead creation')
-          continue
-        }
-        
         // Check if this lead already exists (by email)
         const { data: existingLeads } = await supabase
           .from('leads')
@@ -249,7 +212,7 @@ Deno.serve(async (req) => {
           continue
         }
         
-        // Create the new lead
+        // Create the new lead - assigned to adam@prosperly.com
         const newLead = {
           contact_name: inviteeName,
           email: inviteeEmail,
@@ -259,7 +222,7 @@ Deno.serve(async (req) => {
           mrr: 0, // Default value
           demo_date: resource.start_time,
           status: 'Demo Scheduled',
-          owner_id: ownerId,
+          owner_id: adminId, // Using the admin ID (adam@prosperly.com)
           value: 0, // Default value
         }
         
@@ -273,7 +236,7 @@ Deno.serve(async (req) => {
           continue
         }
         
-        console.log(`Successfully created lead for ${inviteeEmail}`)
+        console.log(`Successfully created lead for ${inviteeEmail}, assigned to admin (adam@prosperly.com)`)
         newLeads.push(lead)
       }
     }
