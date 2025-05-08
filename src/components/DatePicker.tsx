@@ -6,7 +6,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { formatDateForDisplay } from "@/utils/dateUtils";
-import { toZonedTime } from "date-fns-tz";
 
 interface DatePickerProps {
   date: Date | undefined;
@@ -14,9 +13,6 @@ interface DatePickerProps {
   disabled?: boolean;
   placeholder?: string;
 }
-
-// Eastern Time Zone identifier - should match the one from dateUtils.ts
-const TIMEZONE = "America/New_York";
 
 const DatePicker: React.FC<DatePickerProps> = ({
   date,
@@ -27,10 +23,17 @@ const DatePicker: React.FC<DatePickerProps> = ({
   const handleSelect = (newDate: Date | undefined) => {
     if (newDate) {
       console.log('DatePicker selected date:', newDate);
-      // Use toZonedTime to ensure consistent timezone handling
-      const easternDate = toZonedTime(newDate, TIMEZONE);
-      console.log('DatePicker converted to Eastern time:', easternDate);
-      onSelect(easternDate);
+      
+      // Create a new Date object preserving the selected date exactly as chosen
+      // This avoids timezone shifts
+      const selectedYear = newDate.getFullYear();
+      const selectedMonth = newDate.getMonth();
+      const selectedDay = newDate.getDate();
+      
+      const preservedDate = new Date(selectedYear, selectedMonth, selectedDay);
+      console.log('DatePicker preserved date:', preservedDate);
+      
+      onSelect(preservedDate);
     } else {
       onSelect(undefined);
     }
@@ -64,6 +67,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
           selected={date}
           onSelect={handleSelect}
           initialFocus
+          className="pointer-events-auto"
         />
       </PopoverContent>
     </Popover>

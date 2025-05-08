@@ -53,17 +53,13 @@ export const parseDateToISO = (date: Date | string | null): string | null => {
       return null;
     }
     
-    // Convert to Eastern Time
-    const easternDate = toZonedTime(dateObj, TIMEZONE);
+    // Format as YYYY-MM-DD without timezone conversion
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
     
-    // Create date in Eastern timezone
-    const year = easternDate.getFullYear();
-    const month = String(easternDate.getMonth() + 1).padStart(2, '0');
-    const day = String(easternDate.getDate()).padStart(2, '0');
-    
-    // Format as YYYY-MM-DD
     const isoDate = `${year}-${month}-${day}`;
-    console.log(`Converting date: ${dateObj} to Eastern Time ISO format: ${isoDate}`);
+    console.log(`Converting date: ${dateObj} to ISO format: ${isoDate}`);
     
     return isoDate;
   } catch (e) {

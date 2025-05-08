@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
@@ -81,11 +80,11 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : currentLead.setupFee,
         mrr: typeof formData.mrr === 'number' ? formData.mrr : currentLead.mrr,
         value: typeof formData.value === 'number' ? formData.value : currentLead.value,
-        // Explicitly set date fields from formData
-        demoDate: formData.demoDate ?? currentLead.demoDate,
-        signupDate: formData.signupDate ?? currentLead.signupDate,
-        nextFollowUp: formData.nextFollowUp ?? currentLead.nextFollowUp,
-        closedAt: formData.closedAt ?? currentLead.closedAt,
+        // Explicitly set date fields from formData, using undefined check to properly handle null values
+        demoDate: formData.demoDate !== undefined ? formData.demoDate : currentLead.demoDate,
+        signupDate: formData.signupDate !== undefined ? formData.signupDate : currentLead.signupDate,
+        nextFollowUp: formData.nextFollowUp !== undefined ? formData.nextFollowUp : currentLead.nextFollowUp,
+        closedAt: formData.closedAt !== undefined ? formData.closedAt : currentLead.closedAt,
       };
       
       console.log('4. Sending to parent:', updatedLead);

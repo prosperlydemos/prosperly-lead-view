@@ -31,7 +31,7 @@ const DateInput: React.FC<DateInputProps> = ({
       return;
     }
     
-    // Convert date to ISO string (YYYY-MM-DD format)
+    // Convert date to ISO string (YYYY-MM-DD format) without timezone conversion
     const isoDate = parseDateToISO(date);
     console.log(`Parsed ${label} to ISO:`, isoDate);
     onChange(isoDate);
