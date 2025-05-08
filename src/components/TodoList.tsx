@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Lead, Profile } from '../types/supabase';
 import { format, isToday, parseISO } from 'date-fns';
-import { Check, ListTodo } from 'lucide-react';
+import { Check, ListTodo, Calendar } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,8 @@ interface TodoItem {
   businessName: string;
   dueDate: string;
   completed: boolean;
+  type: 'follow-up' | 'demo';
+  time?: string; // Optional time for demo items
 }
 
 interface TodoListProps {
@@ -52,7 +54,7 @@ const TodoList: React.FC<TodoListProps> = ({
 
         {userTodoItems.length === 0 ? (
           <div className="py-6 text-center text-muted-foreground">
-            No follow-up items for today
+            No follow-up items or demos for today
           </div>
         ) : (
           <ScrollArea className="h-[60vh] pr-4">
@@ -65,8 +67,18 @@ const TodoList: React.FC<TodoListProps> = ({
                   <div className="space-y-1">
                     <div className="font-medium">{item.contactName}</div>
                     <div className="text-sm text-muted-foreground">{item.businessName}</div>
-                    <div className="text-xs">
-                      Follow-up due: {format(parseISO(item.dueDate), 'PPP')}
+                    <div className="text-xs flex items-center">
+                      {item.type === 'follow-up' ? (
+                        <>
+                          <ListTodo className="mr-1" size={14} />
+                          Follow-up due: {format(parseISO(item.dueDate), 'PPP')}
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="mr-1" size={14} />
+                          Demo with {item.contactName} at {item.time}
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -77,15 +89,17 @@ const TodoList: React.FC<TodoListProps> = ({
                     >
                       View
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onMarkComplete(item.id)}
-                      className="flex items-center"
-                    >
-                      <Check className="mr-1" size={16} />
-                      Done
-                    </Button>
+                    {item.type === 'follow-up' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onMarkComplete(item.id)}
+                        className="flex items-center"
+                      >
+                        <Check className="mr-1" size={16} />
+                        Done
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

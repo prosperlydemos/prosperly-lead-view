@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ListTodo } from 'lucide-react';
-import { isToday, parseISO } from 'date-fns';
+import { isToday, parseISO, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
@@ -25,6 +25,8 @@ interface TodoItem {
   businessName: string;
   dueDate: string;
   completed: boolean;
+  type: 'follow-up' | 'demo';
+  time?: string; // Optional time for demo items
 }
 
 const Index: React.FC = () => {
@@ -194,18 +196,41 @@ const Index: React.FC = () => {
     
     leads.forEach(lead => {
       // Only consider leads assigned to the current user
-      if (lead.owner_id === currentUser.id && lead.next_follow_up) {
-        // Check if the next follow-up is today
-        const followUpDate = parseISO(lead.next_follow_up);
-        if (isToday(followUpDate)) {
-          newTodoItems.push({
-            id: `todo-${lead.id}-${Date.now()}`,
-            leadId: lead.id,
-            contactName: lead.contact_name,
-            businessName: lead.business_name || '',
-            dueDate: lead.next_follow_up,
-            completed: false
-          });
+      if (lead.owner_id === currentUser.id) {
+        // Check for follow-ups due today
+        if (lead.next_follow_up) {
+          const followUpDate = parseISO(lead.next_follow_up);
+          if (isToday(followUpDate)) {
+            newTodoItems.push({
+              id: `follow-up-${lead.id}-${Date.now()}`,
+              leadId: lead.id,
+              contactName: lead.contact_name,
+              businessName: lead.business_name || '',
+              dueDate: lead.next_follow_up,
+              completed: false,
+              type: 'follow-up'
+            });
+          }
+        }
+        
+        // Check for demos scheduled today
+        if (lead.demo_date) {
+          const demoDate = parseISO(lead.demo_date);
+          if (isToday(demoDate)) {
+            // Extract time from the demo_date
+            const demoTime = format(demoDate, 'h:mm a');
+            
+            newTodoItems.push({
+              id: `demo-${lead.id}-${Date.now()}`,
+              leadId: lead.id,
+              contactName: lead.contact_name,
+              businessName: lead.business_name || '',
+              dueDate: lead.demo_date,
+              completed: false,
+              type: 'demo',
+              time: demoTime
+            });
+          }
         }
       }
     });
@@ -213,7 +238,7 @@ const Index: React.FC = () => {
     // Filter out completed items and add new ones
     const filteredItems = todoItems.filter(item => 
       !item.completed && 
-      !newTodoItems.some(newItem => newItem.leadId === item.leadId)
+      !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
     );
     
     setTodoItems([...filteredItems, ...newTodoItems]);
@@ -409,7 +434,7 @@ const Index: React.FC = () => {
   
   // Get the number of active todo items for the current user
   const activeTodoCount = todoItems.filter(
-    item => !item.completed && item.leadId
+    item => !item.completed
   ).length;
   
   // Count leads by status
