@@ -24,7 +24,7 @@ export function UserNavbar() {
     <div className="flex items-center gap-4">
       <Link to="/reports">
         <Button variant="outline" size="sm">
-          Reports
+          Sales Reports
         </Button>
       </Link>
       

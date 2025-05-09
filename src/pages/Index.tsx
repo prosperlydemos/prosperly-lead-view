@@ -10,7 +10,6 @@ import { ListTodo } from 'lucide-react';
 import { isToday, parseISO, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { UserNavbar } from '@/components/UserNavbar';
 import { Lead as AppLead, LeadStatus, User } from '../types/index';
 import UserManagement from '../components/UserManagement';
 import AddLeadDialog from '@/components/leads/AddLeadDialog';
@@ -602,54 +601,36 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold">Prosperly Lead View</h1>
-              <div className="flex gap-2 mt-2">
-                {Object.entries(leadStatusCounts).map(([status, count]) => (
-                  <Badge key={status} variant="outline" className={
-                    status === 'Demo Scheduled' ? 'bg-white border' : 
-                    status === 'Warm' ? 'bg-blue-50' :
-                    status === 'Hot' ? 'bg-red-50' :
-                    status === 'Closed' ? 'bg-green-50' : ''
-                  }>
-                    {status}: {count}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {currentUser?.is_admin && (
-                <UserManagement 
-                  users={appUsers}
-                  onAddUser={onAddUser}
-                  onUpdateUser={onUpdateUser}
-                  onDeleteUser={onDeleteUser}
-                  currentUser={appCurrentUser}
-                />
+      <div className="container py-4">
+        <div className="flex justify-between mb-4">
+          <div className="flex gap-2">
+            {Object.entries(leadStatusCounts).map(([status, count]) => (
+              <Badge key={status} variant="outline" className={
+                status === 'Demo Scheduled' ? 'bg-white border' : 
+                status === 'Warm Lead' ? 'bg-blue-50' :
+                status === 'Hot Lead' ? 'bg-red-50' :
+                status === 'Closed' ? 'bg-green-50' : ''
+              }>
+                {status}: {count}
+              </Badge>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsTodoListOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <ListTodo className="h-4 w-4" /> 
+              Items For Today
+              {activeTodoCount > 0 && (
+                <span className="ml-1 text-red-500 font-medium">
+                  ({activeTodoCount})
+                </span>
               )}
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2" 
-                onClick={() => setIsTodoListOpen(true)}
-              >
-                <ListTodo className="h-4 w-4" /> 
-                <span>Items For Today</span>
-                {activeTodoCount > 0 && (
-                  <span className="ml-1 text-red-500 font-medium">
-                    ({activeTodoCount})
-                  </span>
-                )}
-              </Button>
-              <UserNavbar />
-            </div>
+            </Button>
           </div>
         </div>
-      </header>
-      
-      <main className="container py-6">
         <div className="flex justify-between mb-4">
           <div>
             {currentUser?.is_admin && <CalendlySync onSyncComplete={triggerRefresh} />}
@@ -685,7 +666,7 @@ const Index: React.FC = () => {
             />
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Use the EditLeadDialog component */}
       {appSelectedLead && (
