@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Button } from '@/components/ui/button';
 import { Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface NoteSectionProps {
   lead: Lead | null;
@@ -46,65 +47,71 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
   };
 
   return (
-    <div className="h-[calc(100vh-100px)] overflow-y-auto pl-2">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold">{lead.contactName}</h2>
-          <Button variant="ghost" size="sm" onClick={() => onEditLead(lead.id)}>
-            <Edit size={16} className="mr-1" />
-            <span>Edit</span>
-          </Button>
+    <div className="h-[calc(100vh-100px)] flex flex-col">
+      <div className="sticky top-0 bg-background z-10 pb-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold">{lead.contactName}</h2>
+            <Button variant="ghost" size="sm" onClick={() => onEditLead(lead.id)}>
+              <Edit size={16} className="mr-1" />
+              <span>Edit</span>
+            </Button>
+          </div>
+          <Select value={lead.status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Set Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+                <SelectItem value="Warm Lead">Warm Lead</SelectItem>
+                <SelectItem value="Hot Lead">Hot Lead</SelectItem>
+                <SelectItem value="Closed">Closed</SelectItem>
+                <SelectItem value="Lost">Lost</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={lead.status} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Set Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-              <SelectItem value="Warm Lead">Warm Lead</SelectItem>
-              <SelectItem value="Hot Lead">Hot Lead</SelectItem>
-              <SelectItem value="Closed">Closed</SelectItem>
-              <SelectItem value="Lost">Lost</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+
+        {/* Lead details section with all captured fields */}
+        <div className="mb-4 space-y-2 text-sm border-b pb-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-muted-foreground">Business:</span> {lead.businessName || 'Not specified'}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Email:</span> {lead.email || 'Not specified'}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-muted-foreground">CRM:</span> {lead.crm || 'Not specified'}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Signup Date:</span> {formatDate(lead.signupDate)}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Lead details section with all captured fields */}
-      <div className="mb-4 space-y-2 text-sm border-b pb-4">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <span className="text-muted-foreground">Business:</span> {lead.businessName || 'Not specified'}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Email:</span> {lead.email || 'Not specified'}
-          </div>
+      <ScrollArea className="flex-1">
+        <div className="mb-8">
+          <h3 className="font-medium mb-3">Notes ({sortedNotes.length})</h3>
+          {sortedNotes.length > 0 ? (
+            <div>
+              {sortedNotes.map(note => (
+                <Note key={'id' in note ? note.id : ''} note={note} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-muted-foreground">No notes yet</div>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <span className="text-muted-foreground">CRM:</span> {lead.crm || 'Not specified'}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Signup Date:</span> {formatDate(lead.signupDate)}
-          </div>
-        </div>
-      </div>
+      </ScrollArea>
 
-      <div className="mb-8">
-        <h3 className="font-medium mb-3">Notes ({sortedNotes.length})</h3>
-        {sortedNotes.length > 0 ? (
-          <div>
-            {sortedNotes.map(note => (
-              <Note key={'id' in note ? note.id : ''} note={note} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-muted-foreground">No notes yet</div>
-        )}
+      <div className="sticky bottom-0 bg-background pt-4">
+        <AddNoteForm leadId={lead.id} onAddNote={onAddNote} />
       </div>
-
-      <AddNoteForm leadId={lead.id} onAddNote={onAddNote} />
     </div>
   );
 };
