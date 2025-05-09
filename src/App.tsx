@@ -3,13 +3,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Reports from "./pages/Reports";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AppHeader from "./components/AppHeader";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
               path="/" 
               element={
                 <ProtectedRoute>
+                  <AppHeader />
                   <Index />
                 </ProtectedRoute>
               } 
@@ -37,8 +39,7 @@ const App = () => (
               path="/reports" 
               element={
                 <ProtectedRoute>
-                  {/* We're passing empty arrays as props because the Reports component
-                      will fetch its own data from Supabase */}
+                  <AppHeader />
                   <Reports 
                     users={[]} 
                     leads={[]} 
