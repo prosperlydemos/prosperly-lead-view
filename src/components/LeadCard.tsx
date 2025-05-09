@@ -106,7 +106,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
               </>
             ) : (
               <>
-                <span className="text-muted-foreground">Next Follow-up:</span> {formatDateForDisplay(lead.next_follow_up)}
+                <span className="text-muted-foreground">Next Follow-up:</span> <span className="font-bold">{formatDateForDisplay(lead.next_follow_up)}</span>
               </>
             )}
           </span>
