@@ -65,10 +65,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
     }
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default navigation behavior
+    onClick(); // Call the provided onClick handler
+  };
+
   return (
     <div 
       className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
-      onClick={onClick}
+      onClick={handleCardClick}
     >
       <div className="flex flex-col gap-1">
         {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
