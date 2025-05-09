@@ -7,6 +7,7 @@ import DateRangeFilter, { DateFilterOption, DateFieldOption } from './DateRangeF
 import { Lead, Profile } from '@/types/supabase';
 import { LeadStatus } from '@/types';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { subDays } from 'date-fns';
 
 interface LeadListProps {
   leads: Lead[];
@@ -68,12 +69,9 @@ const LeadList: React.FC<LeadListProps> = ({
         date.getFullYear() === currentYear && 
         date.getMonth() === currentMonth;
     } 
-    else if (selectedDateFilter === 'last-month') {
-      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-      const yearOfLastMonth = currentMonth === 0 ? currentYear - 1 : currentYear;
-      return statusMatch && userMatch && 
-        date.getFullYear() === yearOfLastMonth && 
-        date.getMonth() === lastMonth;
+    else if (selectedDateFilter === 'last-60-days') {
+      const sixtyDaysAgo = subDays(now, 60);
+      return statusMatch && userMatch && date >= sixtyDaysAgo;
     }
     else if (selectedDateFilter === 'this-year') {
       return statusMatch && userMatch && date.getFullYear() === currentYear;

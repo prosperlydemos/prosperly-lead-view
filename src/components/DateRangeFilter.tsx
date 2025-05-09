@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export type DateFilterOption = 'this-month' | 'last-month' | 'this-year' | 'all';
+export type DateFilterOption = 'this-month' | 'last-60-days' | 'this-year' | 'all';
 export type DateFieldOption = 'demo_date' | 'signup_date';
 
 interface DateRangeFilterProps {
@@ -36,11 +36,11 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
           This Month
         </Button>
         <Button
-          variant={selectedDateFilter === 'last-month' ? 'default' : 'outline'}
+          variant={selectedDateFilter === 'last-60-days' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => onDateFilterChange('last-month')}
+          onClick={() => onDateFilterChange('last-60-days')}
         >
-          Last Month
+          Last 60 Days
         </Button>
         <Button
           variant={selectedDateFilter === 'this-year' ? 'default' : 'outline'}

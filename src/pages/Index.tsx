@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -42,7 +43,7 @@ const Index: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [selectedDateFilter, setSelectedDateFilter] = useState<DateFilterOption>('this-month');
+  const [selectedDateFilter, setSelectedDateFilter] = useState<DateFilterOption>('last-60-days');
   const [selectedDateField, setSelectedDateField] = useState<DateFieldOption>('demo_date');
 
   // Memoize the selected lead to prevent unnecessary recalculations
