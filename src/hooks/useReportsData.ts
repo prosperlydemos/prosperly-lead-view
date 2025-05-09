@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '@/types';
-import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay, parseISO } from 'date-fns';
 
 interface Metrics {
   totalMRR: number;
@@ -121,11 +121,14 @@ export const useReportsData = (
       return sum + (lead.setupFee || 0);
     }, 0);
 
-    // Count of new leads
-    const newLeadsCount = filteredLeads.length;
+    // Count of leads excluding "Demo Scheduled" status for conversion rate calculation
+    const leadsForConversionCalculation = filteredLeads.filter(lead => lead.status !== 'Demo Scheduled');
     
     // Count of closed deals
     const closedDealsCount = closedDeals.length;
+    
+    // Count of new leads (excluding "Demo Scheduled" for conversion calculation)
+    const newLeadsCount = leadsForConversionCalculation.length;
 
     console.log('Calculated metrics:', {
       totalMRR,
@@ -165,12 +168,13 @@ export const useReportsData = (
     }, {} as Record<string, number>);
 
     // Group by month for trend chart and revenue chart
+    const currentDate = new Date();
     const monthlyData = Array(12).fill(0).map((_, i) => {
       const month = new Date();
       month.setMonth(month.getMonth() - 11 + i);
       
-      const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
-      const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
       
       const monthlyClosedDeals = filteredLeads.filter(lead => {
         if (lead.closedAt && lead.status === 'Closed') {
@@ -180,14 +184,26 @@ export const useReportsData = (
         return false;
       });
       
+      // Log monthly deals for debugging
+      const monthLabel = format(month, 'MMM yyyy');
+      console.log(`Closed deals for ${monthLabel}:`, monthlyClosedDeals.length, monthlyClosedDeals);
+      
       const monthlyDealsCount = monthlyClosedDeals.length;
       
       // Calculate MRR and setup fees for the month
-      const monthlyMRR = monthlyClosedDeals.reduce((sum, lead) => sum + (lead.mrr || 0), 0);
-      const monthlySetupFees = monthlyClosedDeals.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
+      let monthlyMRR = 0;
+      let monthlySetupFees = 0;
+      
+      monthlyClosedDeals.forEach(lead => {
+        monthlyMRR += (lead.mrr || 0);
+        monthlySetupFees += (lead.setupFee || 0);
+      });
+      
+      console.log(`Revenue data for ${monthLabel}: MRR=${monthlyMRR}, Setup=${monthlySetupFees}`);
       
       return {
         month: format(month, 'MMM'),
+        monthYear: monthLabel, // Store full month and year for debugging
         deals: monthlyDealsCount,
         mrr: monthlyMRR,
         setupFees: monthlySetupFees,
@@ -245,10 +261,13 @@ export const useReportsData = (
     // Extract revenue data from monthlyData
     const revenueData = monthlyData.map(item => ({
       month: item.month,
+      monthYear: item.monthYear, // Include full month/year for debugging
       mrr: item.mrr,
       setupFees: item.setupFees,
       total: item.total
     }));
+    
+    console.log('Revenue chart data:', revenueData);
 
     setChartData({
       leadSourcePieData: Object.entries(leadSourceData).map(([name, value]) => ({ name, value })),

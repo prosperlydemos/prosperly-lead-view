@@ -9,6 +9,9 @@ interface RevenueChartProps {
 }
 
 const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => {
+  // Log the data being received by the chart for debugging
+  console.log('RevenueChart data:', data);
+  
   return (
     <Card className="mb-6">
       <CardHeader>

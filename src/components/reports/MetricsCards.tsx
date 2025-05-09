@@ -57,7 +57,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{conversionRate}%</div>
-          <p className="text-xs text-muted-foreground mt-1">Lead to customer</p>
+          <p className="text-xs text-muted-foreground mt-1">Lead to customer (excluding Demo Scheduled)</p>
         </CardContent>
       </Card>
     </div>
