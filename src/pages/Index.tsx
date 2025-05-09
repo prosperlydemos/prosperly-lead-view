@@ -40,7 +40,6 @@ const Index: React.FC = () => {
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
-  // Define refreshLeads function here, before any conditional returns
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Memoize the selected lead to prevent unnecessary recalculations
@@ -59,6 +58,20 @@ const Index: React.FC = () => {
   useEffect(() => {
     console.log('Selected lead changed:', selectedLead);
   }, [selectedLead]);
+
+  // Add effect to load completed todo items from localStorage on component mount
+  useEffect(() => {
+    // Load completed todo items from localStorage
+    const savedCompletedItems = localStorage.getItem('completedTodoItems');
+    if (savedCompletedItems) {
+      const completedItems = JSON.parse(savedCompletedItems);
+      setTodoItems(prev => 
+        prev.map(item => 
+          completedItems.includes(item.id) ? { ...item, completed: true } : item
+        )
+      );
+    }
+  }, []);
 
   // Function to manually refresh leads data - moved up and memoized properly
   const refreshLeads = useMemo(() => async () => {
@@ -235,13 +248,23 @@ const Index: React.FC = () => {
       }
     });
     
+    // Get completed items from localStorage
+    const savedCompletedItems = localStorage.getItem('completedTodoItems');
+    const completedItems = savedCompletedItems ? JSON.parse(savedCompletedItems) : [];
+    
     // Filter out completed items and add new ones
     const filteredItems = todoItems.filter(item => 
       !item.completed && 
       !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
     );
     
-    setTodoItems([...filteredItems, ...newTodoItems]);
+    // Mark new items as completed if they were previously completed
+    const processedNewItems = newTodoItems.map(item => ({
+      ...item,
+      completed: completedItems.includes(item.id)
+    }));
+    
+    setTodoItems([...filteredItems, ...processedNewItems]);
   }, [leads, currentUser]);
 
   const handleLeadSelect = (leadId: string) => {
@@ -425,6 +448,12 @@ const Index: React.FC = () => {
     setTodoItems(todoItems.map(item => 
       item.id === todoId ? { ...item, completed: true } : item
     ));
+    
+    // Save completed items to localStorage
+    const completedItems = todoItems
+      .filter(item => item.completed || item.id === todoId)
+      .map(item => item.id);
+    localStorage.setItem('completedTodoItems', JSON.stringify(completedItems));
     
     toast({
       title: "Task completed",
