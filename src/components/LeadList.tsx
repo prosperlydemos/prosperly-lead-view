@@ -6,6 +6,7 @@ import UserFilter from './UserFilter';
 import DateRangeFilter, { DateFilterOption, DateFieldOption } from './DateRangeFilter';
 import { Lead, Profile } from '@/types/supabase';
 import { LeadStatus } from '@/types';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LeadListProps {
   leads: Lead[];
@@ -92,12 +93,12 @@ const LeadList: React.FC<LeadListProps> = ({
   });
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <div className="flex justify-between items-end mb-4">
         <h2 className="text-xl font-semibold">Leads</h2>
       </div>
 
-      <div className="space-y-4 mb-4">
+      <div className="space-y-4 mb-4 sticky top-0 bg-background z-10 pb-4">
         <DateRangeFilter
           selectedDateFilter={selectedDateFilter}
           onDateFilterChange={onDateFilterChange}
@@ -118,23 +119,25 @@ const LeadList: React.FC<LeadListProps> = ({
         </div>
       </div>
 
-      <div className="space-y-2">
-        {sortedLeads.length > 0 ? (
-          sortedLeads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              isSelected={lead.id === selectedLeadId}
-              onClick={() => onLeadSelect(lead.id)}
-              onEdit={() => onEditLead(lead.id)}
-            />
-          ))
-        ) : (
-          <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
-            No leads match your filters
-          </div>
-        )}
-      </div>
+      <ScrollArea className="h-[calc(100vh-250px)]">
+        <div className="space-y-2">
+          {sortedLeads.length > 0 ? (
+            sortedLeads.map((lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                isSelected={lead.id === selectedLeadId}
+                onClick={() => onLeadSelect(lead.id)}
+                onEdit={() => onEditLead(lead.id)}
+              />
+            ))
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+              No leads match your filters
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
