@@ -621,18 +621,10 @@ const Index: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {currentUser?.is_admin && (
-                <UserManagement 
-                  users={appUsers}
-                  onAddUser={onAddUser}
-                  onUpdateUser={onUpdateUser}
-                  onDeleteUser={onDeleteUser}
-                  currentUser={appCurrentUser}
-                />
-              )}
+              {/* Button for Todo Items - Moved here */}
               <Button 
-                variant="outline" 
-                className="flex items-center gap-2" 
+                variant="outlinePrimary" 
+                className="flex items-center gap-2 ml-auto" 
                 onClick={() => setIsTodoListOpen(true)}
               >
                 <ListTodo className="h-4 w-4" /> 
@@ -643,6 +635,15 @@ const Index: React.FC = () => {
                   </span>
                 )}
               </Button>
+              {currentUser?.is_admin && (
+                <UserManagement 
+                  users={appUsers}
+                  onAddUser={onAddUser}
+                  onUpdateUser={onUpdateUser}
+                  onDeleteUser={onDeleteUser}
+                  currentUser={appCurrentUser}
+                />
+              )}
               <UserNavbar />
             </div>
           </div>
@@ -652,6 +653,7 @@ const Index: React.FC = () => {
       <main className="container py-6">
         <div className="flex justify-between mb-4">
           <div>
+            {/* Calendly Sync - Moved here */}
             {currentUser?.is_admin && <CalendlySync onSyncComplete={triggerRefresh} />}
           </div>
           <AddLeadDialog 
