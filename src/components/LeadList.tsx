@@ -3,6 +3,7 @@ import React from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
 import UserFilter from './UserFilter';
+import DateRangeFilter, { DateFilterOption, DateFieldOption } from './DateRangeFilter';
 import { Lead, Profile } from '@/types/supabase';
 import { LeadStatus } from '@/types';
 
@@ -17,6 +18,10 @@ interface LeadListProps {
   selectedUserId: string | 'all';
   onUserChange: (userId: string | 'all') => void;
   onUsersLoaded?: (users: Profile[]) => void;
+  selectedDateFilter: DateFilterOption;
+  onDateFilterChange: (filter: DateFilterOption) => void;
+  selectedDateField: DateFieldOption;
+  onDateFieldChange: (field: DateFieldOption) => void;
 }
 
 const LeadList: React.FC<LeadListProps> = ({
@@ -29,12 +34,50 @@ const LeadList: React.FC<LeadListProps> = ({
   onStatusChange,
   selectedUserId,
   onUserChange,
-  onUsersLoaded
+  onUsersLoaded,
+  selectedDateFilter,
+  onDateFilterChange,
+  selectedDateField,
+  onDateFieldChange
 }) => {
-  // Filter leads by status and user
+  // Filter leads by status, user, and date range
   const filteredLeads = leads.filter(lead => {
     const statusMatch = selectedStatus === 'All' || lead.status === selectedStatus;
     const userMatch = selectedUserId === 'all' || lead.owner_id === selectedUserId;
+    
+    // No date filtering if 'all' is selected
+    if (selectedDateFilter === 'all') {
+      return statusMatch && userMatch;
+    }
+    
+    // Get the appropriate date field based on user selection
+    const dateField = selectedDateField === 'demo_date' ? lead.demo_date : lead.signup_date;
+    
+    // If there's no date in the selected field, don't include in filtered results
+    if (!dateField) return false;
+    
+    const date = new Date(dateField);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    // Apply date filters
+    if (selectedDateFilter === 'this-month') {
+      return statusMatch && userMatch && 
+        date.getFullYear() === currentYear && 
+        date.getMonth() === currentMonth;
+    } 
+    else if (selectedDateFilter === 'last-month') {
+      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const yearOfLastMonth = currentMonth === 0 ? currentYear - 1 : currentYear;
+      return statusMatch && userMatch && 
+        date.getFullYear() === yearOfLastMonth && 
+        date.getMonth() === lastMonth;
+    }
+    else if (selectedDateFilter === 'this-year') {
+      return statusMatch && userMatch && date.getFullYear() === currentYear;
+    }
+    
     return statusMatch && userMatch;
   });
   
@@ -54,16 +97,25 @@ const LeadList: React.FC<LeadListProps> = ({
         <h2 className="text-xl font-semibold">Leads</h2>
       </div>
 
-      <div className="flex flex-wrap gap-4 mb-4">
-        <LeadStatusFilter
-          selectedStatus={selectedStatus}
-          onStatusChange={onStatusChange}
+      <div className="space-y-4 mb-4">
+        <DateRangeFilter
+          selectedDateFilter={selectedDateFilter}
+          onDateFilterChange={onDateFilterChange}
+          selectedDateField={selectedDateField}
+          onDateFieldChange={onDateFieldChange}
         />
-        <UserFilter
-          selectedUserId={selectedUserId}
-          onUserChange={onUserChange}
-          onUsersLoaded={onUsersLoaded}
-        />
+        
+        <div className="flex flex-wrap gap-4">
+          <LeadStatusFilter
+            selectedStatus={selectedStatus}
+            onStatusChange={onStatusChange}
+          />
+          <UserFilter
+            selectedUserId={selectedUserId}
+            onUserChange={onUserChange}
+            onUsersLoaded={onUsersLoaded}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

@@ -16,6 +16,7 @@ import UserManagement from '../components/UserManagement';
 import AddLeadDialog from '@/components/leads/AddLeadDialog';
 import EditLeadDialog from '@/components/leads/EditLeadDialog';
 import CalendlySync from '@/components/CalendlySync';
+import { DateFilterOption, DateFieldOption } from '@/components/DateRangeFilter';
 
 interface TodoItem {
   id: string;
@@ -40,8 +41,9 @@ const Index: React.FC = () => {
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
-  // Define refreshLeads function here, before any conditional returns
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedDateFilter, setSelectedDateFilter] = useState<DateFilterOption>('this-month');
+  const [selectedDateField, setSelectedDateField] = useState<DateFieldOption>('demo_date');
 
   // Memoize the selected lead to prevent unnecessary recalculations
   const selectedLead = useMemo(() => 
@@ -673,6 +675,10 @@ const Index: React.FC = () => {
               selectedUserId={selectedUserId}
               onUserChange={handleUserFilterChange}
               onUsersLoaded={handleUsersLoaded}
+              selectedDateFilter={selectedDateFilter}
+              onDateFilterChange={setSelectedDateFilter}
+              selectedDateField={selectedDateField}
+              onDateFieldChange={setSelectedDateField}
             />
           </div>
           <div className="border-l pl-6">
