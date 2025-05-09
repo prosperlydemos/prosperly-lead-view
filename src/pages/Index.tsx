@@ -40,6 +40,7 @@ const Index: React.FC = () => {
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
+  // Define refreshLeads function here, before any conditional returns
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Memoize the selected lead to prevent unnecessary recalculations
@@ -58,20 +59,6 @@ const Index: React.FC = () => {
   useEffect(() => {
     console.log('Selected lead changed:', selectedLead);
   }, [selectedLead]);
-
-  // Add effect to load completed todo items from localStorage on component mount
-  useEffect(() => {
-    // Load completed todo items from localStorage
-    const savedCompletedItems = localStorage.getItem('completedTodoItems');
-    if (savedCompletedItems) {
-      const completedItems = JSON.parse(savedCompletedItems);
-      setTodoItems(prev => 
-        prev.map(item => 
-          completedItems.includes(item.id) ? { ...item, completed: true } : item
-        )
-      );
-    }
-  }, []);
 
   // Function to manually refresh leads data - moved up and memoized properly
   const refreshLeads = useMemo(() => async () => {
@@ -248,23 +235,13 @@ const Index: React.FC = () => {
       }
     });
     
-    // Get completed items from localStorage
-    const savedCompletedItems = localStorage.getItem('completedTodoItems');
-    const completedItems = savedCompletedItems ? JSON.parse(savedCompletedItems) : [];
-    
     // Filter out completed items and add new ones
     const filteredItems = todoItems.filter(item => 
       !item.completed && 
       !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
     );
     
-    // Mark new items as completed if they were previously completed
-    const processedNewItems = newTodoItems.map(item => ({
-      ...item,
-      completed: completedItems.includes(item.id)
-    }));
-    
-    setTodoItems([...filteredItems, ...processedNewItems]);
+    setTodoItems([...filteredItems, ...newTodoItems]);
   }, [leads, currentUser]);
 
   const handleLeadSelect = (leadId: string) => {
@@ -448,12 +425,6 @@ const Index: React.FC = () => {
     setTodoItems(todoItems.map(item => 
       item.id === todoId ? { ...item, completed: true } : item
     ));
-    
-    // Save completed items to localStorage
-    const completedItems = todoItems
-      .filter(item => item.completed || item.id === todoId)
-      .map(item => item.id);
-    localStorage.setItem('completedTodoItems', JSON.stringify(completedItems));
     
     toast({
       title: "Task completed",
@@ -650,10 +621,18 @@ const Index: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {/* Button for Todo Items - Moved here */}
+              {currentUser?.is_admin && (
+                <UserManagement 
+                  users={appUsers}
+                  onAddUser={onAddUser}
+                  onUpdateUser={onUpdateUser}
+                  onDeleteUser={onDeleteUser}
+                  currentUser={appCurrentUser}
+                />
+              )}
               <Button 
-                variant="outlinePrimary" 
-                className="flex items-center gap-2 ml-auto" 
+                variant="outline" 
+                className="flex items-center gap-2" 
                 onClick={() => setIsTodoListOpen(true)}
               >
                 <ListTodo className="h-4 w-4" /> 
@@ -664,15 +643,6 @@ const Index: React.FC = () => {
                   </span>
                 )}
               </Button>
-              {currentUser?.is_admin && (
-                <UserManagement 
-                  users={appUsers}
-                  onAddUser={onAddUser}
-                  onUpdateUser={onUpdateUser}
-                  onDeleteUser={onDeleteUser}
-                  currentUser={appCurrentUser}
-                />
-              )}
               <UserNavbar />
             </div>
           </div>
@@ -682,7 +652,6 @@ const Index: React.FC = () => {
       <main className="container py-6">
         <div className="flex justify-between mb-4">
           <div>
-            {/* Calendly Sync - Moved here */}
             {currentUser?.is_admin && <CalendlySync onSyncComplete={triggerRefresh} />}
           </div>
           <AddLeadDialog 
