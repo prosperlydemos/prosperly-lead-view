@@ -246,8 +246,12 @@ const Index: React.FC = () => {
     setTodoItems([...filteredItems, ...newTodoItems]);
   }, [leads, currentUser]);
 
-  // Modified handleLeadSelect to ensure it doesn't cause page refreshes - now with useCallback
-  const handleLeadSelect = useCallback((leadId: string) => {
+  // Modified handleLeadSelect to ensure it doesn't cause page refreshes
+  const handleLeadSelect = useCallback((leadId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     console.log('Lead selected in Index:', leadId);
     // Prevent any default behavior that might be causing refreshes
     setSelectedLeadId(leadId);

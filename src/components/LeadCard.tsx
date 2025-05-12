@@ -9,7 +9,7 @@ import { formatDateForDisplay } from '@/utils/dateUtils';
 interface LeadCardProps {
   lead: Lead;
   isSelected: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
   onEdit: () => void;
 }
 
@@ -75,7 +75,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick();
+          onClick(e as unknown as React.MouseEvent);
         }
       }}
     >

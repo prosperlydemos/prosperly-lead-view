@@ -12,7 +12,7 @@ import { subDays } from 'date-fns';
 interface LeadListProps {
   leads: Lead[];
   selectedLeadId: string | null;
-  onLeadSelect: (leadId: string) => void;
+  onLeadSelect: (leadId: string, e?: React.MouseEvent) => void;
   onEditLead: (leadId: string) => void;
   onAddLead: () => void;
   selectedStatus: LeadStatus | 'All';
@@ -125,9 +125,9 @@ const LeadList: React.FC<LeadListProps> = ({
                 key={lead.id}
                 lead={lead}
                 isSelected={lead.id === selectedLeadId}
-                onClick={() => {
+                onClick={(e) => {
                   console.log("Lead selected in LeadList:", lead.id);
-                  onLeadSelect(lead.id);
+                  onLeadSelect(lead.id, e);
                 }}
                 onEdit={() => onEditLead(lead.id)}
               />
