@@ -65,20 +65,11 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
     }
   }, [lead.email]);
 
-  // Create a separate handler function for the card click using useCallback
-  const handleCardClick = useCallback((e: React.MouseEvent) => {
-    // Ensure we prevent default behavior and stop propagation
-    e.preventDefault();
-    e.stopPropagation();
-    console.log("Lead card clicked with preventDefault", lead.id);
-    // Call the provided onClick handler
-    onClick();
-  }, [lead.id, onClick]);
-
   return (
-    <div 
-      className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
-      onClick={handleCardClick}
+    <button 
+      type="button"
+      className={`w-full text-left rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
+      onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -97,6 +88,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
               <span className="text-xs text-muted-foreground">
                 ({lead.email}) 
                 <button 
+                  type="button"
                   onClick={copyEmail} 
                   className="ml-1 inline-flex hover:text-primary"
                   aria-label="Copy email"
@@ -140,7 +132,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
