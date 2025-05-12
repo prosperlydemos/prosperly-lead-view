@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
 import TodoList from '../components/TodoList';
@@ -246,14 +246,14 @@ const Index: React.FC = () => {
     setTodoItems([...filteredItems, ...newTodoItems]);
   }, [leads, currentUser]);
 
-  // Modified handleLeadSelect to ensure it doesn't cause page refreshes
-  const handleLeadSelect = (leadId: string) => {
+  // Modified handleLeadSelect to ensure it doesn't cause page refreshes - now with useCallback
+  const handleLeadSelect = useCallback((leadId: string) => {
     console.log('Lead selected in Index:', leadId);
     // Prevent any default behavior that might be causing refreshes
     setSelectedLeadId(leadId);
-  };
+  }, []);
 
-  const handleAddNote = async (leadId: string, content: string) => {
+  const handleAddNote = useCallback(async (leadId: string, content: string) => {
     if (!currentUser) return;
     
     try {
@@ -290,9 +290,9 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [currentUser, setNotes, todoItems, setTodoItems]);
 
-  const handleStatusChange = async (leadId: string, status: string) => {
+  const handleStatusChange = useCallback(async (leadId: string, status: string) => {
     try {
       // If changing to Closed status, update the closing_date
       const updates: Partial<Lead> = { status };
@@ -326,17 +326,17 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [setLeads]);
 
   // Modified handleEditLead to ensure it doesn't cause page refreshes
-  const handleEditLead = (leadId: string) => {
+  const handleEditLead = useCallback((leadId: string) => {
     console.log('Edit lead clicked:', leadId);
     // Prevent default behavior by using React state
     setSelectedLeadId(leadId);
     setIsEditModalOpen(true);
-  };
+  }, []);
 
-  const handleSaveLead = async (updatedLead: AppLead) => {
+  const handleSaveLead = useCallback(async (updatedLead: AppLead) => {
     console.log('=== SAVE LEAD DEBUG ===');
     console.log('1. Save initiated with lead:', updatedLead);
     try {
@@ -383,9 +383,9 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, []);
   
-  const handleDeleteLead = async (leadId: string) => {
+  const handleDeleteLead = useCallback(async (leadId: string) => {
     try {
       const { error } = await supabase
         .from('leads')
@@ -414,21 +414,21 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [selectedLeadId, setLeads, setNotes, setSelectedLeadId]);
   
-  const handleStatusFilterChange = (status: LeadStatus | 'All') => {
+  const handleStatusFilterChange = useCallback((status: LeadStatus | 'All') => {
     setSelectedStatus(status);
-  };
+  }, []);
   
-  const handleUserFilterChange = (userId: string | 'all') => {
+  const handleUserFilterChange = useCallback((userId: string | 'all') => {
     setSelectedUserId(userId);
-  };
+  }, []);
 
-  const handleUsersLoaded = (loadedUsers: Profile[]) => {
+  const handleUsersLoaded = useCallback((loadedUsers: Profile[]) => {
     setUsers(loadedUsers);
-  };
+  }, []);
   
-  const handleMarkTodoComplete = (todoId: string) => {
+  const handleMarkTodoComplete = useCallback((todoId: string) => {
     setTodoItems(todoItems.map(item => 
       item.id === todoId ? { ...item, completed: true } : item
     ));
@@ -437,19 +437,23 @@ const Index: React.FC = () => {
       title: "Task completed",
       description: "Follow-up task marked as completed."
     });
-  };
+  }, [todoItems, setTodoItems]);
   
   // Get the number of active todo items for the current user
-  const activeTodoCount = todoItems.filter(
-    item => !item.completed
-  ).length;
+  const activeTodoCount = useMemo(() => 
+    todoItems.filter(item => !item.completed).length,
+    [todoItems]
+  );
   
   // Count leads by status
-  const leadStatusCounts = leads.reduce((acc, lead) => {
-    if (!acc[lead.status]) acc[lead.status] = 0;
-    acc[lead.status]++;
-    return acc;
-  }, {} as Record<string, number>);
+  const leadStatusCounts = useMemo(() =>
+    leads.reduce((acc, lead) => {
+      if (!acc[lead.status]) acc[lead.status] = 0;
+      acc[lead.status]++;
+      return acc;
+    }, {} as Record<string, number>),
+    [leads]
+  );
   
   if (loading) {
     return (

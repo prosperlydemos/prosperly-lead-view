@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { Lead, Profile } from '../types/supabase';
 import { Copy, UserRound } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
@@ -53,7 +54,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
 
   const ownerName = owner ? owner.name : 'Unassigned';
 
-  const copyEmail = (e: React.MouseEvent) => {
+  const copyEmail = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (lead.email) {
       navigator.clipboard.writeText(lead.email);
@@ -62,17 +63,17 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
         description: `${lead.email} copied to clipboard`,
       });
     }
-  };
+  }, [lead.email]);
 
-  // Create a separate handler function for the card click
-  const handleCardClick = (e: React.MouseEvent) => {
+  // Create a separate handler function for the card click using useCallback
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
     // Ensure we prevent default behavior and stop propagation
     e.preventDefault();
     e.stopPropagation();
     console.log("Lead card clicked with preventDefault", lead.id);
     // Call the provided onClick handler
     onClick();
-  };
+  }, [lead.id, onClick]);
 
   return (
     <div 

@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useCallback } from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
 import UserFilter from './UserFilter';
@@ -89,11 +90,11 @@ const LeadList: React.FC<LeadListProps> = ({
     return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
   });
 
-  // Handle lead selection without page refresh
-  const handleLeadSelect = (leadId: string) => {
+  // Handle lead selection using useCallback to ensure it's properly memoized
+  const handleLeadSelect = useCallback((leadId: string) => {
     console.log("Lead selected in LeadList:", leadId);
     onLeadSelect(leadId);
-  };
+  }, [onLeadSelect]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-160px)]">
