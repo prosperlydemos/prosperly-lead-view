@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Lead, Profile } from '../types/supabase';
 import { Copy, UserRound } from 'lucide-react';
@@ -65,15 +64,20 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
     }
   };
 
+  // Create a separate handler function for the card click
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Ensure we prevent default behavior and stop propagation
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Lead card clicked with preventDefault", lead.id);
+    // Call the provided onClick handler
+    onClick();
+  };
+
   return (
     <div 
       className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log("Lead card clicked", lead.id);
-        onClick();
-      }}
+      onClick={handleCardClick}
     >
       <div className="flex flex-col gap-1">
         {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}

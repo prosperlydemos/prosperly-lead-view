@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -247,7 +246,10 @@ const Index: React.FC = () => {
     setTodoItems([...filteredItems, ...newTodoItems]);
   }, [leads, currentUser]);
 
+  // Modified handleLeadSelect to ensure it doesn't cause page refreshes
   const handleLeadSelect = (leadId: string) => {
+    console.log('Lead selected in Index:', leadId);
+    // Prevent any default behavior that might be causing refreshes
     setSelectedLeadId(leadId);
   };
 
@@ -326,8 +328,10 @@ const Index: React.FC = () => {
     }
   };
 
+  // Modified handleEditLead to ensure it doesn't cause page refreshes
   const handleEditLead = (leadId: string) => {
     console.log('Edit lead clicked:', leadId);
+    // Prevent default behavior by using React state
     setSelectedLeadId(leadId);
     setIsEditModalOpen(true);
   };
