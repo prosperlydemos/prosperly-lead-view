@@ -1,3 +1,4 @@
+
 import React, { useCallback } from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
@@ -89,14 +90,6 @@ const LeadList: React.FC<LeadListProps> = ({
     return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
   });
 
-  // Create a memoized click handler generator for lead selection
-  const getLeadClickHandler = useCallback((leadId: string) => {
-    return () => {
-      console.log("Lead selected in LeadList:", leadId);
-      onLeadSelect(leadId);
-    };
-  }, [onLeadSelect]);
-
   return (
     <div className="flex flex-col h-[calc(100vh-160px)]">
       <div className="flex justify-between items-end mb-4">
@@ -132,7 +125,10 @@ const LeadList: React.FC<LeadListProps> = ({
                 key={lead.id}
                 lead={lead}
                 isSelected={lead.id === selectedLeadId}
-                onClick={getLeadClickHandler(lead.id)}
+                onClick={() => {
+                  console.log("Lead selected in LeadList:", lead.id);
+                  onLeadSelect(lead.id);
+                }}
                 onEdit={() => onEditLead(lead.id)}
               />
             ))
