@@ -1,4 +1,3 @@
-
 import React from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
@@ -90,6 +89,12 @@ const LeadList: React.FC<LeadListProps> = ({
     return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
   });
 
+  // Handle lead selection without page refresh
+  const handleLeadSelect = (leadId: string) => {
+    console.log("Lead selected in LeadList:", leadId);
+    onLeadSelect(leadId);
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-160px)]">
       <div className="flex justify-between items-end mb-4">
@@ -125,7 +130,7 @@ const LeadList: React.FC<LeadListProps> = ({
                 key={lead.id}
                 lead={lead}
                 isSelected={lead.id === selectedLeadId}
-                onClick={() => onLeadSelect(lead.id)}
+                onClick={() => handleLeadSelect(lead.id)}
                 onEdit={() => onEditLead(lead.id)}
               />
             ))

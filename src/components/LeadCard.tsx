@@ -65,19 +65,15 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Ensure we're preventing any default behavior
-    e.preventDefault();
-    e.stopPropagation(); // Also stop propagation to be sure
-    
-    // Call the provided onClick handler
-    onClick();
-  };
-
   return (
     <div 
       className={`rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
-      onClick={handleCardClick}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("Lead card clicked", lead.id);
+        onClick();
+      }}
     >
       <div className="flex flex-col gap-1">
         {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
