@@ -66,8 +66,12 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default navigation behavior
-    onClick(); // Call the provided onClick handler
+    // Ensure we're preventing any default behavior
+    e.preventDefault();
+    e.stopPropagation(); // Also stop propagation to be sure
+    
+    // Call the provided onClick handler
+    onClick();
   };
 
   return (
