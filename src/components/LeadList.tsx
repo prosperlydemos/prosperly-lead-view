@@ -1,3 +1,4 @@
+
 import React, { useCallback, useRef, useEffect, useState } from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
@@ -67,10 +68,12 @@ const LeadList: React.FC<LeadListProps> = ({
     const statusMatch = selectedStatus === 'All' || lead.status === selectedStatus;
     const userMatch = selectedUserId === 'all' || lead.owner_id === selectedUserId;
     
-    // Search filter (case insensitive)
-    const searchMatch = !searchQuery || 
-      (lead.contact_name && lead.contact_name.toLowerCase().includes(searchQuery.toLowerCase())) || 
-      (lead.email && lead.email.toLowerCase().includes(searchQuery.toLowerCase()));
+    // Search filter - ensure case insensitivity
+    const searchLower = searchQuery.toLowerCase().trim();
+    const searchMatch = !searchLower || 
+      (lead.contact_name && lead.contact_name.toLowerCase().includes(searchLower)) || 
+      (lead.email && lead.email.toLowerCase().includes(searchLower)) ||
+      (lead.business_name && lead.business_name.toLowerCase().includes(searchLower));
     
     // No date filtering if 'all' is selected
     if (selectedDateFilter === 'all') {
