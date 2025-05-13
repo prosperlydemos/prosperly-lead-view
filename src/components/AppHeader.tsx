@@ -2,9 +2,12 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserNavbar } from './UserNavbar';
+import UserManagement from './UserManagement'; // Import UserManagement
+import { useAuth } from '@/context/AuthContext';
 
 const AppHeader: React.FC = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -21,7 +24,24 @@ const AppHeader: React.FC = () => {
             className="w-[250px]" 
           />
         </Link>
-        <UserNavbar />
+        <div className="flex items-center gap-4">
+          {profile?.isAdmin && (
+            <UserManagement 
+              users={[]} 
+              onAddUser={() => {}} 
+              onUpdateUser={() => {}} 
+              onDeleteUser={() => {}} 
+              currentUser={{
+                id: profile?.id || '',
+                name: profile?.name || '',
+                email: profile?.email || '',
+                isAdmin: profile?.isAdmin || false,
+                commissionRules: []
+              }} 
+            />
+          )}
+          <UserNavbar />
+        </div>
       </div>
     </header>
   );
