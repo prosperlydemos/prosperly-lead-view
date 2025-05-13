@@ -42,12 +42,12 @@ const UserFilter: React.FC<UserFilterProps> = ({
   }, [onUsersLoaded]);
 
   return (
-    <div className="mb-4">
+    <div>
       <Select 
         value={selectedUserId} 
         onValueChange={onUserChange}
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-[200px] h-10">
           <SelectValue placeholder="Filter by owner" />
         </SelectTrigger>
         <SelectContent>
