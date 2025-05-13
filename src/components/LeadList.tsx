@@ -1,4 +1,3 @@
-
 import React, { useCallback, useRef, useEffect, useState } from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
@@ -9,7 +8,7 @@ import { LeadStatus } from '@/types';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { subDays } from 'date-fns';
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 interface LeadListProps {
   leads: Lead[];
@@ -116,6 +115,11 @@ const LeadList: React.FC<LeadListProps> = ({
     return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
   });
 
+  // Function to clear the search input
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-160px)]">
       <div className="flex justify-between items-end mb-4">
@@ -150,6 +154,15 @@ const LeadList: React.FC<LeadListProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
               />
+              {searchQuery && (
+                <button 
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
