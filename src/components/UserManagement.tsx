@@ -100,7 +100,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="mb-4">
+          <Button variant="outline" size="sm" className="h-10 mb-4">
             <Users size={16} className="mr-2" />
             Manage Users
           </Button>
