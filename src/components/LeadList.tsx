@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
 import UserFilter from './UserFilter';
@@ -42,6 +42,22 @@ const LeadList: React.FC<LeadListProps> = ({
   selectedDateField,
   onDateFieldChange
 }) => {
+  // Add ref for the selected lead card
+  const selectedLeadRef = useRef<HTMLButtonElement>(null);
+  
+  // Add effect to handle scrolling when selectedLeadId changes
+  useEffect(() => {
+    if (selectedLeadId && selectedLeadRef.current) {
+      // Add a small delay to ensure the DOM has updated
+      setTimeout(() => {
+        selectedLeadRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
+  }, [selectedLeadId]);
+  
   // Filter leads by status, user, and date range
   const filteredLeads = leads.filter(lead => {
     const statusMatch = selectedStatus === 'All' || lead.status === selectedStatus;
@@ -130,6 +146,7 @@ const LeadList: React.FC<LeadListProps> = ({
                   onLeadSelect(lead.id, e);
                 }}
                 onEdit={() => onEditLead(lead.id)}
+                ref={lead.id === selectedLeadId ? selectedLeadRef : undefined}
               />
             ))
           ) : (

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, forwardRef } from 'react';
 import { Lead, Profile } from '../types/supabase';
 import { Copy, UserRound } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
@@ -13,7 +13,12 @@ interface LeadCardProps {
   onEdit: () => void;
 }
 
-const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }) => {
+const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({ 
+  lead, 
+  isSelected, 
+  onClick, 
+  onEdit 
+}, ref) => {
   const [owner, setOwner] = useState<Profile | null>(null);
   
   useEffect(() => {
@@ -67,6 +72,7 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
 
   return (
     <button 
+      ref={ref}
       type="button"
       className={`w-full text-left rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
@@ -134,6 +140,8 @@ const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }
       </div>
     </button>
   );
-};
+});
+
+LeadCard.displayName = 'LeadCard';
 
 export default LeadCard;
