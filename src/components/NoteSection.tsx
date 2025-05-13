@@ -46,6 +46,13 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
     return format(new Date(dateString), 'MMM d, yyyy');
   };
 
+  // Display business name with location if available
+  const displayBusinessName = () => {
+    if (!lead.businessName) return 'Not specified';
+    if (lead.location) return `${lead.businessName} (${lead.location})`;
+    return lead.businessName;
+  };
+
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col">
       <div className="sticky top-0 bg-background z-10 pb-4">
@@ -77,7 +84,7 @@ const NoteSection: React.FC<NoteSectionProps> = ({ lead, notes, onAddNote, onSta
         <div className="mb-4 space-y-2 text-sm border-b pb-4">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <span className="text-muted-foreground">Business:</span> {lead.businessName || 'Not specified'}
+              <span className="text-muted-foreground">Business:</span> {displayBusinessName()}
             </div>
             <div>
               <span className="text-muted-foreground">Email:</span> {lead.email || 'Not specified'}
