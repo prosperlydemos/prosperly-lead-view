@@ -63,7 +63,8 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     nextFollowUp: formatDate(supabaseLead.next_follow_up),
     crm: supabaseLead.crm || '',
     value: value,
-    location: supabaseLead.location || ''
+    location: supabaseLead.location || '',
+    commissionAmount: typeof supabaseLead.commission_amount === 'number' ? supabaseLead.commission_amount : undefined
   };
 };
 
@@ -86,6 +87,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
   crm?: string | null;
   phone?: string | null;
   location?: string | null;
+  commission_amount?: number | null;
 } => {
   // Use parseDateToISO for consistent date formatting for Supabase
   const formatDateForSupabase = (dateStr: string | null | undefined): string | null => {
@@ -110,6 +112,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
     value: appLead.value || 0,
     crm: appLead.crm || null,
     phone: null,
-    location: appLead.location || null
+    location: appLead.location || null,
+    commission_amount: appLead.commissionAmount !== undefined ? appLead.commissionAmount : null
   };
 };
