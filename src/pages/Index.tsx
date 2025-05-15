@@ -360,8 +360,9 @@ const Index: React.FC = () => {
   // Modified handleEditLead to ensure it doesn't cause page refreshes
   const handleEditLead = useCallback((leadId: string) => {
     console.log('Edit lead clicked:', leadId);
-    // Prevent default behavior by using React state
+    // Set the selected lead ID first
     setSelectedLeadId(leadId);
+    // Then open the modal
     setIsEditModalOpen(true);
   }, []);
 
@@ -378,12 +379,20 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      // Update the leads array for immediate UI feedback
+      // Convert the Supabase data to our app Lead type
+      const appLead = mapSupabaseLeadToAppLead(data);
+      
+      // Update the leads array
       setLeads(prev => 
-        prev.map(lead => lead.id === updatedLead.id ? mapSupabaseLeadToAppLead(data) : lead)
+        prev.map(lead => lead.id === updatedLead.id ? appLead : lead)
       );
       
-      // Close the edit modal
+      // Update the selected lead if it's the one being edited
+      if (selectedLeadId === updatedLead.id) {
+        setSelectedLeadId(updatedLead.id);
+      }
+      
+      // Close the modal
       setIsEditModalOpen(false);
       
       toast({
@@ -398,7 +407,7 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, []);
+  }, [selectedLeadId]);
 
   const handleDeleteLead = useCallback(async (leadId: string) => {
     try {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
@@ -86,15 +85,6 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
       
       // Save the updated lead
       await onSave(updatedLead);
-      
-      // Only proceed with toast and close if the component is still mounted
-      if (isOpen) {
-        toast({
-          title: 'Lead updated successfully',
-          description: `Updated ${updatedLead.contactName}'s information`,
-        });
-        onClose();
-      }
     } catch (error) {
       console.error('Error updating lead:', error);
       
@@ -112,9 +102,9 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         setIsSubmitting(false);
       }
     }
-  }, [isOpen, lead, onSave, onClose, toast]);
+  }, [isOpen, lead, onSave, toast]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDeleteLead = useCallback(async () => {
     if (!onDelete || !lead || !isOpen) return;
     
     try {
@@ -185,7 +175,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} disabled={isSubmitting}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDeleteLead} disabled={isSubmitting}>Delete</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
