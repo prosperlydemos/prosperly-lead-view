@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,7 +58,11 @@ const LeadForm: React.FC<LeadFormProps> = ({
       console.log('3. UpdateEffect: Setting form data from initialData:', initialData);
       setFormData(prev => ({
         ...prev,
-        ...initialData
+        ...initialData,
+        // Ensure numeric fields are properly handled
+        setupFee: typeof initialData.setupFee === 'number' ? initialData.setupFee : prev.setupFee,
+        mrr: typeof initialData.mrr === 'number' ? initialData.mrr : prev.mrr,
+        value: typeof initialData.value === 'number' ? initialData.value : prev.value,
       }));
     }
   }, [initialData]);

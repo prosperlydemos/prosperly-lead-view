@@ -291,7 +291,7 @@ const Index: React.FC = () => {
       // Convert the Supabase note to our application note format
       const appNote: Note = {
         id: data.id,
-        leadId: data.lead_id,
+        leadId: data.lead_id, // Map lead_id from Supabase to leadId in our app
         content: data.content,
         createdAt: data.created_at,
         userId: data.user_id
@@ -366,11 +366,8 @@ const Index: React.FC = () => {
   }, []);
 
   const handleSaveLead = useCallback(async (updatedLead: AppLead) => {
-    console.log('=== SAVE LEAD DEBUG ===');
-    console.log('1. Save initiated with lead:', updatedLead);
     try {
       const supabaseUpdatedLead = mapAppLeadToSupabaseLead(updatedLead);
-      console.log('2. Mapped to Supabase format:', supabaseUpdatedLead);
       
       const { data, error } = await supabase
         .from('leads')
@@ -381,24 +378,12 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      console.log('3. Supabase response:', data);
+      // Update the leads array for immediate UI feedback
+      setLeads(prev => 
+        prev.map(lead => lead.id === updatedLead.id ? mapSupabaseLeadToAppLead(data) : lead)
+      );
       
-      // Manually update the leads array for immediate UI feedback, 
-      // but don't update the selected lead to prevent form resets
-      setLeads(prev => {
-        console.log('4. Previous leads state:', prev);
-        const newLeads = prev.map(lead => {
-          if (lead.id === updatedLead.id) {
-            console.log('5. Updating lead in array:', lead.id);
-            // Convert the Supabase data to our app Lead type
-            return mapSupabaseLeadToAppLead(data); 
-          }
-          return lead;
-        });
-        console.log('6. New leads state:', newLeads);
-        return newLeads;
-      });
-      
+      // Close the edit modal
       setIsEditModalOpen(false);
       
       toast({
@@ -414,7 +399,7 @@ const Index: React.FC = () => {
       });
     }
   }, []);
-  
+
   const handleDeleteLead = useCallback(async (leadId: string) => {
     try {
       const { error } = await supabase

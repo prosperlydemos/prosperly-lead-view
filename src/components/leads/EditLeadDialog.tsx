@@ -50,39 +50,36 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
   const [formKey, setFormKey] = useState(Date.now());
-  const [currentLead, setCurrentLead] = useState<Lead>(lead);
   
-  // Only update lead data when dialog opens with a new lead
+  // Update form key when dialog opens with a new lead
   useEffect(() => {
     console.log('2. Dialog effect triggered:', { isOpen, lead });
     if (isOpen && lead) {
       console.log('Dialog opened with lead data:', lead);
-      setCurrentLead({...lead}); // Create a new object to ensure proper updates
       setFormKey(Date.now());
     }
   }, [isOpen, lead?.id]); // Only re-run when either isOpen changes or a different lead is being edited
   
   const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
-    console.log('3. Form submission:', { formData, currentLead });
+    console.log('3. Form submission:', { formData, lead });
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
     
     try {
       setIsSubmitting(true);
       console.log('Form data before update:', formData);
-      console.log('Current lead data:', currentLead);
       
       // Create updated lead object with proper type handling and explicit date fields
       const updatedLead: Lead = {
-        ...currentLead,
+        ...lead,
         ...formData,
-        setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : currentLead.setupFee,
-        mrr: typeof formData.mrr === 'number' ? formData.mrr : currentLead.mrr,
-        value: typeof formData.value === 'number' ? formData.value : currentLead.value,
+        setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : lead.setupFee,
+        mrr: typeof formData.mrr === 'number' ? formData.mrr : lead.mrr,
+        value: typeof formData.value === 'number' ? formData.value : lead.value,
         // Explicitly set date fields from formData, using undefined check to properly handle null values
-        demoDate: formData.demoDate !== undefined ? formData.demoDate : currentLead.demoDate,
-        signupDate: formData.signupDate !== undefined ? formData.signupDate : currentLead.signupDate,
-        nextFollowUp: formData.nextFollowUp !== undefined ? formData.nextFollowUp : currentLead.nextFollowUp,
-        closedAt: formData.closedAt !== undefined ? formData.closedAt : currentLead.closedAt,
+        demoDate: formData.demoDate !== undefined ? formData.demoDate : lead.demoDate,
+        signupDate: formData.signupDate !== undefined ? formData.signupDate : lead.signupDate,
+        nextFollowUp: formData.nextFollowUp !== undefined ? formData.nextFollowUp : lead.nextFollowUp,
+        closedAt: formData.closedAt !== undefined ? formData.closedAt : lead.closedAt,
       };
       
       console.log('4. Sending to parent:', updatedLead);
@@ -115,7 +112,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         setIsSubmitting(false);
       }
     }
-  }, [isOpen, currentLead, onSave, onClose, toast]);
+  }, [isOpen, lead, onSave, onClose, toast]);
 
   const handleDelete = useCallback(async () => {
     if (!onDelete || !lead || !isOpen) return;
@@ -182,7 +179,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete {currentLead.contactName}'s contact record and all
+                      This will permanently delete {lead.contactName}'s contact record and all
                       associated notes. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -196,7 +193,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
           </div>
           <LeadForm
             key={formKey}
-            initialData={currentLead}
+            initialData={lead}
             users={users}
             currentUser={currentUser}
             onSubmit={handleSubmit}
