@@ -1,5 +1,4 @@
 
-
 import { Lead as AppLead, Note as AppNote, LeadStatus, User } from '@/types';
 
 export type Lead = AppLead;

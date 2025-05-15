@@ -44,6 +44,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
       nextFollowUp: null,
       value: 0,
       location: '',
+      commissionAmount: null,
     };
     
     // Merge initialData with defaultData
@@ -52,7 +53,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
     return mergedData;
   });
 
-  // Update form data when initialData changes (to handle case when component doesn't remount)
+  // Update form data when initialData changes
   useEffect(() => {
     if (initialData) {
       console.log('3. UpdateEffect: Setting form data from initialData:', initialData);
@@ -63,6 +64,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
         setupFee: typeof initialData.setupFee === 'number' ? initialData.setupFee : prev.setupFee,
         mrr: typeof initialData.mrr === 'number' ? initialData.mrr : prev.mrr,
         value: typeof initialData.value === 'number' ? initialData.value : prev.value,
+        commissionAmount: typeof initialData.commissionAmount === 'number' ? initialData.commissionAmount : prev.commissionAmount,
       }));
     }
   }, [initialData]);

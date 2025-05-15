@@ -357,14 +357,18 @@ const Index: React.FC = () => {
     }
   }, [setLeads]);
 
-  // Modified handleEditLead to ensure it doesn't cause page refreshes
+  // Modified handleEditLead to properly set the selected lead
   const handleEditLead = useCallback((leadId: string) => {
     console.log('Edit lead clicked:', leadId);
-    // Set the selected lead ID first
-    setSelectedLeadId(leadId);
-    // Then open the modal
-    setIsEditModalOpen(true);
-  }, []);
+    // Find the lead in the leads array
+    const leadToEdit = leads.find(lead => lead.id === leadId);
+    if (leadToEdit) {
+      // Set the selected lead ID
+      setSelectedLeadId(leadId);
+      // Open the modal
+      setIsEditModalOpen(true);
+    }
+  }, [leads]);
 
   const handleSaveLead = useCallback(async (updatedLead: AppLead) => {
     try {
@@ -392,11 +396,6 @@ const Index: React.FC = () => {
         prev.map(lead => lead.id === updatedLead.id ? appLead : lead)
       );
       
-      // Update the selected lead if it's the one being edited
-      if (selectedLeadId === updatedLead.id) {
-        setSelectedLeadId(updatedLead.id);
-      }
-      
       // Close the modal
       setIsEditModalOpen(false);
       
@@ -412,7 +411,7 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, [selectedLeadId]);
+  }, []);
 
   const handleDeleteLead = useCallback(async (leadId: string) => {
     try {
