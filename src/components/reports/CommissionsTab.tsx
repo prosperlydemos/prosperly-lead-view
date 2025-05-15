@@ -48,7 +48,10 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
     .filter(lead => lead.status === 'Closed')
     .reduce((sum, lead) => sum + (lead.mrr || 0), 0);
     
-  const totalCommissions = leaderboardData.reduce((sum, user) => sum + (user.commission || 0), 0);
+  // Calculate total commissions from actual commission amounts on leads
+  const totalCommissions = filteredLeads
+    .filter(lead => lead.status === 'Closed')
+    .reduce((sum, lead) => sum + (lead.commissionAmount || 0), 0);
 
   // Handle opening the edit commission dialog
   const handleEditCommission = (lead: Lead) => {
@@ -202,9 +205,9 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-lg">Recent Closed Deals</CardTitle>
+          <CardTitle className="text-lg">Closed Deals</CardTitle>
           <CardDescription>
-            Showing the most recently closed deals in the selected time period
+            Showing all closed deals in the selected time period
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -230,10 +233,11 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                   const dateB = b.closedAt ? new Date(b.closedAt).getTime() : 0;
                   return dateB - dateA;
                 })
-                .slice(0, 10)
                 .map((lead) => {
                   const owner = users.find(u => u.id === lead.ownerId);
-                  const commission = calculateCommission(lead);
+                  const commission = lead.commissionAmount !== undefined && lead.commissionAmount !== null
+                    ? lead.commissionAmount
+                    : calculateCommission(lead);
                   const setupFee = lead.setupFee || 0;
                   const mrr = lead.mrr || 0;
                   const totalValue = setupFee + mrr;
