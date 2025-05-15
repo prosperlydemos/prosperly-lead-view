@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
@@ -51,19 +52,16 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [formKey, setFormKey] = useState(Date.now());
   const [currentLead, setCurrentLead] = useState<Lead>(lead);
   
-  // Only update lead data when dialog opens to prevent form resets
+  // Only update lead data when dialog opens with a new lead
   useEffect(() => {
     console.log('2. Dialog effect triggered:', { isOpen, lead });
-    if (isOpen) {
+    if (isOpen && lead) {
       console.log('Dialog opened with lead data:', lead);
-      setCurrentLead(lead);
+      setCurrentLead({...lead}); // Create a new object to ensure proper updates
       setFormKey(Date.now());
     }
-  }, [isOpen]); // Only re-run when dialog opens/closes
+  }, [isOpen, lead?.id]); // Only re-run when either isOpen changes or a different lead is being edited
   
-  // By removing lead.id from dependencies, we prevent the effect from running
-  // when lead is updated elsewhere in the app
-
   const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
     console.log('3. Form submission:', { formData, currentLead });
     if (!isOpen) return; // Prevent submission if dialog is closing/closed

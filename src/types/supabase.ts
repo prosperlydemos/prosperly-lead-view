@@ -1,10 +1,13 @@
 
-import { Lead, Note, LeadStatus, User } from '@/types';
+import { Lead as AppLead, Note as AppNote, LeadStatus, User } from '@/types';
+
+export type Lead = AppLead;
+export type Note = AppNote;
 
 /**
  * Maps a Supabase lead object to our application's Lead type
  */
-export function mapSupabaseLeadToAppLead(supabaseLead: any): Lead {
+export function mapSupabaseLeadToAppLead(supabaseLead: any): AppLead {
   return {
     id: supabaseLead.id || '',
     contactName: supabaseLead.contact_name || '',
@@ -13,12 +16,12 @@ export function mapSupabaseLeadToAppLead(supabaseLead: any): Lead {
     leadSource: supabaseLead.lead_source || '',
     setupFee: typeof supabaseLead.setup_fee === 'number' ? supabaseLead.setup_fee : 0,
     mrr: typeof supabaseLead.mrr === 'number' ? supabaseLead.mrr : 0,
-    demoDate: supabaseLead.demo_date ? new Date(supabaseLead.demo_date).toISOString() : null,
-    signupDate: supabaseLead.signup_date ? new Date(supabaseLead.signup_date).toISOString() : null,
+    demoDate: supabaseLead.demo_date ? supabaseLead.demo_date : null,
+    signupDate: supabaseLead.signup_date ? supabaseLead.signup_date : null,
     status: supabaseLead.status || 'Demo Scheduled',
     ownerId: supabaseLead.owner_id || '',
-    closedAt: supabaseLead.closing_date ? new Date(supabaseLead.closing_date).toISOString() : null,
-    nextFollowUp: supabaseLead.next_follow_up ? new Date(supabaseLead.next_follow_up).toISOString() : null,
+    closedAt: supabaseLead.closing_date || null,
+    nextFollowUp: supabaseLead.next_follow_up || null,
     crm: supabaseLead.crm || '',
     value: typeof supabaseLead.value === 'number' ? supabaseLead.value : 0,
     location: supabaseLead.location || '',
@@ -29,7 +32,7 @@ export function mapSupabaseLeadToAppLead(supabaseLead: any): Lead {
 /**
  * Maps our application's Lead type to a Supabase lead object
  */
-export function mapAppLeadToSupabaseLead(appLead: Lead): any {
+export function mapAppLeadToSupabaseLead(appLead: AppLead): any {
   return {
     id: appLead.id,
     contact_name: appLead.contactName,
@@ -52,7 +55,7 @@ export function mapAppLeadToSupabaseLead(appLead: Lead): any {
 }
 
 // Export type aliases to prevent import issues in other files
-export type { Lead, Note, User };
+export type { AppLead, AppNote, User };
 
 // Alias for Supabase's Profile type
 export type Profile = {

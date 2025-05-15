@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   console.log('=== LEAD FORM DEBUG ===');
   console.log('1. Form mounted with initialData:', initialData);
   
-  // Initialize form data only once when component mounts
+  // Initialize form data with initialData
   const [formData, setFormData] = useState<Partial<Lead>>(() => {
     console.log('2. Initializing form data');
     const defaultData: Partial<Lead> = {
@@ -44,20 +44,35 @@ const LeadForm: React.FC<LeadFormProps> = ({
       crm: '',
       nextFollowUp: null,
       value: 0,
-      location: '', // Initialize the location field
+      location: '',
     };
     
     // Merge initialData with defaultData
-    return initialData ? { ...defaultData, ...initialData } : defaultData;
+    const mergedData = initialData ? { ...defaultData, ...initialData } : defaultData;
+    console.log('Merged form data:', mergedData);
+    return mergedData;
   });
 
+  // Update form data when initialData changes (to handle case when component doesn't remount)
+  useEffect(() => {
+    if (initialData) {
+      console.log('3. UpdateEffect: Setting form data from initialData:', initialData);
+      setFormData(prev => ({
+        ...prev,
+        ...initialData
+      }));
+    }
+  }, [initialData]);
+
   // Log form data when it changes for debugging
-  console.log('Current formData in LeadForm:', formData);
+  useEffect(() => {
+    console.log('Current formData in LeadForm:', formData);
+  }, [formData]);
 
   // Handle text input changes with enhanced logging
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-    console.log('3. Input changed:', { name, value, type });
+    console.log('4. Input changed:', { name, value, type });
     
     // For number inputs, convert to proper number values
     const processedValue = type === 'number' ? 
@@ -71,23 +86,27 @@ const LeadForm: React.FC<LeadFormProps> = ({
         ...prev,
         [name]: processedValue
       };
-      console.log('4. New form data:', newData);
+      console.log('5. New form data after input change:', newData);
       return newData;
     });
   }, []);
 
   // Handle date changes
   const handleDateChange = useCallback((field: string, value: string | null) => {
-    console.log(`Date field ${field} changed to: ${value}`);
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    console.log(`6. Date field ${field} changed to:`, value);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [field]: value
+      };
+      console.log(`7. New form data after date change for ${field}:`, newData);
+      return newData;
+    });
   }, []);
 
   // Handle status changes
   const handleStatusChange = useCallback((status: LeadStatus) => {
-    console.log(`Status changed to: ${status}`);
+    console.log(`8. Status changed to:`, status);
     setFormData(prev => ({
       ...prev,
       status
@@ -96,7 +115,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
   // Handle owner changes
   const handleOwnerChange = useCallback((ownerId: string) => {
-    console.log(`Owner changed to: ${ownerId}`);
+    console.log(`9. Owner changed to:`, ownerId);
     setFormData(prev => ({
       ...prev,
       ownerId
@@ -106,7 +125,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   // Form submission
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form data before submission:', formData);
+    console.log('10. Form data before submission:', formData);
     
     // Calculate value based on MRR if not set
     const calculatedValue = formData.value || (formData.mrr ? formData.mrr * 12 : 0);
@@ -115,7 +134,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
       ...formData,
       value: calculatedValue
     };
-    console.log('Submitting form data:', submissionData);
+    console.log('11. Submitting form data:', submissionData);
     
     onSubmit(submissionData);
   }, [formData, onSubmit]);
