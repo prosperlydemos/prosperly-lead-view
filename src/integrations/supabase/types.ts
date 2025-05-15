@@ -28,6 +28,7 @@ export type Database = {
         Row: {
           business_name: string | null
           closing_date: string | null
+          commission_amount: number | null
           contact_name: string
           created_at: string
           crm: string | null
@@ -49,6 +50,7 @@ export type Database = {
         Insert: {
           business_name?: string | null
           closing_date?: string | null
+          commission_amount?: number | null
           contact_name: string
           created_at?: string
           crm?: string | null
@@ -70,6 +72,7 @@ export type Database = {
         Update: {
           business_name?: string | null
           closing_date?: string | null
+          commission_amount?: number | null
           contact_name?: string
           created_at?: string
           crm?: string | null

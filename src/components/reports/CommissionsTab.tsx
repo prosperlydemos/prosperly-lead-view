@@ -1,7 +1,5 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { TabsContent } from '@/components/ui/tabs';
-import { format } from 'date-fns';
 import {
   Table,
   TableBody,
@@ -18,6 +16,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { User, Lead, CommissionRule } from '@/types';
+import { calculateCommission } from '@/utils/commissionUtils';
+import ClosedDealsTable from './ClosedDealsTable';
+import EditCommissionDialog from './EditCommissionDialog';
 
 interface CommissionsTabProps {
   users: User[];
@@ -30,16 +31,36 @@ interface CommissionsTabProps {
 }
 
 const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, leaderboardData }) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedOwner, setSelectedOwner] = useState<User | null>(null);
+  
   // Calculate totals for summary
   const totalSetupFees = filteredLeads
     .filter(lead => lead.status === 'Closed')
-    .reduce((sum, lead) => sum + lead.setupFee, 0);
+    .reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
   
   const totalMRR = filteredLeads
     .filter(lead => lead.status === 'Closed')
-    .reduce((sum, lead) => sum + lead.mrr, 0);
+    .reduce((sum, lead) => sum + (lead.mrr || 0), 0);
     
-  const totalCommissions = leaderboardData.reduce((sum, user) => sum + user.commission, 0);
+  // Calculate total commissions including both custom and default amounts
+  const totalCommissions = filteredLeads
+    .filter(lead => lead.status === 'Closed')
+    .reduce((sum, lead) => {
+      // Use custom commission if set, otherwise calculate default
+      const commissionAmount = lead.commissionAmount !== undefined && lead.commissionAmount !== null
+        ? lead.commissionAmount
+        : calculateCommission(lead, users);
+      return sum + commissionAmount;
+    }, 0);
+
+  const handleEditCommission = (lead: Lead) => {
+    const owner = users.find(user => user.id === lead.ownerId) || null;
+    setSelectedLead(lead);
+    setSelectedOwner(owner);
+    setIsEditDialogOpen(true);
+  };
 
   return (
     <TabsContent value="commissions">
@@ -68,7 +89,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">Commission Structure</CardTitle>
           <CardDescription>
@@ -139,54 +160,30 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
         </CardContent>
       </Card>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Closed Deals</CardTitle>
-          <CardDescription>
-            Showing the most recently closed deals in the selected time period
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Contact Name</TableHead>
-                <TableHead>Business</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Close Date</TableHead>
-                <TableHead className="text-right">Setup Fee</TableHead>
-                <TableHead className="text-right">MRR</TableHead>
-                <TableHead className="text-right">Total Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLeads
-                .filter(lead => lead.status === 'Closed')
-                .sort((a, b) => new Date(b.closedAt || 0).getTime() - new Date(a.closedAt || 0).getTime())
-                .slice(0, 10)
-                .map((lead) => {
-                  const owner = users.find(u => u.id === lead.ownerId);
-                  return (
-                    <TableRow key={lead.id} className="border-b hover:bg-muted/50">
-                      <TableCell>{lead.contactName}</TableCell>
-                      <TableCell>{lead.businessName}</TableCell>
-                      <TableCell>{owner?.name || 'Unknown'}</TableCell>
-                      <TableCell>{lead.closedAt ? format(new Date(lead.closedAt), 'MMM d, yyyy') : 'N/A'}</TableCell>
-                      <TableCell className="text-right">${lead.setupFee.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">${lead.mrr.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">${(lead.setupFee + lead.mrr).toLocaleString()}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              {filteredLeads.filter(lead => lead.status === 'Closed').length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <ClosedDealsTable
+        filteredLeads={filteredLeads}
+        users={users}
+        onEditCommission={handleEditCommission}
+      />
+
+      {selectedLead && selectedOwner && (
+        <EditCommissionDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setSelectedLead(null);
+            setSelectedOwner(null);
+          }}
+          lead={selectedLead}
+          owner={selectedOwner}
+          onCommissionUpdated={() => {
+            // Trigger a refresh of the data
+            setIsEditDialogOpen(false);
+            setSelectedLead(null);
+            setSelectedOwner(null);
+          }}
+        />
+      )}
     </TabsContent>
   );
 };

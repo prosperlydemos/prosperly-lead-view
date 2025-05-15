@@ -33,6 +33,7 @@ export interface Lead {
   nextFollowUp?: string | null; // Date for the next follow-up
   value: number; // Added the value field to match Supabase schema
   location?: string; // US state or Canadian city
+  commissionAmount?: number; // Custom commission amount for this lead
 }
 
 export interface Note {
@@ -42,4 +43,3 @@ export interface Note {
   createdAt: string;
   userId?: string; // Added to match Supabase user_id
 }
-
