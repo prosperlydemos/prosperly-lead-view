@@ -32,6 +32,7 @@ export interface Lead {
   crm?: string; // CRM system the lead uses
   nextFollowUp?: string | null; // Date for the next follow-up
   value: number; // Added the value field to match Supabase schema
+  location?: string; // US state or Canadian city
 }
 
 export interface Note {

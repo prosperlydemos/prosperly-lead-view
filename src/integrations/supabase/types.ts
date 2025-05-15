@@ -35,6 +35,7 @@ export type Database = {
           email: string | null
           id: string
           lead_source: string | null
+          location: string | null
           mrr: number | null
           next_follow_up: string | null
           owner_id: string
@@ -55,6 +56,7 @@ export type Database = {
           email?: string | null
           id?: string
           lead_source?: string | null
+          location?: string | null
           mrr?: number | null
           next_follow_up?: string | null
           owner_id: string
@@ -75,6 +77,7 @@ export type Database = {
           email?: string | null
           id?: string
           lead_source?: string | null
+          location?: string | null
           mrr?: number | null
           next_follow_up?: string | null
           owner_id?: string

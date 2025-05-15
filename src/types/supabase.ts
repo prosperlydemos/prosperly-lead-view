@@ -12,6 +12,7 @@ export type Lead = SupabaseDatabase['public']['Tables']['leads']['Row'] & {
   demo_date?: string | null;
   signup_date?: string | null;
   crm?: string | null;
+  location?: string | null;
 };
 export type Note = SupabaseDatabase['public']['Tables']['notes']['Row'];
 
@@ -61,7 +62,8 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     closedAt: formatDate(supabaseLead.closing_date),
     nextFollowUp: formatDate(supabaseLead.next_follow_up),
     crm: supabaseLead.crm || '',
-    value: value
+    value: value,
+    location: supabaseLead.location || ''
   };
 };
 
@@ -83,6 +85,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
   value: number;
   crm?: string | null;
   phone?: string | null;
+  location?: string | null;
 } => {
   // Use parseDateToISO for consistent date formatting for Supabase
   const formatDateForSupabase = (dateStr: string | null | undefined): string | null => {
@@ -106,6 +109,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
     next_follow_up: formatDateForSupabase(appLead.nextFollowUp),
     value: appLead.value || 0,
     crm: appLead.crm || null,
-    phone: null
+    phone: null,
+    location: appLead.location || null
   };
 };

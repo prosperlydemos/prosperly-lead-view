@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '@/types';
-import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay, parseISO, subMonths, isSameMonth, isSameYear } from 'date-fns';
 
 interface Metrics {
   totalMRR: number;
@@ -9,6 +8,8 @@ interface Metrics {
   newLeadsCount: number;
   closedDealsCount: number;
   conversionRate: number;
+  demosBooked: number;
+  demoComparisonRate: number;
 }
 
 interface ChartData {
@@ -45,7 +46,9 @@ export const useReportsData = (
     totalSetupFees: 0,
     newLeadsCount: 0,
     closedDealsCount: 0,
-    conversionRate: 0
+    conversionRate: 0,
+    demosBooked: 0,
+    demoComparisonRate: 0
   });
   const [chartData, setChartData] = useState<ChartData>({
     leadSourcePieData: [],
@@ -97,7 +100,9 @@ export const useReportsData = (
         totalSetupFees: 0,
         newLeadsCount: 0,
         closedDealsCount: 0,
-        conversionRate: 0
+        conversionRate: 0,
+        demosBooked: 0,
+        demoComparisonRate: 0
       });
       return;
     }
@@ -130,11 +135,63 @@ export const useReportsData = (
     // Count of new leads (excluding "Demo Scheduled" for conversion calculation)
     const newLeadsCount = leadsForConversionCalculation.length;
 
+    // Calculate demos booked in the current period
+    let demosBooked = 0;
+    let demoComparisonRate = 0;
+
+    if (dateFilter) {
+      // Get demos booked in the current period (using demo date)
+      const demosInCurrentPeriod = leads.filter(lead => {
+        if (!lead.demoDate) return false;
+        const demoDate = new Date(lead.demoDate);
+        return isWithinInterval(demoDate, { 
+          start: dateFilter.startDate, 
+          end: dateFilter.endDate 
+        });
+      });
+      
+      demosBooked = demosInCurrentPeriod.length;
+      console.log(`Demos booked in current period: ${demosBooked}`);
+      
+      // Calculate the same period in the previous month
+      const dayDifference = dateFilter.endDate.getDate() - dateFilter.startDate.getDate();
+      const previousPeriodEnd = subMonths(dateFilter.endDate, 1);
+      const previousPeriodStart = subMonths(dateFilter.startDate, 1);
+      
+      console.log(`Previous period: ${format(previousPeriodStart, 'MMM d')} - ${format(previousPeriodEnd, 'MMM d')}`);
+      
+      // Get demos booked in the previous period
+      const demosInPreviousPeriod = leads.filter(lead => {
+        if (!lead.demoDate) return false;
+        const demoDate = new Date(lead.demoDate);
+        return isWithinInterval(demoDate, { 
+          start: previousPeriodStart, 
+          end: previousPeriodEnd 
+        });
+      });
+      
+      const previousDemosCount = demosInPreviousPeriod.length;
+      console.log(`Demos booked in previous period: ${previousDemosCount}`);
+      
+      // Calculate percentage change
+      if (previousDemosCount > 0) {
+        demoComparisonRate = ((demosBooked - previousDemosCount) / previousDemosCount) * 100;
+      } else if (demosBooked > 0) {
+        demoComparisonRate = 100; // If there were 0 demos before and some now, that's a 100% increase
+      } else {
+        demoComparisonRate = 0; // If both periods have 0 demos, then 0% change
+      }
+      
+      console.log(`Demo comparison rate: ${demoComparisonRate.toFixed(1)}%`);
+    }
+
     console.log('Calculated metrics:', {
       totalMRR,
       totalSetupFees,
       newLeadsCount,
-      closedDealsCount
+      closedDealsCount,
+      demosBooked,
+      demoComparisonRate
     });
 
     setMetrics({
@@ -142,9 +199,11 @@ export const useReportsData = (
       totalSetupFees,
       newLeadsCount,
       closedDealsCount,
-      conversionRate: newLeadsCount ? Math.round((closedDealsCount / newLeadsCount) * 100) : 0
+      conversionRate: newLeadsCount ? Math.round((closedDealsCount / newLeadsCount) * 100) : 0,
+      demosBooked,
+      demoComparisonRate: parseFloat(demoComparisonRate.toFixed(1))
     });
-  }, [filteredLeads]);
+  }, [filteredLeads, leads, dateFilter]);
 
   // Prepare chart data
   useEffect(() => {

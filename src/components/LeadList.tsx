@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
 import LeadCard from './LeadCard';
 import LeadStatusFilter from './LeadStatusFilter';
 import UserFilter from './UserFilter';
@@ -8,6 +8,8 @@ import { Lead, Profile } from '@/types/supabase';
 import { LeadStatus } from '@/types';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { subDays } from 'date-fns';
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
 
 interface LeadListProps {
   leads: Lead[];
@@ -42,14 +44,40 @@ const LeadList: React.FC<LeadListProps> = ({
   selectedDateField,
   onDateFieldChange
 }) => {
-  // Filter leads by status, user, and date range
+  // Add search state
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Add ref for the selected lead card
+  const selectedLeadRef = useRef<HTMLButtonElement>(null);
+  
+  // Add effect to handle scrolling when selectedLeadId changes
+  useEffect(() => {
+    if (selectedLeadId && selectedLeadRef.current) {
+      // Add a small delay to ensure the DOM has updated
+      setTimeout(() => {
+        selectedLeadRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
+  }, [selectedLeadId]);
+  
+  // Filter leads by status, user, date range, and search query
   const filteredLeads = leads.filter(lead => {
     const statusMatch = selectedStatus === 'All' || lead.status === selectedStatus;
     const userMatch = selectedUserId === 'all' || lead.owner_id === selectedUserId;
     
+    // Search filter - ensure case insensitivity
+    const searchLower = searchQuery.toLowerCase().trim();
+    const searchMatch = !searchLower || 
+      (lead.contact_name && lead.contact_name.toLowerCase().includes(searchLower)) || 
+      (lead.email && lead.email.toLowerCase().includes(searchLower)) ||
+      (lead.business_name && lead.business_name.toLowerCase().includes(searchLower));
+    
     // No date filtering if 'all' is selected
     if (selectedDateFilter === 'all') {
-      return statusMatch && userMatch;
+      return statusMatch && userMatch && searchMatch;
     }
     
     // Get the appropriate date field based on user selection
@@ -65,19 +93,19 @@ const LeadList: React.FC<LeadListProps> = ({
     
     // Apply date filters
     if (selectedDateFilter === 'this-month') {
-      return statusMatch && userMatch && 
+      return statusMatch && userMatch && searchMatch && 
         date.getFullYear() === currentYear && 
         date.getMonth() === currentMonth;
     } 
     else if (selectedDateFilter === 'last-60-days') {
       const sixtyDaysAgo = subDays(now, 60);
-      return statusMatch && userMatch && date >= sixtyDaysAgo;
+      return statusMatch && userMatch && searchMatch && date >= sixtyDaysAgo;
     }
     else if (selectedDateFilter === 'this-year') {
-      return statusMatch && userMatch && date.getFullYear() === currentYear;
+      return statusMatch && userMatch && searchMatch && date.getFullYear() === currentYear;
     }
     
-    return statusMatch && userMatch;
+    return statusMatch && userMatch && searchMatch;
   });
   
   // Sort leads by demo date (oldest first)
@@ -89,6 +117,11 @@ const LeadList: React.FC<LeadListProps> = ({
     // Sort by demo date (oldest first)
     return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
   });
+
+  // Function to clear the search input
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-160px)]">
@@ -104,16 +137,37 @@ const LeadList: React.FC<LeadListProps> = ({
           onDateFieldChange={onDateFieldChange}
         />
         
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4 items-center">
           <LeadStatusFilter
             selectedStatus={selectedStatus}
             onStatusChange={onStatusChange}
           />
-          <UserFilter
-            selectedUserId={selectedUserId}
-            onUserChange={onUserChange}
-            onUsersLoaded={onUsersLoaded}
-          />
+          <div className="flex items-center gap-2 flex-1 md:flex-none">
+            <UserFilter
+              selectedUserId={selectedUserId}
+              onUserChange={onUserChange}
+              onUsersLoaded={onUsersLoaded}
+            />
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name or email"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -130,6 +184,7 @@ const LeadList: React.FC<LeadListProps> = ({
                   onLeadSelect(lead.id, e);
                 }}
                 onEdit={() => onEditLead(lead.id)}
+                ref={lead.id === selectedLeadId ? selectedLeadRef : undefined}
               />
             ))
           ) : (
