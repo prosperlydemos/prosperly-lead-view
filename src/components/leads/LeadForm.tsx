@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -47,10 +48,20 @@ const LeadForm: React.FC<LeadFormProps> = ({
       commissionAmount: null,
     };
     
-    // Merge initialData with defaultData
-    const mergedData = initialData ? { ...defaultData, ...initialData } : defaultData;
-    console.log('Merged form data:', mergedData);
-    return mergedData;
+    // If we have initialData, use it to override defaults
+    if (initialData) {
+      return {
+        ...defaultData,
+        ...initialData,
+        // Ensure numeric fields are properly handled
+        setupFee: typeof initialData.setupFee === 'number' ? initialData.setupFee : defaultData.setupFee,
+        mrr: typeof initialData.mrr === 'number' ? initialData.mrr : defaultData.mrr,
+        value: typeof initialData.value === 'number' ? initialData.value : defaultData.value,
+        commissionAmount: typeof initialData.commissionAmount === 'number' ? initialData.commissionAmount : defaultData.commissionAmount,
+      };
+    }
+    
+    return defaultData;
   });
 
   // Update form data when initialData changes

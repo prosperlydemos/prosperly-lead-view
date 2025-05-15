@@ -60,6 +60,11 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
     }
   }, [isOpen, lead?.id]); // Only re-run when either isOpen changes or a different lead is being edited
   
+  // Log the lead data when it changes
+  useEffect(() => {
+    console.log('EditLeadDialog received lead:', lead);
+  }, [lead]);
+  
   const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
     console.log('3. Form submission:', { formData, lead });
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
@@ -68,7 +73,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
       setIsSubmitting(true);
       console.log('Form data before update:', formData);
       
-      // Create updated lead object with proper type handling
+      // Create updated lead object
       const updatedLead: Lead = {
         ...lead,
         ...formData,
