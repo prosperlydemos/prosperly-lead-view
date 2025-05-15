@@ -39,6 +39,29 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedOwner, setSelectedOwner] = useState<User | null>(null);
   
+  // Calculate commission for a lead based on owner's commission rules or use stored value
+  const calculateCommission = (lead: Lead): number => {
+    // If we have a stored commission amount, use that
+    if (lead.commissionAmount !== undefined && lead.commissionAmount !== null) {
+      return lead.commissionAmount;
+    }
+    
+    // Otherwise calculate based on rules
+    const owner = users.find(user => user.id === lead.ownerId);
+    if (!owner || !owner.commissionRules || owner.commissionRules.length === 0) {
+      return 0;
+    }
+
+    // Find the base rule (threshold = 0)
+    const baseRule = owner.commissionRules.find(rule => rule.threshold === 0);
+    if (baseRule) {
+      return baseRule.amount;
+    }
+
+    // Default commission if no base rule found
+    return 249;
+  };
+  
   // Calculate totals for summary
   const totalSetupFees = filteredLeads
     .filter(lead => lead.status === 'Closed')
@@ -78,29 +101,6 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
     setIsEditDialogOpen(false);
     setSelectedLead(null);
     setSelectedOwner(null);
-  };
-
-  // Calculate commission for a lead based on owner's commission rules or use stored value
-  const calculateCommission = (lead: Lead): number => {
-    // If we have a stored commission amount, use that
-    if (lead.commissionAmount !== undefined && lead.commissionAmount !== null) {
-      return lead.commissionAmount;
-    }
-    
-    // Otherwise calculate based on rules
-    const owner = users.find(user => user.id === lead.ownerId);
-    if (!owner || !owner.commissionRules || owner.commissionRules.length === 0) {
-      return 0;
-    }
-
-    // Find the base rule (threshold = 0)
-    const baseRule = owner.commissionRules.find(rule => rule.threshold === 0);
-    if (baseRule) {
-      return baseRule.amount;
-    }
-
-    // Default commission if no base rule found
-    return 249;
   };
 
   // Safe formatter for numbers that might be null/undefined
