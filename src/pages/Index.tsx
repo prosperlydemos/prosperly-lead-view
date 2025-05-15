@@ -17,6 +17,7 @@ import AddLeadDialog from '@/components/leads/AddLeadDialog';
 import EditLeadDialog from '@/components/leads/EditLeadDialog';
 import CalendlySync from '@/components/CalendlySync';
 import { DateFilterOption, DateFieldOption } from '@/components/DateRangeFilter';
+import { Lead as AppLead } from '@/types';
 
 interface TodoItem {
   id: string;
@@ -389,7 +390,8 @@ const Index: React.FC = () => {
         const newLeads = prev.map(lead => {
           if (lead.id === updatedLead.id) {
             console.log('5. Updating lead in array:', lead.id);
-            return data;
+            // Convert the Supabase data to our app Lead type
+            return mapSupabaseLeadToAppLead(data); 
           }
           return lead;
         });
@@ -447,7 +449,7 @@ const Index: React.FC = () => {
   const handleStatusFilterChange = useCallback((status: LeadStatus | 'All') => {
     setSelectedStatus(status);
   }, []);
-  
+
   const handleUserFilterChange = useCallback((userId: string | 'all') => {
     setSelectedUserId(userId);
   }, []);
@@ -539,7 +541,8 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      setLeads(prev => [...prev, data]);
+      // Convert returned Supabase data to our app Lead type before adding to state
+      setLeads(prev => [...prev, mapSupabaseLeadToAppLead(data)]);
       
       toast({
         title: "Lead added",
@@ -721,7 +724,7 @@ const Index: React.FC = () => {
           <div className="border-l pl-6">
             <NoteSection 
               lead={selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null}
-              notes={notes.filter(note => note.lead_id === selectedLeadId)}
+              notes={notes.filter(note => note.leadId === selectedLeadId)}
               onAddNote={handleAddNote}
               onStatusChange={handleStatusChange}
               onEditLead={handleEditLead}
