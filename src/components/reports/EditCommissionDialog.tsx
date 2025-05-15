@@ -32,7 +32,7 @@ const EditCommissionDialog: React.FC<EditCommissionDialogProps> = ({
     if (isOpen && lead) {
       // Try to get the commission from the lead's data or calculate it
       // For now, we'll just set a default value based on lead value
-      setCommissionAmount('');
+      setCommissionAmount(lead.commissionAmount ? lead.commissionAmount.toString() : '');
     }
   }, [isOpen, lead]);
 

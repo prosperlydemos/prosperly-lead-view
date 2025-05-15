@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { subDays } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
+import { mapSupabaseLeadToAppLead } from '@/types/supabase';
 
 interface LeadListProps {
   leads: Lead[];
@@ -66,14 +67,14 @@ const LeadList: React.FC<LeadListProps> = ({
   // Filter leads by status, user, date range, and search query
   const filteredLeads = leads.filter(lead => {
     const statusMatch = selectedStatus === 'All' || lead.status === selectedStatus;
-    const userMatch = selectedUserId === 'all' || lead.owner_id === selectedUserId;
+    const userMatch = selectedUserId === 'all' || lead.ownerId === selectedUserId;
     
     // Search filter - ensure case insensitivity
     const searchLower = searchQuery.toLowerCase().trim();
     const searchMatch = !searchLower || 
-      (lead.contact_name && lead.contact_name.toLowerCase().includes(searchLower)) || 
+      (lead.contactName && lead.contactName.toLowerCase().includes(searchLower)) || 
       (lead.email && lead.email.toLowerCase().includes(searchLower)) ||
-      (lead.business_name && lead.business_name.toLowerCase().includes(searchLower));
+      (lead.businessName && lead.businessName.toLowerCase().includes(searchLower));
     
     // No date filtering if 'all' is selected
     if (selectedDateFilter === 'all') {
@@ -81,7 +82,7 @@ const LeadList: React.FC<LeadListProps> = ({
     }
     
     // Get the appropriate date field based on user selection
-    const dateField = selectedDateField === 'demo_date' ? lead.demo_date : lead.signup_date;
+    const dateField = selectedDateField === 'demo_date' ? lead.demoDate : lead.signupDate;
     
     // If there's no date in the selected field, don't include in filtered results
     if (!dateField) return false;
@@ -111,11 +112,11 @@ const LeadList: React.FC<LeadListProps> = ({
   // Sort leads by demo date (oldest first)
   const sortedLeads = [...filteredLeads].sort((a, b) => {
     // If no demo date, put at the end
-    if (!a.demo_date) return 1;
-    if (!b.demo_date) return -1;
+    if (!a.demoDate) return 1;
+    if (!b.demoDate) return -1;
     
     // Sort by demo date (oldest first)
-    return new Date(a.demo_date).getTime() - new Date(b.demo_date).getTime();
+    return new Date(a.demoDate).getTime() - new Date(b.demoDate).getTime();
   });
 
   // Function to clear the search input

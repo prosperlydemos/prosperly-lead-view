@@ -5,6 +5,7 @@ import { Copy, UserRound } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateForDisplay } from '@/utils/dateUtils';
+import { mapSupabaseLeadToAppLead } from '@/types/supabase';
 
 interface LeadCardProps {
   lead: Lead;
@@ -23,11 +24,11 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
   
   useEffect(() => {
     const fetchOwner = async () => {
-      if (lead.owner_id) {
+      if (lead.ownerId) {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', lead.owner_id)
+          .eq('id', lead.ownerId)
           .single();
           
         if (!error && data) {
@@ -37,7 +38,7 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
     };
     
     fetchOwner();
-  }, [lead.owner_id]);
+  }, [lead.ownerId]);
 
   // Get status-specific className
   const getStatusClassName = () => {
@@ -89,7 +90,7 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1">
-            <h3 className="font-semibold text-sm">{lead.contact_name}</h3>
+            <h3 className="font-semibold text-sm">{lead.contactName}</h3>
             {lead.email && (
               <span className="text-xs text-muted-foreground">
                 ({lead.email}) 
@@ -113,16 +114,16 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         {/* Second line: Demo date and Follow-up date or Signup date */}
         <div className="text-xs flex justify-between">
           <span>
-            <span className="text-muted-foreground">Demo:</span> {formatDateForDisplay(lead.demo_date)}
+            <span className="text-muted-foreground">Demo:</span> {formatDateForDisplay(lead.demoDate)}
           </span>
           <span>
-            {lead.signup_date ? (
+            {lead.signupDate ? (
               <>
-                <span className="text-muted-foreground">Signup Date:</span> {formatDateForDisplay(lead.signup_date)}
+                <span className="text-muted-foreground">Signup Date:</span> {formatDateForDisplay(lead.signupDate)}
               </>
             ) : (
               <>
-                <span className="text-muted-foreground">Next Follow-up:</span> <span className="font-bold">{formatDateForDisplay(lead.next_follow_up)}</span>
+                <span className="text-muted-foreground">Next Follow-up:</span> <span className="font-bold">{formatDateForDisplay(lead.nextFollowUp)}</span>
               </>
             )}
           </span>
@@ -131,7 +132,7 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         {/* Third line: Setup Fee and MRR */}
         <div className="text-xs flex justify-between">
           <span>
-            <span className="text-muted-foreground">Setup Fee:</span> ${lead.setup_fee || 0}
+            <span className="text-muted-foreground">Setup Fee:</span> ${lead.setupFee || 0}
           </span>
           <span>
             <span className="text-muted-foreground">MRR:</span> ${lead.mrr || 0}
