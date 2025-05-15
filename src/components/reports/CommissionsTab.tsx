@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
@@ -17,7 +17,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { User, Lead, CommissionRule } from '@/types';
+import EditCommissionDialog from './EditCommissionDialog';
 
 interface CommissionsTabProps {
   users: User[];
@@ -30,6 +32,11 @@ interface CommissionsTabProps {
 }
 
 const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, leaderboardData }) => {
+  // State for the edit commission dialog
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedOwner, setSelectedOwner] = useState<User | null>(null);
+  
   // Calculate totals for summary
   const totalSetupFees = filteredLeads
     .filter(lead => lead.status === 'Closed')
@@ -40,6 +47,23 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
     .reduce((sum, lead) => sum + lead.mrr, 0);
     
   const totalCommissions = leaderboardData.reduce((sum, user) => sum + user.commission, 0);
+
+  // Handle opening the edit commission dialog
+  const handleEditCommission = (lead: Lead) => {
+    const owner = users.find(user => user.id === lead.ownerId) || null;
+    setSelectedLead(lead);
+    setSelectedOwner(owner);
+    setIsEditDialogOpen(true);
+  };
+
+  // Handle commission update
+  const handleCommissionUpdated = () => {
+    // This could trigger a refresh of the data if needed
+    // For now, we'll just close the dialog
+    setIsEditDialogOpen(false);
+    setSelectedLead(null);
+    setSelectedOwner(null);
+  };
 
   return (
     <TabsContent value="commissions">
@@ -157,6 +181,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 <TableHead className="text-right">Setup Fee</TableHead>
                 <TableHead className="text-right">MRR</TableHead>
                 <TableHead className="text-right">Total Value</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -175,18 +200,36 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                       <TableCell className="text-right">${lead.setupFee.toLocaleString()}</TableCell>
                       <TableCell className="text-right">${lead.mrr.toLocaleString()}</TableCell>
                       <TableCell className="text-right">${(lead.setupFee + lead.mrr).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEditCommission(lead)}
+                        >
+                          Edit Commission
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
               {filteredLeads.filter(lead => lead.status === 'Closed').length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
+                  <TableCell colSpan={8} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Commission Dialog */}
+      <EditCommissionDialog 
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        lead={selectedLead}
+        owner={selectedOwner}
+        onCommissionUpdated={handleCommissionUpdated}
+      />
     </TabsContent>
   );
 };
