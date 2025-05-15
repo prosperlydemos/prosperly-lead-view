@@ -44,7 +44,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
       crm: '',
       nextFollowUp: null,
       value: 0,
-      location: '', // Initialize the location field
     };
     
     // Merge initialData with defaultData
@@ -159,19 +158,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
           value={formData.businessName || ''}
           onChange={handleInputChange}
           required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="location">
-          Location (US State/Canadian City)
-        </label>
-        <Input
-          id="location"
-          name="location"
-          value={formData.location || ''}
-          onChange={handleInputChange}
-          placeholder="e.g. California, Toronto"
         />
       </div>
 

@@ -246,9 +246,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
         </div>
 
         {/* Key metrics */}
-        <MetricsCards 
-          {...metrics} 
-        />
+        <MetricsCards {...metrics} />
 
         {/* Main tabs for different report types */}
         <Tabs defaultValue="overview" className="mb-8">

@@ -1,11 +1,10 @@
 
-import React, { useEffect, useState, useCallback, forwardRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Lead, Profile } from '../types/supabase';
 import { Copy, UserRound } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateForDisplay } from '@/utils/dateUtils';
-import { mapSupabaseLeadToAppLead } from '@/types/supabase';
 
 interface LeadCardProps {
   lead: Lead;
@@ -14,21 +13,16 @@ interface LeadCardProps {
   onEdit: () => void;
 }
 
-const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({ 
-  lead, 
-  isSelected, 
-  onClick, 
-  onEdit 
-}, ref) => {
+const LeadCard: React.FC<LeadCardProps> = ({ lead, isSelected, onClick, onEdit }) => {
   const [owner, setOwner] = useState<Profile | null>(null);
   
   useEffect(() => {
     const fetchOwner = async () => {
-      if (lead.ownerId) {
+      if (lead.owner_id) {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', lead.ownerId)
+          .eq('id', lead.owner_id)
           .single();
           
         if (!error && data) {
@@ -38,7 +32,7 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
     };
     
     fetchOwner();
-  }, [lead.ownerId]);
+  }, [lead.owner_id]);
 
   // Get status-specific className
   const getStatusClassName = () => {
@@ -71,14 +65,8 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
     }
   }, [lead.email]);
 
-  // Format a date safely
-  const safeFormatDate = (dateString: string | null | undefined) => {
-    return dateString ? formatDateForDisplay(dateString) : 'Not set';
-  };
-
   return (
     <button 
-      ref={ref}
       type="button"
       className={`w-full text-left rounded-lg border p-2 mb-2 cursor-pointer transition-all ${getStatusClassName()} ${isSelected ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
@@ -95,7 +83,7 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         {/* First line: Lead name, email with copy icon, sales rep name (right-aligned) */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1">
-            <h3 className="font-semibold text-sm">{lead.contactName}</h3>
+            <h3 className="font-semibold text-sm">{lead.contact_name}</h3>
             {lead.email && (
               <span className="text-xs text-muted-foreground">
                 ({lead.email}) 
@@ -119,16 +107,16 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         {/* Second line: Demo date and Follow-up date or Signup date */}
         <div className="text-xs flex justify-between">
           <span>
-            <span className="text-muted-foreground">Demo:</span> {safeFormatDate(lead.demoDate)}
+            <span className="text-muted-foreground">Demo:</span> {formatDateForDisplay(lead.demo_date)}
           </span>
           <span>
-            {lead.signupDate ? (
+            {lead.signup_date ? (
               <>
-                <span className="text-muted-foreground">Signup Date:</span> {safeFormatDate(lead.signupDate)}
+                <span className="text-muted-foreground">Signup Date:</span> {formatDateForDisplay(lead.signup_date)}
               </>
             ) : (
               <>
-                <span className="text-muted-foreground">Next Follow-up:</span> <span className="font-bold">{safeFormatDate(lead.nextFollowUp)}</span>
+                <span className="text-muted-foreground">Next Follow-up:</span> <span className="font-bold">{formatDateForDisplay(lead.next_follow_up)}</span>
               </>
             )}
           </span>
@@ -137,7 +125,7 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         {/* Third line: Setup Fee and MRR */}
         <div className="text-xs flex justify-between">
           <span>
-            <span className="text-muted-foreground">Setup Fee:</span> ${lead.setupFee || 0}
+            <span className="text-muted-foreground">Setup Fee:</span> ${lead.setup_fee || 0}
           </span>
           <span>
             <span className="text-muted-foreground">MRR:</span> ${lead.mrr || 0}
@@ -146,8 +134,6 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
       </div>
     </button>
   );
-});
-
-LeadCard.displayName = 'LeadCard';
+};
 
 export default LeadCard;

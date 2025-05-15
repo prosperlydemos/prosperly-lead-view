@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface MetricsCardsProps {
   totalMRR: number;
@@ -14,8 +13,6 @@ interface MetricsCardsProps {
   closedDealsCount: number;
   newLeadsCount: number;
   conversionRate: number;
-  demosBooked: number;
-  demoComparisonRate: number;
 }
 
 const MetricsCards: React.FC<MetricsCardsProps> = ({ 
@@ -23,12 +20,10 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
   totalSetupFees, 
   closedDealsCount, 
   newLeadsCount, 
-  conversionRate,
-  demosBooked,
-  demoComparisonRate
+  conversionRate 
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <Card>
         <CardHeader className="py-4">
           <CardTitle className="text-sm font-medium text-muted-foreground">Total MRR</CardTitle>
@@ -38,7 +33,6 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
           <p className="text-xs text-muted-foreground mt-1">Monthly Recurring Revenue</p>
         </CardContent>
       </Card>
-      
       <Card>
         <CardHeader className="py-4">
           <CardTitle className="text-sm font-medium text-muted-foreground">Total Setup Fees</CardTitle>
@@ -48,7 +42,6 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
           <p className="text-xs text-muted-foreground mt-1">One-time payments</p>
         </CardContent>
       </Card>
-      
       <Card>
         <CardHeader className="py-4">
           <CardTitle className="text-sm font-medium text-muted-foreground">Closed Deals</CardTitle>
@@ -58,7 +51,6 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
           <p className="text-xs text-muted-foreground mt-1">Out of {newLeadsCount} leads</p>
         </CardContent>
       </Card>
-      
       <Card>
         <CardHeader className="py-4">
           <CardTitle className="text-sm font-medium text-muted-foreground">Conversion Rate</CardTitle>
@@ -66,24 +58,6 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
         <CardContent>
           <div className="text-2xl font-bold">{conversionRate}%</div>
           <p className="text-xs text-muted-foreground mt-1">Lead to customer (excluding Demo Scheduled)</p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="py-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Demos Booked</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            <div className="text-2xl font-bold mr-2">{demosBooked}</div>
-            {demoComparisonRate !== 0 && (
-              <div className={`flex items-center text-sm ${demoComparisonRate > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {demoComparisonRate > 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                {Math.abs(demoComparisonRate)}%
-              </div>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">vs. same period last month</p>
         </CardContent>
       </Card>
     </div>

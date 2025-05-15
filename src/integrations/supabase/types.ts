@@ -28,7 +28,6 @@ export type Database = {
         Row: {
           business_name: string | null
           closing_date: string | null
-          commission_amount: number | null
           contact_name: string
           created_at: string
           crm: string | null
@@ -36,7 +35,6 @@ export type Database = {
           email: string | null
           id: string
           lead_source: string | null
-          location: string | null
           mrr: number | null
           next_follow_up: string | null
           owner_id: string
@@ -50,7 +48,6 @@ export type Database = {
         Insert: {
           business_name?: string | null
           closing_date?: string | null
-          commission_amount?: number | null
           contact_name: string
           created_at?: string
           crm?: string | null
@@ -58,7 +55,6 @@ export type Database = {
           email?: string | null
           id?: string
           lead_source?: string | null
-          location?: string | null
           mrr?: number | null
           next_follow_up?: string | null
           owner_id: string
@@ -72,7 +68,6 @@ export type Database = {
         Update: {
           business_name?: string | null
           closing_date?: string | null
-          commission_amount?: number | null
           contact_name?: string
           created_at?: string
           crm?: string | null
@@ -80,7 +75,6 @@ export type Database = {
           email?: string | null
           id?: string
           lead_source?: string | null
-          location?: string | null
           mrr?: number | null
           next_follow_up?: string | null
           owner_id?: string

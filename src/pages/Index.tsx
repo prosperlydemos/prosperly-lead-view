@@ -11,7 +11,7 @@ import { isToday, parseISO, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { UserNavbar } from '@/components/UserNavbar';
-import { LeadStatus, User } from '../types/index';
+import { Lead as AppLead, LeadStatus, User } from '../types/index';
 import UserManagement from '../components/UserManagement';
 import AddLeadDialog from '@/components/leads/AddLeadDialog';
 import EditLeadDialog from '@/components/leads/EditLeadDialog';
@@ -81,9 +81,7 @@ const Index: React.FC = () => {
         throw leadsError;
       }
       
-      // Map Supabase leads to application leads
-      const appLeads = leadsData ? leadsData.map(lead => mapSupabaseLeadToAppLead(lead)) : [];
-      setLeads(appLeads);
+      setLeads(leadsData || []);
       
       toast({
         title: "Leads refreshed",
@@ -125,10 +123,10 @@ const Index: React.FC = () => {
 
           setLeads(prev => {
             if (payload.eventType === 'INSERT') {
-              return [...prev, mapSupabaseLeadToAppLead(payload.new)];
+              return [...prev, payload.new as Lead];
             } else if (payload.eventType === 'UPDATE') {
               return prev.map(lead => 
-                lead.id === (payload.new as any).id ? mapSupabaseLeadToAppLead(payload.new) : lead
+                lead.id === (payload.new as Lead).id ? payload.new as Lead : lead
               );
             } else if (payload.eventType === 'DELETE') {
               return prev.filter(lead => 
@@ -169,18 +167,8 @@ const Index: React.FC = () => {
           throw notesError;
         }
         
-        // Map Supabase leads and notes to application types
-        const appLeads = leadsData ? leadsData.map(lead => mapSupabaseLeadToAppLead(lead)) : [];
-        const appNotes = notesData ? notesData.map(note => ({
-          id: note.id,
-          leadId: note.lead_id,
-          content: note.content,
-          createdAt: note.created_at,
-          userId: note.user_id
-        })) : [];
-        
-        setLeads(appLeads);
-        setNotes(appNotes);
+        setLeads(leadsData || []);
+        setNotes(notesData || []);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -209,17 +197,17 @@ const Index: React.FC = () => {
     
     leads.forEach(lead => {
       // Only consider leads assigned to the current user
-      if (lead.ownerId === currentUser.id) {
+      if (lead.owner_id === currentUser.id) {
         // Check for follow-ups due today
-        if (lead.nextFollowUp) {
-          const followUpDate = parseISO(lead.nextFollowUp);
+        if (lead.next_follow_up) {
+          const followUpDate = parseISO(lead.next_follow_up);
           if (isToday(followUpDate)) {
             newTodoItems.push({
               id: `follow-up-${lead.id}-${Date.now()}`,
               leadId: lead.id,
-              contactName: lead.contactName,
-              businessName: lead.businessName || '',
-              dueDate: lead.nextFollowUp,
+              contactName: lead.contact_name,
+              businessName: lead.business_name || '',
+              dueDate: lead.next_follow_up,
               completed: false,
               type: 'follow-up'
             });
@@ -227,19 +215,19 @@ const Index: React.FC = () => {
         }
         
         // Check for demos scheduled today
-        if (lead.demoDate) {
-          const demoDate = parseISO(lead.demoDate);
+        if (lead.demo_date) {
+          const demoDate = parseISO(lead.demo_date);
           if (isToday(demoDate)) {
             // Extract time from the demo_date with proper formatting
             const demoTime = format(demoDate, 'h:mm a');
-            console.log(`Formatted demo time for ${lead.contactName}: ${demoTime}, original value: ${lead.demoDate}`);
+            console.log(`Formatted demo time for ${lead.contact_name}: ${demoTime}, original value: ${lead.demo_date}`);
             
             newTodoItems.push({
               id: `demo-${lead.id}-${Date.now()}`,
               leadId: lead.id,
-              contactName: lead.contactName,
-              businessName: lead.businessName || '',
-              dueDate: lead.demoDate,
+              contactName: lead.contact_name,
+              businessName: lead.business_name || '',
+              dueDate: lead.demo_date,
               completed: false,
               type: 'demo',
               time: demoTime
@@ -256,7 +244,7 @@ const Index: React.FC = () => {
     );
     
     setTodoItems([...filteredItems, ...newTodoItems]);
-  }, [leads, currentUser, todoItems]);
+  }, [leads, currentUser]);
 
   // Modified handleLeadSelect to ensure it doesn't cause page refreshes
   const handleLeadSelect = useCallback((leadId: string, e?: React.MouseEvent) => {
@@ -287,16 +275,7 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      // Convert the Supabase note to our application note format
-      const appNote: Note = {
-        id: data.id,
-        leadId: data.lead_id,
-        content: data.content,
-        createdAt: data.created_at,
-        userId: data.user_id
-      };
-      
-      setNotes(prev => [...prev, appNote]);
+      setNotes(prev => [...prev, data]);
       
       // Mark todo item for this lead as completed when a note is added
       setTodoItems(todoItems.map(item => 
@@ -317,10 +296,10 @@ const Index: React.FC = () => {
     }
   }, [currentUser, setNotes, todoItems, setTodoItems]);
 
-  const handleStatusChange = useCallback(async (leadId: string, status: LeadStatus) => {
+  const handleStatusChange = useCallback(async (leadId: string, status: string) => {
     try {
       // If changing to Closed status, update the closing_date
-      const updates: Partial<any> = { status };
+      const updates: Partial<Lead> = { status };
       
       if (status === 'Closed') {
         updates.closing_date = new Date().toISOString();
@@ -335,11 +314,8 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      // Convert the Supabase lead to our application lead format
-      const appLead = mapSupabaseLeadToAppLead(data);
-      
       setLeads(prev => 
-        prev.map(lead => lead.id === leadId ? appLead : lead)
+        prev.map(lead => lead.id === leadId ? data : lead)
       );
       
       toast({

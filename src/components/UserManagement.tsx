@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, CommissionRule } from '../types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -99,12 +100,11 @@ const UserManagement: React.FC<UserManagementProps> = ({
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="h-10">
+          <Button variant="outline" size="sm" className="mb-4">
             <Users size={16} className="mr-2" />
             Manage Users
           </Button>
         </SheetTrigger>
-        
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Team Management</SheetTitle>
