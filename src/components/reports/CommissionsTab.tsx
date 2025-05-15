@@ -65,6 +65,23 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
     setSelectedOwner(null);
   };
 
+  // Calculate commission for a lead based on owner's commission rules
+  const calculateCommission = (lead: Lead): number => {
+    const owner = users.find(user => user.id === lead.ownerId);
+    if (!owner || !owner.commissionRules || owner.commissionRules.length === 0) {
+      return 0;
+    }
+
+    // Find the base rule (threshold = 0)
+    const baseRule = owner.commissionRules.find(rule => rule.threshold === 0);
+    if (baseRule) {
+      return baseRule.amount;
+    }
+
+    // Default commission if no base rule found
+    return 249;
+  };
+
   return (
     <TabsContent value="commissions">
       <Card className="mb-6">
@@ -180,6 +197,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 <TableHead>Close Date</TableHead>
                 <TableHead className="text-right">Setup Fee</TableHead>
                 <TableHead className="text-right">MRR</TableHead>
+                <TableHead className="text-right">Commission</TableHead>
                 <TableHead className="text-right">Total Value</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -191,6 +209,8 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 .slice(0, 10)
                 .map((lead) => {
                   const owner = users.find(u => u.id === lead.ownerId);
+                  const commission = calculateCommission(lead);
+                  
                   return (
                     <TableRow key={lead.id} className="border-b hover:bg-muted/50">
                       <TableCell>{lead.contactName}</TableCell>
@@ -199,6 +219,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                       <TableCell>{lead.closedAt ? format(new Date(lead.closedAt), 'MMM d, yyyy') : 'N/A'}</TableCell>
                       <TableCell className="text-right">${lead.setupFee.toLocaleString()}</TableCell>
                       <TableCell className="text-right">${lead.mrr.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">${commission.toLocaleString()}</TableCell>
                       <TableCell className="text-right">${(lead.setupFee + lead.mrr).toLocaleString()}</TableCell>
                       <TableCell>
                         <Button 
@@ -214,7 +235,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 })}
               {filteredLeads.filter(lead => lead.status === 'Closed').length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
+                  <TableCell colSpan={9} className="py-4 text-center text-muted-foreground">No closed deals in the selected time period.</TableCell>
                 </TableRow>
               )}
             </TableBody>
