@@ -358,17 +358,34 @@ const Index: React.FC = () => {
   }, [setLeads]);
 
   // Modified handleEditLead to properly set the selected lead
-  const handleEditLead = useCallback((leadId: string) => {
-    console.log('Edit lead clicked:', leadId);
-    // Find the lead in the leads array
-    const leadToEdit = leads.find(lead => lead.id === leadId);
-    if (leadToEdit) {
+  const handleEditLead = useCallback(async (leadId: string) => {
+    try {
+      console.log('Edit lead clicked:', leadId);
+      // Fetch fresh lead data from Supabase
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', leadId)
+        .single();
+        
+      if (error) throw error;
+      
+      // Convert to app lead format
+      const appLead = mapSupabaseLeadToAppLead(data);
+      
       // Set the selected lead ID
       setSelectedLeadId(leadId);
       // Open the modal
       setIsEditModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching lead for edit:', error);
+      toast({
+        title: "Error loading lead",
+        description: "Failed to load lead data for editing",
+        variant: "destructive"
+      });
     }
-  }, [leads]);
+  }, []);
 
   const handleSaveLead = useCallback(async (updatedLead: AppLead) => {
     try {

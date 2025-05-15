@@ -68,14 +68,14 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
       setIsSubmitting(true);
       console.log('Form data before update:', formData);
       
-      // Create updated lead object with proper type handling and explicit date fields
+      // Create updated lead object with proper type handling
       const updatedLead: Lead = {
         ...lead,
         ...formData,
+        // Ensure numeric fields are properly handled
         setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : lead.setupFee,
         mrr: typeof formData.mrr === 'number' ? formData.mrr : lead.mrr,
         value: typeof formData.value === 'number' ? formData.value : lead.value,
-        // Handle commission amount specifically
         commissionAmount: typeof formData.commissionAmount === 'number' ? formData.commissionAmount : lead.commissionAmount,
         // Explicitly set date fields from formData, using undefined check to properly handle null values
         demoDate: formData.demoDate !== undefined ? formData.demoDate : lead.demoDate,
