@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,11 +28,13 @@ const EditCommissionDialog: React.FC<EditCommissionDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset form when dialog opens with new lead data
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen && lead) {
       // Try to get the commission from the lead's data or calculate it
-      // For now, we'll just set a default value based on lead value
-      setCommissionAmount(lead.commissionAmount ? lead.commissionAmount.toString() : '');
+      setCommissionAmount(lead.commissionAmount !== undefined && lead.commissionAmount !== null 
+        ? lead.commissionAmount.toString() 
+        : ''
+      );
     }
   }, [isOpen, lead]);
 
@@ -64,10 +66,16 @@ const EditCommissionDialog: React.FC<EditCommissionDialogProps> = ({
       if (leadError) throw leadError;
       
       // Update the user's total commission in the database
+      const currentCommission = owner.totalCommission || 0;
+      const previousCommission = lead.commissionAmount || 0;
+      
+      // Calculate the difference to add to the total (if updating an existing commission)
+      const commissionDifference = commission - previousCommission;
+      
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          total_commission: owner.totalCommission ? owner.totalCommission + commission : commission 
+          total_commission: currentCommission + commissionDifference
         })
         .eq('id', owner.id);
       
@@ -107,9 +115,9 @@ const EditCommissionDialog: React.FC<EditCommissionDialogProps> = ({
             <div className="space-y-1 mb-4">
               <p><strong>Deal:</strong> {lead.businessName || lead.contactName}</p>
               <p><strong>Owner:</strong> {owner.name}</p>
-              <p><strong>Setup Fee:</strong> ${lead.setupFee.toLocaleString()}</p>
-              <p><strong>MRR:</strong> ${lead.mrr.toLocaleString()}</p>
-              <p><strong>Total Value:</strong> ${(lead.setupFee + lead.mrr).toLocaleString()}</p>
+              <p><strong>Setup Fee:</strong> ${(lead.setupFee || 0).toLocaleString()}</p>
+              <p><strong>MRR:</strong> ${(lead.mrr || 0).toLocaleString()}</p>
+              <p><strong>Total Value:</strong> ${((lead.setupFee || 0) + (lead.mrr || 0)).toLocaleString()}</p>
             </div>
           )}
           

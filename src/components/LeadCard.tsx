@@ -71,6 +71,11 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
     }
   }, [lead.email]);
 
+  // Format a date safely
+  const safeFormatDate = (dateString: string | null | undefined) => {
+    return dateString ? formatDateForDisplay(dateString) : 'Not set';
+  };
+
   return (
     <button 
       ref={ref}
@@ -114,16 +119,16 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         {/* Second line: Demo date and Follow-up date or Signup date */}
         <div className="text-xs flex justify-between">
           <span>
-            <span className="text-muted-foreground">Demo:</span> {formatDateForDisplay(lead.demoDate)}
+            <span className="text-muted-foreground">Demo:</span> {safeFormatDate(lead.demoDate)}
           </span>
           <span>
             {lead.signupDate ? (
               <>
-                <span className="text-muted-foreground">Signup Date:</span> {formatDateForDisplay(lead.signupDate)}
+                <span className="text-muted-foreground">Signup Date:</span> {safeFormatDate(lead.signupDate)}
               </>
             ) : (
               <>
-                <span className="text-muted-foreground">Next Follow-up:</span> <span className="font-bold">{formatDateForDisplay(lead.nextFollowUp)}</span>
+                <span className="text-muted-foreground">Next Follow-up:</span> <span className="font-bold">{safeFormatDate(lead.nextFollowUp)}</span>
               </>
             )}
           </span>

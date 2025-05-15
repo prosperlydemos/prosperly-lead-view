@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { format } from 'date-fns';
@@ -41,13 +42,13 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
   // Calculate totals for summary
   const totalSetupFees = filteredLeads
     .filter(lead => lead.status === 'Closed')
-    .reduce((sum, lead) => sum + lead.setupFee, 0);
+    .reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
   
   const totalMRR = filteredLeads
     .filter(lead => lead.status === 'Closed')
-    .reduce((sum, lead) => sum + lead.mrr, 0);
+    .reduce((sum, lead) => sum + (lead.mrr || 0), 0);
     
-  const totalCommissions = leaderboardData.reduce((sum, user) => sum + user.commission, 0);
+  const totalCommissions = leaderboardData.reduce((sum, user) => sum + (user.commission || 0), 0);
 
   // Handle opening the edit commission dialog
   const handleEditCommission = (lead: Lead) => {
@@ -73,7 +74,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
   // Calculate commission for a lead based on owner's commission rules or use stored value
   const calculateCommission = (lead: Lead): number => {
     // If we have a stored commission amount, use that
-    if (lead.commissionAmount !== undefined) {
+    if (lead.commissionAmount !== undefined && lead.commissionAmount !== null) {
       return lead.commissionAmount;
     }
     
@@ -93,6 +94,14 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
     return 249;
   };
 
+  // Safe formatter for numbers that might be null/undefined
+  const safeFormat = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) {
+      return '$0';
+    }
+    return `$${value.toLocaleString()}`;
+  };
+
   return (
     <TabsContent value="commissions">
       <Card className="mb-6">
@@ -106,15 +115,15 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
           <div className="grid grid-cols-3 gap-4">
             <div className="p-4 bg-muted rounded-md">
               <div className="text-sm text-muted-foreground mb-1">Total Setup Fees</div>
-              <div className="text-2xl font-bold">${totalSetupFees.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{safeFormat(totalSetupFees)}</div>
             </div>
             <div className="p-4 bg-muted rounded-md">
               <div className="text-sm text-muted-foreground mb-1">Total MRR</div>
-              <div className="text-2xl font-bold">${totalMRR.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{safeFormat(totalMRR)}</div>
             </div>
             <div className="p-4 bg-muted rounded-md">
               <div className="text-sm text-muted-foreground mb-1">Total Commissions Paid</div>
-              <div className="text-2xl font-bold">${totalCommissions.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{safeFormat(totalCommissions)}</div>
             </div>
           </div>
         </CardContent>
@@ -148,8 +157,8 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 );
                 
                 // Calculate the total revenue for each user's closed leads
-                const userTotalMRR = userClosedLeads.reduce((sum, lead) => sum + lead.mrr, 0);
-                const userTotalSetupFees = userClosedLeads.reduce((sum, lead) => sum + lead.setupFee, 0);
+                const userTotalMRR = userClosedLeads.reduce((sum, lead) => sum + (lead.mrr || 0), 0);
+                const userTotalSetupFees = userClosedLeads.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
                 const userTotalRevenue = userTotalMRR + userTotalSetupFees;
                 
                 return (
@@ -174,8 +183,8 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                       )}
                     </TableCell>
                     <TableCell>{userClosedLeads.length}</TableCell>
-                    <TableCell>${userTotalRevenue.toLocaleString()}</TableCell>
-                    <TableCell>${userData?.commission.toLocaleString() || 0}</TableCell>
+                    <TableCell>{safeFormat(userTotalRevenue)}</TableCell>
+                    <TableCell>{safeFormat(userData?.commission)}</TableCell>
                   </TableRow>
                 );
               })}
@@ -216,11 +225,18 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
             <TableBody>
               {filteredLeads
                 .filter(lead => lead.status === 'Closed')
-                .sort((a, b) => new Date(b.closedAt || 0).getTime() - new Date(a.closedAt || 0).getTime())
+                .sort((a, b) => {
+                  const dateA = a.closedAt ? new Date(a.closedAt).getTime() : 0;
+                  const dateB = b.closedAt ? new Date(b.closedAt).getTime() : 0;
+                  return dateB - dateA;
+                })
                 .slice(0, 10)
                 .map((lead) => {
                   const owner = users.find(u => u.id === lead.ownerId);
                   const commission = calculateCommission(lead);
+                  const setupFee = lead.setupFee || 0;
+                  const mrr = lead.mrr || 0;
+                  const totalValue = setupFee + mrr;
                   
                   return (
                     <TableRow key={lead.id} className="border-b hover:bg-muted/50">
@@ -228,10 +244,10 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                       <TableCell>{lead.businessName}</TableCell>
                       <TableCell>{owner?.name || 'Unknown'}</TableCell>
                       <TableCell>{lead.closedAt ? format(new Date(lead.closedAt), 'MMM d, yyyy') : 'N/A'}</TableCell>
-                      <TableCell className="text-right">${lead.setupFee.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">${lead.mrr.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">${commission.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">${(lead.setupFee + lead.mrr).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{safeFormat(setupFee)}</TableCell>
+                      <TableCell className="text-right">{safeFormat(mrr)}</TableCell>
+                      <TableCell className="text-right">{safeFormat(commission)}</TableCell>
+                      <TableCell className="text-right">{safeFormat(totalValue)}</TableCell>
                       <TableCell>
                         <Button 
                           variant="outline" 
