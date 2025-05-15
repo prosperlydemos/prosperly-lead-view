@@ -1,4 +1,5 @@
 
+
 import { Lead as AppLead, Note as AppNote, LeadStatus, User } from '@/types';
 
 export type Lead = AppLead;
@@ -25,7 +26,7 @@ export function mapSupabaseLeadToAppLead(supabaseLead: any): AppLead {
     crm: supabaseLead.crm || '',
     value: typeof supabaseLead.value === 'number' ? supabaseLead.value : 0,
     location: supabaseLead.location || '',
-    commissionAmount: supabaseLead.commission_amount,
+    commissionAmount: typeof supabaseLead.commission_amount === 'number' ? supabaseLead.commission_amount : null,
   };
 }
 
@@ -50,7 +51,7 @@ export function mapAppLeadToSupabaseLead(appLead: AppLead): any {
     crm: appLead.crm,
     value: appLead.value,
     location: appLead.location,
-    commission_amount: appLead.commissionAmount
+    commission_amount: appLead.commissionAmount,
   };
 }
 

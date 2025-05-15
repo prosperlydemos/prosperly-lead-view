@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
@@ -74,6 +75,8 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : lead.setupFee,
         mrr: typeof formData.mrr === 'number' ? formData.mrr : lead.mrr,
         value: typeof formData.value === 'number' ? formData.value : lead.value,
+        // Handle commission amount specifically
+        commissionAmount: typeof formData.commissionAmount === 'number' ? formData.commissionAmount : lead.commissionAmount,
         // Explicitly set date fields from formData, using undefined check to properly handle null values
         demoDate: formData.demoDate !== undefined ? formData.demoDate : lead.demoDate,
         signupDate: formData.signupDate !== undefined ? formData.signupDate : lead.signupDate,

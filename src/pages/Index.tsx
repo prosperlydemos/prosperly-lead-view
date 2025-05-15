@@ -370,6 +370,11 @@ const Index: React.FC = () => {
     try {
       const supabaseUpdatedLead = mapAppLeadToSupabaseLead(updatedLead);
       
+      // Ensure commission_amount is properly handled
+      if (typeof updatedLead.commissionAmount === 'number') {
+        supabaseUpdatedLead.commission_amount = updatedLead.commissionAmount;
+      }
+      
       const { data, error } = await supabase
         .from('leads')
         .update(supabaseUpdatedLead)
@@ -420,7 +425,7 @@ const Index: React.FC = () => {
       
       setLeads(prev => prev.filter(lead => lead.id !== leadId));
       // Notes will be automatically deleted due to cascade delete
-      setNotes(prev => prev.filter(note => note.lead_id !== leadId));
+      setNotes(prev => prev.filter(note => note.leadId !== leadId));
       
       if (selectedLeadId === leadId) {
         setSelectedLeadId(null);
