@@ -48,10 +48,16 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
     .filter(lead => lead.status === 'Closed')
     .reduce((sum, lead) => sum + (lead.mrr || 0), 0);
     
-  // Calculate total commissions from actual commission amounts on leads
+  // Calculate total commissions from both custom and calculated commission amounts
   const totalCommissions = filteredLeads
     .filter(lead => lead.status === 'Closed')
-    .reduce((sum, lead) => sum + (lead.commissionAmount || 0), 0);
+    .reduce((sum, lead) => {
+      // Use the stored commission amount if available, otherwise calculate it
+      const commissionAmount = lead.commissionAmount !== undefined && lead.commissionAmount !== null
+        ? lead.commissionAmount
+        : calculateCommission(lead);
+      return sum + commissionAmount;
+    }, 0);
 
   // Handle opening the edit commission dialog
   const handleEditCommission = (lead: Lead) => {
