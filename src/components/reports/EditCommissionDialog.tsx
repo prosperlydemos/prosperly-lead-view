@@ -55,19 +55,27 @@ const EditCommissionDialog: React.FC<EditCommissionDialogProps> = ({
         return;
       }
       
-      // Update the commission in the database
-      const { error } = await supabase
+      // Update the lead with the commission amount in the database
+      const { error: leadError } = await supabase
+        .from('leads')
+        .update({ commission_amount: commission })
+        .eq('id', lead.id);
+      
+      if (leadError) throw leadError;
+      
+      // Update the user's total commission in the database
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           total_commission: owner.totalCommission ? owner.totalCommission + commission : commission 
         })
         .eq('id', owner.id);
       
-      if (error) throw error;
+      if (profileError) throw profileError;
       
       toast({
         title: "Commission updated",
-        description: `Commission of $${commission} has been added to ${owner.name}'s total.`
+        description: `Commission of $${commission} has been saved for this deal.`
       });
       
       onCommissionUpdated();

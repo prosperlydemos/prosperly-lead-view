@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
@@ -20,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { User, Lead, CommissionRule } from '@/types';
 import EditCommissionDialog from './EditCommissionDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface CommissionsTabProps {
   users: User[];
@@ -32,6 +32,7 @@ interface CommissionsTabProps {
 }
 
 const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, leaderboardData }) => {
+  const { toast } = useToast();
   // State for the edit commission dialog
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -58,15 +59,25 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
 
   // Handle commission update
   const handleCommissionUpdated = () => {
-    // This could trigger a refresh of the data if needed
-    // For now, we'll just close the dialog
+    // Notify the user that they'll need to refresh to see updated totals
+    toast({
+      title: "Commission updated",
+      description: "Commission has been updated. The totals will be updated on the next data refresh."
+    });
+    
     setIsEditDialogOpen(false);
     setSelectedLead(null);
     setSelectedOwner(null);
   };
 
-  // Calculate commission for a lead based on owner's commission rules
+  // Calculate commission for a lead based on owner's commission rules or use stored value
   const calculateCommission = (lead: Lead): number => {
+    // If we have a stored commission amount, use that
+    if (lead.commissionAmount !== undefined) {
+      return lead.commissionAmount;
+    }
+    
+    // Otherwise calculate based on rules
     const owner = users.find(user => user.id === lead.ownerId);
     if (!owner || !owner.commissionRules || owner.commissionRules.length === 0) {
       return 0;
