@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
@@ -50,49 +49,57 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
   const [formKey, setFormKey] = useState(Date.now());
+  const [currentLead, setCurrentLead] = useState<Lead>(lead);
   
-  // Update form key when dialog opens with a new lead
+  // Only update lead data when dialog opens to prevent form resets
   useEffect(() => {
     console.log('2. Dialog effect triggered:', { isOpen, lead });
-    if (isOpen && lead) {
+    if (isOpen) {
       console.log('Dialog opened with lead data:', lead);
+      setCurrentLead(lead);
       setFormKey(Date.now());
     }
-  }, [isOpen, lead?.id]); // Only re-run when either isOpen changes or a different lead is being edited
+  }, [isOpen]); // Only re-run when dialog opens/closes
   
-  // Log the lead data when it changes
-  useEffect(() => {
-    console.log('EditLeadDialog received lead:', lead);
-  }, [lead]);
-  
+  // By removing lead.id from dependencies, we prevent the effect from running
+  // when lead is updated elsewhere in the app
+
   const handleSubmit = useCallback(async (formData: Partial<Lead>) => {
-    console.log('3. Form submission:', { formData, lead });
+    console.log('3. Form submission:', { formData, currentLead });
     if (!isOpen) return; // Prevent submission if dialog is closing/closed
     
     try {
       setIsSubmitting(true);
       console.log('Form data before update:', formData);
+      console.log('Current lead data:', currentLead);
       
-      // Create updated lead object
+      // Create updated lead object with proper type handling and explicit date fields
       const updatedLead: Lead = {
-        ...lead,
+        ...currentLead,
         ...formData,
-        // Ensure numeric fields are properly handled
-        setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : lead.setupFee,
-        mrr: typeof formData.mrr === 'number' ? formData.mrr : lead.mrr,
-        value: typeof formData.value === 'number' ? formData.value : lead.value,
-        commissionAmount: typeof formData.commissionAmount === 'number' ? formData.commissionAmount : lead.commissionAmount,
+        setupFee: typeof formData.setupFee === 'number' ? formData.setupFee : currentLead.setupFee,
+        mrr: typeof formData.mrr === 'number' ? formData.mrr : currentLead.mrr,
+        value: typeof formData.value === 'number' ? formData.value : currentLead.value,
         // Explicitly set date fields from formData, using undefined check to properly handle null values
-        demoDate: formData.demoDate !== undefined ? formData.demoDate : lead.demoDate,
-        signupDate: formData.signupDate !== undefined ? formData.signupDate : lead.signupDate,
-        nextFollowUp: formData.nextFollowUp !== undefined ? formData.nextFollowUp : lead.nextFollowUp,
-        closedAt: formData.closedAt !== undefined ? formData.closedAt : lead.closedAt,
+        demoDate: formData.demoDate !== undefined ? formData.demoDate : currentLead.demoDate,
+        signupDate: formData.signupDate !== undefined ? formData.signupDate : currentLead.signupDate,
+        nextFollowUp: formData.nextFollowUp !== undefined ? formData.nextFollowUp : currentLead.nextFollowUp,
+        closedAt: formData.closedAt !== undefined ? formData.closedAt : currentLead.closedAt,
       };
       
       console.log('4. Sending to parent:', updatedLead);
       
       // Save the updated lead
       await onSave(updatedLead);
+      
+      // Only proceed with toast and close if the component is still mounted
+      if (isOpen) {
+        toast({
+          title: 'Lead updated successfully',
+          description: `Updated ${updatedLead.contactName}'s information`,
+        });
+        onClose();
+      }
     } catch (error) {
       console.error('Error updating lead:', error);
       
@@ -110,9 +117,9 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
         setIsSubmitting(false);
       }
     }
-  }, [isOpen, lead, onSave, toast]);
+  }, [isOpen, currentLead, onSave, onClose, toast]);
 
-  const handleDeleteLead = useCallback(async () => {
+  const handleDelete = useCallback(async () => {
     if (!onDelete || !lead || !isOpen) return;
     
     try {
@@ -177,13 +184,13 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete {lead.contactName}'s contact record and all
+                      This will permanently delete {currentLead.contactName}'s contact record and all
                       associated notes. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteLead} disabled={isSubmitting}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDelete} disabled={isSubmitting}>Delete</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -191,7 +198,7 @@ const EditLeadDialog: React.FC<EditLeadDialogProps> = ({
           </div>
           <LeadForm
             key={formKey}
-            initialData={lead}
+            initialData={currentLead}
             users={users}
             currentUser={currentUser}
             onSubmit={handleSubmit}

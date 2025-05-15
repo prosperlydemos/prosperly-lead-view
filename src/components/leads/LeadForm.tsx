@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   console.log('=== LEAD FORM DEBUG ===');
   console.log('1. Form mounted with initialData:', initialData);
   
-  // Initialize form data with initialData
+  // Initialize form data only once when component mounts
   const [formData, setFormData] = useState<Partial<Lead>>(() => {
     console.log('2. Initializing form data');
     const defaultData: Partial<Lead> = {
@@ -44,51 +44,20 @@ const LeadForm: React.FC<LeadFormProps> = ({
       crm: '',
       nextFollowUp: null,
       value: 0,
-      location: '',
-      commissionAmount: null,
+      location: '', // Initialize the location field
     };
     
-    // If we have initialData, use it to override defaults
-    if (initialData) {
-      return {
-        ...defaultData,
-        ...initialData,
-        // Ensure numeric fields are properly handled
-        setupFee: typeof initialData.setupFee === 'number' ? initialData.setupFee : defaultData.setupFee,
-        mrr: typeof initialData.mrr === 'number' ? initialData.mrr : defaultData.mrr,
-        value: typeof initialData.value === 'number' ? initialData.value : defaultData.value,
-        commissionAmount: typeof initialData.commissionAmount === 'number' ? initialData.commissionAmount : defaultData.commissionAmount,
-      };
-    }
-    
-    return defaultData;
+    // Merge initialData with defaultData
+    return initialData ? { ...defaultData, ...initialData } : defaultData;
   });
 
-  // Update form data when initialData changes
-  useEffect(() => {
-    if (initialData) {
-      console.log('3. UpdateEffect: Setting form data from initialData:', initialData);
-      setFormData(prev => ({
-        ...prev,
-        ...initialData,
-        // Ensure numeric fields are properly handled
-        setupFee: typeof initialData.setupFee === 'number' ? initialData.setupFee : prev.setupFee,
-        mrr: typeof initialData.mrr === 'number' ? initialData.mrr : prev.mrr,
-        value: typeof initialData.value === 'number' ? initialData.value : prev.value,
-        commissionAmount: typeof initialData.commissionAmount === 'number' ? initialData.commissionAmount : prev.commissionAmount,
-      }));
-    }
-  }, [initialData]);
-
   // Log form data when it changes for debugging
-  useEffect(() => {
-    console.log('Current formData in LeadForm:', formData);
-  }, [formData]);
+  console.log('Current formData in LeadForm:', formData);
 
   // Handle text input changes with enhanced logging
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
-    console.log('4. Input changed:', { name, value, type });
+    console.log('3. Input changed:', { name, value, type });
     
     // For number inputs, convert to proper number values
     const processedValue = type === 'number' ? 
@@ -102,27 +71,23 @@ const LeadForm: React.FC<LeadFormProps> = ({
         ...prev,
         [name]: processedValue
       };
-      console.log('5. New form data after input change:', newData);
+      console.log('4. New form data:', newData);
       return newData;
     });
   }, []);
 
   // Handle date changes
   const handleDateChange = useCallback((field: string, value: string | null) => {
-    console.log(`6. Date field ${field} changed to:`, value);
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        [field]: value
-      };
-      console.log(`7. New form data after date change for ${field}:`, newData);
-      return newData;
-    });
+    console.log(`Date field ${field} changed to: ${value}`);
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   }, []);
 
   // Handle status changes
   const handleStatusChange = useCallback((status: LeadStatus) => {
-    console.log(`8. Status changed to:`, status);
+    console.log(`Status changed to: ${status}`);
     setFormData(prev => ({
       ...prev,
       status
@@ -131,7 +96,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
   // Handle owner changes
   const handleOwnerChange = useCallback((ownerId: string) => {
-    console.log(`9. Owner changed to:`, ownerId);
+    console.log(`Owner changed to: ${ownerId}`);
     setFormData(prev => ({
       ...prev,
       ownerId
@@ -141,7 +106,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
   // Form submission
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    console.log('10. Form data before submission:', formData);
+    console.log('Form data before submission:', formData);
     
     // Calculate value based on MRR if not set
     const calculatedValue = formData.value || (formData.mrr ? formData.mrr * 12 : 0);
@@ -150,7 +115,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
       ...formData,
       value: calculatedValue
     };
-    console.log('11. Submitting form data:', submissionData);
+    console.log('Submitting form data:', submissionData);
     
     onSubmit(submissionData);
   }, [formData, onSubmit]);

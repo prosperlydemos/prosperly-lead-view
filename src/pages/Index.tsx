@@ -17,7 +17,6 @@ import AddLeadDialog from '@/components/leads/AddLeadDialog';
 import EditLeadDialog from '@/components/leads/EditLeadDialog';
 import CalendlySync from '@/components/CalendlySync';
 import { DateFilterOption, DateFieldOption } from '@/components/DateRangeFilter';
-import { Lead as AppLead } from '@/types';
 
 interface TodoItem {
   id: string;
@@ -291,7 +290,7 @@ const Index: React.FC = () => {
       // Convert the Supabase note to our application note format
       const appNote: Note = {
         id: data.id,
-        leadId: data.lead_id, // Map lead_id from Supabase to leadId in our app
+        leadId: data.lead_id,
         content: data.content,
         createdAt: data.created_at,
         userId: data.user_id
@@ -357,40 +356,20 @@ const Index: React.FC = () => {
     }
   }, [setLeads]);
 
-  // Modified handleEditLead to properly handle the lead data
-  const handleEditLead = useCallback(async (leadId: string) => {
-    try {
-      // Find the lead in the leads array
-      const leadToEdit = leads.find(lead => lead.id === leadId);
-      if (!leadToEdit) {
-        throw new Error('Lead not found');
-      }
-      
-      // Convert to app lead format
-      const appLead = mapSupabaseLeadToAppLead(leadToEdit);
-      
-      // Set the selected lead ID
-      setSelectedLeadId(leadId);
-      // Open the modal
-      setIsEditModalOpen(true);
-    } catch (error) {
-      console.error('Error preparing lead for edit:', error);
-      toast({
-        title: "Error loading lead",
-        description: "Failed to load lead data for editing",
-        variant: "destructive"
-      });
-    }
-  }, [leads]);
+  // Modified handleEditLead to ensure it doesn't cause page refreshes
+  const handleEditLead = useCallback((leadId: string) => {
+    console.log('Edit lead clicked:', leadId);
+    // Prevent default behavior by using React state
+    setSelectedLeadId(leadId);
+    setIsEditModalOpen(true);
+  }, []);
 
   const handleSaveLead = useCallback(async (updatedLead: AppLead) => {
+    console.log('=== SAVE LEAD DEBUG ===');
+    console.log('1. Save initiated with lead:', updatedLead);
     try {
       const supabaseUpdatedLead = mapAppLeadToSupabaseLead(updatedLead);
-      
-      // Ensure commission_amount is properly handled
-      if (typeof updatedLead.commissionAmount === 'number') {
-        supabaseUpdatedLead.commission_amount = updatedLead.commissionAmount;
-      }
+      console.log('2. Mapped to Supabase format:', supabaseUpdatedLead);
       
       const { data, error } = await supabase
         .from('leads')
@@ -401,15 +380,23 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      // Convert the Supabase data to our app Lead type
-      const appLead = mapSupabaseLeadToAppLead(data);
+      console.log('3. Supabase response:', data);
       
-      // Update the leads array
-      setLeads(prev => 
-        prev.map(lead => lead.id === updatedLead.id ? appLead : lead)
-      );
+      // Manually update the leads array for immediate UI feedback, 
+      // but don't update the selected lead to prevent form resets
+      setLeads(prev => {
+        console.log('4. Previous leads state:', prev);
+        const newLeads = prev.map(lead => {
+          if (lead.id === updatedLead.id) {
+            console.log('5. Updating lead in array:', lead.id);
+            return data;
+          }
+          return lead;
+        });
+        console.log('6. New leads state:', newLeads);
+        return newLeads;
+      });
       
-      // Close the modal
       setIsEditModalOpen(false);
       
       toast({
@@ -425,7 +412,7 @@ const Index: React.FC = () => {
       });
     }
   }, []);
-
+  
   const handleDeleteLead = useCallback(async (leadId: string) => {
     try {
       const { error } = await supabase
@@ -437,7 +424,7 @@ const Index: React.FC = () => {
       
       setLeads(prev => prev.filter(lead => lead.id !== leadId));
       // Notes will be automatically deleted due to cascade delete
-      setNotes(prev => prev.filter(note => note.leadId !== leadId));
+      setNotes(prev => prev.filter(note => note.lead_id !== leadId));
       
       if (selectedLeadId === leadId) {
         setSelectedLeadId(null);
@@ -460,7 +447,7 @@ const Index: React.FC = () => {
   const handleStatusFilterChange = useCallback((status: LeadStatus | 'All') => {
     setSelectedStatus(status);
   }, []);
-
+  
   const handleUserFilterChange = useCallback((userId: string | 'all') => {
     setSelectedUserId(userId);
   }, []);
@@ -552,8 +539,7 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      // Convert returned Supabase data to our app Lead type before adding to state
-      setLeads(prev => [...prev, mapSupabaseLeadToAppLead(data)]);
+      setLeads(prev => [...prev, data]);
       
       toast({
         title: "Lead added",
@@ -735,7 +721,7 @@ const Index: React.FC = () => {
           <div className="border-l pl-6">
             <NoteSection 
               lead={selectedLead ? mapSupabaseLeadToAppLead(selectedLead) : null}
-              notes={notes.filter(note => note.leadId === selectedLeadId)}
+              notes={notes.filter(note => note.lead_id === selectedLeadId)}
               onAddNote={handleAddNote}
               onStatusChange={handleStatusChange}
               onEditLead={handleEditLead}

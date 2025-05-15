@@ -30,7 +30,6 @@ const EditCommissionDialog: React.FC<EditCommissionDialogProps> = ({
   // Reset form when dialog opens with new lead data
   useEffect(() => {
     if (isOpen && lead) {
-      console.log('Setting commission amount from lead:', lead);
       // Try to get the commission from the lead's data or calculate it
       setCommissionAmount(lead.commissionAmount !== undefined && lead.commissionAmount !== null 
         ? lead.commissionAmount.toString() 
