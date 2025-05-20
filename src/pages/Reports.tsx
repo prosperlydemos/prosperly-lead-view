@@ -270,6 +270,8 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
           
           <LeaderboardTab 
             leaderboardData={chartData.leaderboardData}
+            users={users}
+            filteredLeads={filteredLeads}
           />
           
           <CommissionsTab 
