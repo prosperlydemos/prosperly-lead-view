@@ -111,16 +111,23 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
             </TableHeader>
             <TableBody>
               {users.map((user) => {
-                const userData = leaderboardData.find(u => u.id === user.id);
                 const userClosedLeads = filteredLeads.filter(lead => 
                   lead.ownerId === user.id && 
                   lead.status === 'Closed'
                 );
                 
                 // Calculate the total revenue for each user's closed leads
-                const userTotalMRR = userClosedLeads.reduce((sum, lead) => sum + lead.mrr, 0);
-                const userTotalSetupFees = userClosedLeads.reduce((sum, lead) => sum + lead.setupFee, 0);
+                const userTotalMRR = userClosedLeads.reduce((sum, lead) => sum + (lead.mrr || 0), 0);
+                const userTotalSetupFees = userClosedLeads.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
                 const userTotalRevenue = userTotalMRR + userTotalSetupFees;
+                
+                // Calculate total commission earned including custom commission amounts
+                const userTotalCommission = userClosedLeads.reduce((sum, lead) => {
+                  const commissionAmount = lead.commissionAmount !== undefined && lead.commissionAmount !== null
+                    ? lead.commissionAmount
+                    : calculateCommission(lead, users);
+                  return sum + commissionAmount;
+                }, 0);
                 
                 return (
                   <TableRow key={user.id}>
@@ -145,7 +152,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                     </TableCell>
                     <TableCell>{userClosedLeads.length}</TableCell>
                     <TableCell>${userTotalRevenue.toLocaleString()}</TableCell>
-                    <TableCell>${userData?.commission.toLocaleString() || 0}</TableCell>
+                    <TableCell>${userTotalCommission.toLocaleString()}</TableCell>
                   </TableRow>
                 );
               })}
