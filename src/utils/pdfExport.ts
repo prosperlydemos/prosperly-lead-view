@@ -147,13 +147,13 @@ export const exportCommissionsPDF = ({ users, filteredLeads, dateRange, selected
   if (targetDeals.length === 0) {
     yPosition = addText('No closed deals in the selected time period.', 20, yPosition);
   } else {
-    // Table headers
+    // Table headers - adjusted positions to fit commission column
     yPosition = addText('Date', 20, yPosition, { fontSize: 10, fontStyle: 'bold' });
-    addText('Business', 70, yPosition, { fontSize: 10, fontStyle: 'bold' });
-    addText('Owner', 120, yPosition, { fontSize: 10, fontStyle: 'bold' });
-    addText('Setup Fee', 150, yPosition, { fontSize: 10, fontStyle: 'bold' });
-    addText('MRR', 180, yPosition, { fontSize: 10, fontStyle: 'bold' });
-    yPosition = addText('Commission', 210, yPosition, { fontSize: 10, fontStyle: 'bold' });
+    addText('Business', 60, yPosition, { fontSize: 10, fontStyle: 'bold' });
+    addText('Owner', 110, yPosition, { fontSize: 10, fontStyle: 'bold' });
+    addText('Setup Fee', 140, yPosition, { fontSize: 10, fontStyle: 'bold' });
+    addText('MRR', 170, yPosition, { fontSize: 10, fontStyle: 'bold' });
+    yPosition = addText('Commission', 190, yPosition, { fontSize: 10, fontStyle: 'bold' });
     yPosition += 5;
 
     // Add a line under headers
@@ -169,11 +169,11 @@ export const exportCommissionsPDF = ({ users, filteredLeads, dateRange, selected
         : calculateCommission(deal, users);
 
       yPosition = addText(formatDate(deal.closedAt), 20, yPosition, { fontSize: 9 });
-      addText(deal.businessName || deal.contactName || 'N/A', 70, yPosition, { fontSize: 9, maxWidth: 45 });
-      addText(owner?.name || 'Unassigned', 120, yPosition, { fontSize: 9, maxWidth: 25 });
-      addText(`$${(deal.setupFee || 0).toLocaleString()}`, 150, yPosition, { fontSize: 9 });
-      addText(`$${(deal.mrr || 0).toLocaleString()}`, 180, yPosition, { fontSize: 9 });
-      yPosition = addText(`$${commissionAmount.toLocaleString()}`, 210, yPosition, { fontSize: 9 });
+      addText(deal.businessName || deal.contactName || 'N/A', 60, yPosition, { fontSize: 9, maxWidth: 45 });
+      addText(owner?.name || 'Unassigned', 110, yPosition, { fontSize: 9, maxWidth: 25 });
+      addText(`$${(deal.setupFee || 0).toLocaleString()}`, 140, yPosition, { fontSize: 9 });
+      addText(`$${(deal.mrr || 0).toLocaleString()}`, 170, yPosition, { fontSize: 9 });
+      yPosition = addText(`$${commissionAmount.toLocaleString()}`, 190, yPosition, { fontSize: 9 });
       yPosition += 3;
     });
   }
