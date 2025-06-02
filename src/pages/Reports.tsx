@@ -15,6 +15,7 @@ import LeaderboardTab from '@/components/reports/LeaderboardTab';
 import CommissionsTab from '@/components/reports/CommissionsTab';
 import SalesRepFilter from '@/components/SalesRepFilter';
 import { DateRangePicker, DateRangePickerValue, defaultPresets } from '@/components/DateRangePicker';
+import PdfExportButton from '@/components/reports/PdfExportButton';
 
 // Colors for charts - kept here for reference
 const COLORS = ['#9b87f5', '#8E9196', '#F97316', '#0EA5E9'];
@@ -241,6 +242,14 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
             <DateRangePicker 
               value={dateRange}
               onChange={setDateRange}
+            />
+            
+            {/* PDF Export Button */}
+            <PdfExportButton
+              users={users}
+              filteredLeads={filteredLeads}
+              dateRange={dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined}
+              selectedUserId={selectedUserId !== 'all' ? selectedUserId : undefined}
             />
           </div>
         </div>
