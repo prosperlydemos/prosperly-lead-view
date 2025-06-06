@@ -257,7 +257,7 @@ const Index: React.FC = () => {
     setSelectedLeadId(leadId);
   }, []);
 
-  const handleAddNote = useCallback(async (leadId: string, content: string) => {
+  const handleAddNote = useCallback(async (leadId: string, content: string, followUpDate?: string | null) => {
     if (!currentUser) return;
     
     try {
@@ -267,15 +267,30 @@ const Index: React.FC = () => {
         content
       };
       
-      const { data, error } = await supabase
+      const { data: noteData, error: noteError } = await supabase
         .from('notes')
         .insert(newNote)
         .select()
         .single();
         
-      if (error) throw error;
+      if (noteError) throw noteError;
       
-      setNotes(prev => [...prev, data]);
+      setNotes(prev => [...prev, noteData]);
+      
+      // If a follow-up date is provided, update the lead's next_follow_up
+      if (followUpDate) {
+        const { error: leadError } = await supabase
+          .from('leads')
+          .update({ next_follow_up: followUpDate })
+          .eq('id', leadId);
+          
+        if (leadError) throw leadError;
+        
+        // Update the leads state with the new follow-up date
+        setLeads(prev => prev.map(lead => 
+          lead.id === leadId ? { ...lead, next_follow_up: followUpDate } : lead
+        ));
+      }
       
       // Mark todo item for this lead as completed when a note is added
       setTodoItems(todoItems.map(item => 
@@ -294,7 +309,7 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, [currentUser, setNotes, todoItems, setTodoItems]);
+  }, [currentUser, setNotes, todoItems, setTodoItems, setLeads]);
 
   const handleStatusChange = useCallback(async (leadId: string, status: string) => {
     try {
