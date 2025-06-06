@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import DateInput from './DateInput';
+import { Input } from '@/components/ui/input';
+import { formatDateForInput } from '@/utils/dateUtils';
 
 interface AddNoteFormProps {
   leadId: string;
@@ -34,10 +35,14 @@ const AddNoteForm: React.FC<AddNoteFormProps> = ({ leadId, onAddNote }) => {
       />
       
       <div className="mb-3">
-        <DateInput
-          label="Follow up date (optional)"
-          value={followUpDate}
-          onChange={setFollowUpDate}
+        <label className="block text-sm font-medium mb-1" htmlFor="followUpDate">
+          Follow up date (optional)
+        </label>
+        <Input
+          id="followUpDate"
+          type="date"
+          value={followUpDate ? formatDateForInput(followUpDate) : ''}
+          onChange={(e) => setFollowUpDate(e.target.value || null)}
         />
       </div>
 
