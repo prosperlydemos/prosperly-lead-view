@@ -24,16 +24,17 @@ const DatePicker: React.FC<DatePickerProps> = ({
     if (newDate) {
       console.log('DatePicker selected date:', newDate);
       
-      // Create a new date using local time to preserve the exact selected date
-      const selectedDate = new Date(
-        newDate.getFullYear(),
-        newDate.getMonth(),
-        newDate.getDate(),
-        12, 0, 0
-      );
+      // Create a new Date object at noon UTC to avoid timezone issues
+      // Use UTC methods to get the components
+      const selectedYear = newDate.getUTCFullYear();
+      const selectedMonth = newDate.getUTCMonth();
+      const selectedDay = newDate.getUTCDate();
       
-      console.log('DatePicker preserved date:', selectedDate);
-      onSelect(selectedDate);
+      // Create date at noon UTC to avoid timezone shifts
+      const preservedDate = new Date(Date.UTC(selectedYear, selectedMonth, selectedDay, 12, 0, 0));
+      console.log('DatePicker preserved date (UTC):', preservedDate);
+      
+      onSelect(preservedDate);
     } else {
       onSelect(undefined);
     }
