@@ -39,38 +39,40 @@ const AddNoteForm: React.FC<AddNoteFormProps> = ({ leadId, onAddNote }) => {
       />
       
       <div className="space-y-3">
-        <div>
-          <Label htmlFor="followup-select" className="text-sm font-medium">
-            Follow up in:
-          </Label>
-          <Select value={scheduleFollowUp} onValueChange={setScheduleFollowUp}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Schedule follow up?" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="no">No follow up</SelectItem>
-              <SelectItem value="yes">Schedule follow up</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {scheduleFollowUp === 'yes' && (
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="followup-days" className="text-sm font-medium">
-              Number of days:
+            <Label htmlFor="followup-select" className="text-sm font-medium">
+              Follow up in:
             </Label>
-            <Input
-              id="followup-days"
-              type="number"
-              min="1"
-              max="365"
-              value={followUpDays}
-              onChange={(e) => setFollowUpDays(parseInt(e.target.value) || 1)}
-              className="w-full"
-              placeholder="Enter days"
-            />
+            <Select value={scheduleFollowUp} onValueChange={setScheduleFollowUp}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Schedule follow up?" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">No follow up</SelectItem>
+                <SelectItem value="yes">Schedule follow up</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          {scheduleFollowUp === 'yes' && (
+            <div>
+              <Label htmlFor="followup-days" className="text-sm font-medium">
+                Number of days:
+              </Label>
+              <Input
+                id="followup-days"
+                type="number"
+                min="1"
+                max="365"
+                value={followUpDays}
+                onChange={(e) => setFollowUpDays(parseInt(e.target.value) || 1)}
+                className="w-full"
+                placeholder="Enter days"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <Button 
