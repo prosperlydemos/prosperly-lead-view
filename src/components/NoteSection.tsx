@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface NoteSectionProps {
   lead: Lead | null;
   notes: (AppNoteType | SupabaseNote)[];
-  onAddNote: (leadId: string, content: string) => void;
+  onAddNote: (leadId: string, content: string, followUpDays?: number) => void;
   onStatusChange: (leadId: string, status: string) => void;
   onEditLead: (leadId: string) => void;
 }
