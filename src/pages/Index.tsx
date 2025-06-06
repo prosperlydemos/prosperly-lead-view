@@ -257,8 +257,7 @@ const Index: React.FC = () => {
     setSelectedLeadId(leadId);
   }, []);
 
-  // Modified handleAddNote to include follow-up scheduling
-  const handleAddNote = useCallback(async (leadId: string, content: string, followUpDays?: number) => {
+  const handleAddNote = useCallback(async (leadId: string, content: string) => {
     if (!currentUser) return;
     
     try {
@@ -278,50 +277,15 @@ const Index: React.FC = () => {
       
       setNotes(prev => [...prev, data]);
       
-      // If follow-up days are specified, update the lead's next_follow_up date
-      if (followUpDays !== undefined) {
-        const followUpDate = new Date();
-        followUpDate.setDate(followUpDate.getDate() + followUpDays);
-        
-        const { error: leadUpdateError } = await supabase
-          .from('leads')
-          .update({ next_follow_up: followUpDate.toISOString().split('T')[0] })
-          .eq('id', leadId);
-          
-        if (leadUpdateError) {
-          console.error('Error updating follow-up date:', leadUpdateError);
-          toast({
-            title: "Note added, but follow-up not scheduled",
-            description: "Failed to schedule follow-up date",
-            variant: "destructive"
-          });
-        } else {
-          // Update the local leads state to reflect the new follow-up date
-          setLeads(prev => 
-            prev.map(lead => 
-              lead.id === leadId 
-                ? { ...lead, next_follow_up: followUpDate.toISOString().split('T')[0] }
-                : lead
-            )
-          );
-          
-          toast({
-            title: "Note added and follow-up scheduled",
-            description: `Follow-up scheduled for ${followUpDate.toLocaleDateString()}`
-          });
-        }
-      } else {
-        toast({
-          title: "Note added",
-          description: "Your note has been saved successfully."
-        });
-      }
-      
       // Mark todo item for this lead as completed when a note is added
       setTodoItems(todoItems.map(item => 
         item.leadId === leadId ? { ...item, completed: true } : item
       ));
       
+      toast({
+        title: "Note added",
+        description: "Your note has been saved successfully."
+      });
     } catch (error) {
       console.error('Error adding note:', error);
       toast({
