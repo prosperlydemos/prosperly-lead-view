@@ -3,28 +3,28 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import DateInput from './DateInput';
 
 interface AddNoteFormProps {
   leadId: string;
-  onAddNote: (leadId: string, content: string, followUpDays?: number) => void;
+  onAddNote: (leadId: string, content: string, followUpDate?: string) => void;
 }
 
 const AddNoteForm: React.FC<AddNoteFormProps> = ({ leadId, onAddNote }) => {
   const [content, setContent] = useState('');
   const [scheduleFollowUp, setScheduleFollowUp] = useState<string>('no');
-  const [followUpDays, setFollowUpDays] = useState<number>(1);
+  const [followUpDate, setFollowUpDate] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (content.trim()) {
-      const followUpDaysToPass = scheduleFollowUp === 'yes' ? followUpDays : undefined;
-      onAddNote(leadId, content, followUpDaysToPass);
+      const followUpDateToPass = scheduleFollowUp === 'yes' ? followUpDate : undefined;
+      onAddNote(leadId, content, followUpDateToPass || undefined);
       setContent('');
       setScheduleFollowUp('no');
-      setFollowUpDays(1);
+      setFollowUpDate(null);
     }
   };
 
@@ -42,7 +42,7 @@ const AddNoteForm: React.FC<AddNoteFormProps> = ({ leadId, onAddNote }) => {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="followup-select" className="text-sm font-medium">
-              Follow up in:
+              Follow up:
             </Label>
             <Select value={scheduleFollowUp} onValueChange={setScheduleFollowUp}>
               <SelectTrigger className="w-full">
@@ -57,18 +57,10 @@ const AddNoteForm: React.FC<AddNoteFormProps> = ({ leadId, onAddNote }) => {
 
           {scheduleFollowUp === 'yes' && (
             <div>
-              <Label htmlFor="followup-days" className="text-sm font-medium">
-                Number of days:
-              </Label>
-              <Input
-                id="followup-days"
-                type="number"
-                min="1"
-                max="365"
-                value={followUpDays}
-                onChange={(e) => setFollowUpDays(parseInt(e.target.value) || 1)}
-                className="w-full"
-                placeholder="Enter days"
+              <DateInput
+                label="Follow up date:"
+                value={followUpDate}
+                onChange={setFollowUpDate}
               />
             </div>
           )}
