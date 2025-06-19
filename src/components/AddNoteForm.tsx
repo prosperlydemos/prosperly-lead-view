@@ -16,6 +16,7 @@ const AddNoteForm: React.FC<AddNoteFormProps> = ({ leadId, onAddNote }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent any event bubbling that might cause refreshes
     
     if (content.trim()) {
       onAddNote(leadId, content, followUpDate);

@@ -57,13 +57,8 @@ const Index: React.FC = () => {
     [selectedLead]
   );
 
-  // Add effect to log when selectedLead changes
-  useEffect(() => {
-    console.log('Selected lead changed:', selectedLead);
-  }, [selectedLead]);
-
   // Function to manually refresh leads data - moved up and memoized properly
-  const refreshLeads = useMemo(() => async () => {
+  const refreshLeads = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -99,11 +94,11 @@ const Index: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Fetch leads with real-time subscription
+  // Fetch leads with real-time subscription - optimized to prevent unnecessary updates
   useEffect(() => {
     if (!currentUser) return;
 
-    // Set up real-time subscription
+    // Set up real-time subscription with better filtering
     const subscription = supabase
       .channel('leads_changes')
       .on(
@@ -115,14 +110,25 @@ const Index: React.FC = () => {
         },
         (payload) => {
           console.log('Real-time update:', payload);
-          // Only update if it's not the lead we're currently editing
-          if (isEditModalOpen && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.id === selectedLeadId) {
-            console.log('Ignoring update for lead being edited:', payload.new.id);
+          
+          // Skip updates during modal editing to prevent form resets
+          if (isEditModalOpen) {
+            console.log('Skipping real-time update during edit modal');
+            return;
+          }
+
+          // Only update if the change affects the current user's leads
+          const updatedLead = payload.new as Lead;
+          if (updatedLead && !currentUser.is_admin && updatedLead.owner_id !== currentUser.id) {
             return;
           }
 
           setLeads(prev => {
             if (payload.eventType === 'INSERT') {
+              // Only add if not already in the list
+              if (prev.some(lead => lead.id === updatedLead.id)) {
+                return prev;
+              }
               return [...prev, payload.new as Lead];
             } else if (payload.eventType === 'UPDATE') {
               return prev.map(lead => 
@@ -139,7 +145,7 @@ const Index: React.FC = () => {
       )
       .subscribe();
 
-    // Initial fetch
+    // Initial fetch - only when component mounts or user changes
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -187,11 +193,11 @@ const Index: React.FC = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentUser, isEditModalOpen, selectedLeadId, refreshTrigger]);
+  }, [currentUser?.id, currentUser?.is_admin]); // Simplified dependencies
 
-  // Update todo items whenever leads change
+  // Update todo items whenever leads change - with better dependency management
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     
     const newTodoItems: TodoItem[] = [];
     
@@ -203,7 +209,7 @@ const Index: React.FC = () => {
           const followUpDate = parseISO(lead.next_follow_up);
           if (isToday(followUpDate)) {
             newTodoItems.push({
-              id: `follow-up-${lead.id}-${Date.now()}`,
+              id: `follow-up-${lead.id}`,
               leadId: lead.id,
               contactName: lead.contact_name,
               businessName: lead.business_name || '',
@@ -218,12 +224,10 @@ const Index: React.FC = () => {
         if (lead.demo_date) {
           const demoDate = parseISO(lead.demo_date);
           if (isToday(demoDate)) {
-            // Extract time from the demo_date with proper formatting
             const demoTime = format(demoDate, 'h:mm a');
-            console.log(`Formatted demo time for ${lead.contact_name}: ${demoTime}, original value: ${lead.demo_date}`);
             
             newTodoItems.push({
-              id: `demo-${lead.id}-${Date.now()}`,
+              id: `demo-${lead.id}`,
               leadId: lead.id,
               contactName: lead.contact_name,
               businessName: lead.business_name || '',
@@ -237,14 +241,26 @@ const Index: React.FC = () => {
       }
     });
     
-    // Filter out completed items and add new ones
-    const filteredItems = todoItems.filter(item => 
-      !item.completed && 
-      !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
-    );
-    
-    setTodoItems([...filteredItems, ...newTodoItems]);
-  }, [leads, currentUser]);
+    // Only update if there are actual changes to prevent unnecessary re-renders
+    setTodoItems(prev => {
+      const prevIds = new Set(prev.map(item => item.id));
+      const newIds = new Set(newTodoItems.map(item => item.id));
+      
+      // Check if the todo items have actually changed
+      if (prev.length === newTodoItems.length && 
+          [...prevIds].every(id => newIds.has(id))) {
+        return prev; // No changes, return previous state
+      }
+      
+      // Filter out completed items and add new ones
+      const filteredItems = prev.filter(item => 
+        item.completed && 
+        !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
+      );
+      
+      return [...filteredItems, ...newTodoItems];
+    });
+  }, [leads, currentUser?.id]);
 
   // Modified handleLeadSelect to ensure it doesn't cause page refreshes
   const handleLeadSelect = useCallback((leadId: string, e?: React.MouseEvent) => {
@@ -253,7 +269,6 @@ const Index: React.FC = () => {
       e.stopPropagation();
     }
     console.log('Lead selected in Index:', leadId);
-    // Prevent any default behavior that might be causing refreshes
     setSelectedLeadId(leadId);
   }, []);
 
@@ -293,7 +308,7 @@ const Index: React.FC = () => {
       }
       
       // Mark todo item for this lead as completed when a note is added
-      setTodoItems(todoItems.map(item => 
+      setTodoItems(prev => prev.map(item => 
         item.leadId === leadId ? { ...item, completed: true } : item
       ));
       
@@ -309,7 +324,7 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, [currentUser, setNotes, todoItems, setTodoItems, setLeads]);
+  }, [currentUser]);
 
   const handleStatusChange = useCallback(async (leadId: string, status: string) => {
     try {
@@ -345,12 +360,11 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, [setLeads]);
+  }, []);
 
   // Modified handleEditLead to ensure it doesn't cause page refreshes
   const handleEditLead = useCallback((leadId: string) => {
     console.log('Edit lead clicked:', leadId);
-    // Prevent default behavior by using React state
     setSelectedLeadId(leadId);
     setIsEditModalOpen(true);
   }, []);
@@ -373,8 +387,7 @@ const Index: React.FC = () => {
       
       console.log('3. Supabase response:', data);
       
-      // Manually update the leads array for immediate UI feedback, 
-      // but don't update the selected lead to prevent form resets
+      // Manually update the leads array for immediate UI feedback
       setLeads(prev => {
         console.log('4. Previous leads state:', prev);
         const newLeads = prev.map(lead => {
@@ -433,7 +446,7 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, [selectedLeadId, setLeads, setNotes, setSelectedLeadId]);
+  }, [selectedLeadId]);
   
   const handleStatusFilterChange = useCallback((status: LeadStatus | 'All') => {
     setSelectedStatus(status);
@@ -448,7 +461,7 @@ const Index: React.FC = () => {
   }, []);
   
   const handleMarkTodoComplete = useCallback((todoId: string) => {
-    setTodoItems(todoItems.map(item => 
+    setTodoItems(prev => prev.map(item => 
       item.id === todoId ? { ...item, completed: true } : item
     ));
     
@@ -456,7 +469,7 @@ const Index: React.FC = () => {
       title: "Task completed",
       description: "Follow-up task marked as completed."
     });
-  }, [todoItems, setTodoItems]);
+  }, []);
   
   // Get the number of active todo items for the current user
   const activeTodoCount = useMemo(() => 
@@ -483,10 +496,10 @@ const Index: React.FC = () => {
   }
 
   // Trigger a refresh of leads
-  const triggerRefresh = () => {
+  const triggerRefresh = useCallback(() => {
     refreshLeads();
-    setRefreshTrigger(prev => prev + 1); // Force re-fetch by updating trigger value
-  };
+    setRefreshTrigger(prev => prev + 1);
+  }, [refreshLeads]);
   
   console.log('Mapped lead data:', { selectedLead, appSelectedLead });
   
@@ -506,7 +519,7 @@ const Index: React.FC = () => {
     isAdmin: currentUser?.is_admin || false
   };
   
-  const handleAddLead = async (newLead: Omit<AppLead, 'id'>) => {
+  const handleAddLead = useCallback(async (newLead: Omit<AppLead, 'id'>) => {
     if (!currentUser) return;
     
     try {
@@ -514,10 +527,10 @@ const Index: React.FC = () => {
       const leadToInsert = {
         ...newLead as AppLead,
         id: undefined, // Let Supabase generate the ID
-        contactName: newLead.contactName || 'New Contact', // Ensure this is never empty
-        status: newLead.status || 'Demo Scheduled' as LeadStatus, // Ensure status is set
-        ownerId: newLead.ownerId || currentUser.id, // Ensure owner is set
-        value: newLead.value || (newLead.mrr ? newLead.mrr * 12 : 0) // Calculate value if not provided
+        contactName: newLead.contactName || 'New Contact',
+        status: newLead.status || 'Demo Scheduled' as LeadStatus,
+        ownerId: newLead.ownerId || currentUser.id,
+        value: newLead.value || (newLead.mrr ? newLead.mrr * 12 : 0)
       };
       
       const supabaseNewLead = mapAppLeadToSupabaseLead(leadToInsert);
@@ -544,7 +557,7 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [currentUser]);
 
   const onAddUser = async (userData: Omit<User, 'id'>) => {
     try {
