@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -57,8 +58,10 @@ const Index: React.FC = () => {
     [selectedLead]
   );
 
-  // Function to manually refresh leads data - moved up and memoized properly
+  // Function to manually refresh leads data - simplified dependencies
   const refreshLeads = useCallback(async () => {
+    if (!currentUser) return;
+    
     try {
       setLoading(true);
       
@@ -66,7 +69,7 @@ const Index: React.FC = () => {
       let query = supabase.from('leads').select('*');
       
       // If not admin, only fetch user's leads
-      if (currentUser && !currentUser.is_admin) {
+      if (!currentUser.is_admin) {
         query = query.eq('owner_id', currentUser.id);
       }
       
@@ -92,177 +95,9 @@ const Index: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser?.id, currentUser?.is_admin]);
 
-  // Fetch leads with real-time subscription - optimized to prevent unnecessary updates
-  useEffect(() => {
-    if (!currentUser) return;
-
-    // Set up real-time subscription with better filtering
-    const subscription = supabase
-      .channel('leads_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'leads'
-        },
-        (payload) => {
-          console.log('Real-time update:', payload);
-          
-          // Skip updates during modal editing to prevent form resets
-          if (isEditModalOpen) {
-            console.log('Skipping real-time update during edit modal');
-            return;
-          }
-
-          // Only update if the change affects the current user's leads
-          const updatedLead = payload.new as Lead;
-          if (updatedLead && !currentUser.is_admin && updatedLead.owner_id !== currentUser.id) {
-            return;
-          }
-
-          setLeads(prev => {
-            if (payload.eventType === 'INSERT') {
-              // Only add if not already in the list
-              if (prev.some(lead => lead.id === updatedLead.id)) {
-                return prev;
-              }
-              return [...prev, payload.new as Lead];
-            } else if (payload.eventType === 'UPDATE') {
-              return prev.map(lead => 
-                lead.id === (payload.new as Lead).id ? payload.new as Lead : lead
-              );
-            } else if (payload.eventType === 'DELETE') {
-              return prev.filter(lead => 
-                lead.id !== (payload.old as { id: string }).id
-              );
-            }
-            return prev;
-          });
-        }
-      )
-      .subscribe();
-
-    // Initial fetch - only when component mounts or user changes
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch leads based on user's role
-        let query = supabase.from('leads').select('*');
-        
-        // If not admin, only fetch user's leads
-        if (!currentUser.is_admin) {
-          query = query.eq('owner_id', currentUser.id);
-        }
-        
-        const { data: leadsData, error: leadsError } = await query;
-        
-        if (leadsError) {
-          throw leadsError;
-        }
-        
-        // Fetch notes
-        const { data: notesData, error: notesError } = await supabase
-          .from('notes')
-          .select('*');
-        
-        if (notesError) {
-          throw notesError;
-        }
-        
-        setLeads(leadsData || []);
-        setNotes(notesData || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast({
-          title: "Error fetching data",
-          description: "Failed to load leads and notes",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [currentUser?.id, currentUser?.is_admin]); // Simplified dependencies
-
-  // Update todo items whenever leads change - with better dependency management
-  useEffect(() => {
-    if (!currentUser?.id) return;
-    
-    const newTodoItems: TodoItem[] = [];
-    
-    leads.forEach(lead => {
-      // Only consider leads assigned to the current user
-      if (lead.owner_id === currentUser.id) {
-        // Check for follow-ups due today
-        if (lead.next_follow_up) {
-          const followUpDate = parseISO(lead.next_follow_up);
-          if (isToday(followUpDate)) {
-            newTodoItems.push({
-              id: `follow-up-${lead.id}`,
-              leadId: lead.id,
-              contactName: lead.contact_name,
-              businessName: lead.business_name || '',
-              dueDate: lead.next_follow_up,
-              completed: false,
-              type: 'follow-up'
-            });
-          }
-        }
-        
-        // Check for demos scheduled today
-        if (lead.demo_date) {
-          const demoDate = parseISO(lead.demo_date);
-          if (isToday(demoDate)) {
-            const demoTime = format(demoDate, 'h:mm a');
-            
-            newTodoItems.push({
-              id: `demo-${lead.id}`,
-              leadId: lead.id,
-              contactName: lead.contact_name,
-              businessName: lead.business_name || '',
-              dueDate: lead.demo_date,
-              completed: false,
-              type: 'demo',
-              time: demoTime
-            });
-          }
-        }
-      }
-    });
-    
-    // Only update if there are actual changes to prevent unnecessary re-renders
-    setTodoItems(prev => {
-      const prevIds = new Set(prev.map(item => item.id));
-      const newIds = new Set(newTodoItems.map(item => item.id));
-      
-      // Check if the todo items have actually changed
-      if (prev.length === newTodoItems.length && 
-          [...prevIds].every(id => newIds.has(id))) {
-        return prev; // No changes, return previous state
-      }
-      
-      // Filter out completed items and add new ones
-      const filteredItems = prev.filter(item => 
-        item.completed && 
-        !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
-      );
-      
-      return [...filteredItems, ...newTodoItems];
-    });
-  }, [leads, currentUser?.id]);
-
-  // Modified handleLeadSelect to ensure it doesn't cause page refreshes
+  // Modified handleLeadSelect with stable dependencies
   const handleLeadSelect = useCallback((leadId: string, e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -273,7 +108,7 @@ const Index: React.FC = () => {
   }, []);
 
   const handleAddNote = useCallback(async (leadId: string, content: string, followUpDate?: string | null) => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     
     try {
       const newNote = {
@@ -324,7 +159,7 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const handleStatusChange = useCallback(async (leadId: string, status: string) => {
     try {
@@ -362,7 +197,7 @@ const Index: React.FC = () => {
     }
   }, []);
 
-  // Modified handleEditLead to ensure it doesn't cause page refreshes
+  // Modified handleEditLead with stable dependencies
   const handleEditLead = useCallback((leadId: string) => {
     console.log('Edit lead clicked:', leadId);
     setSelectedLeadId(leadId);
@@ -470,57 +305,9 @@ const Index: React.FC = () => {
       description: "Follow-up task marked as completed."
     });
   }, []);
-  
-  // Get the number of active todo items for the current user
-  const activeTodoCount = useMemo(() => 
-    todoItems.filter(item => !item.completed).length,
-    [todoItems]
-  );
-  
-  // Count leads by status
-  const leadStatusCounts = useMemo(() =>
-    leads.reduce((acc, lead) => {
-      if (!acc[lead.status]) acc[lead.status] = 0;
-      acc[lead.status]++;
-      return acc;
-    }, {} as Record<string, number>),
-    [leads]
-  );
-  
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
-  // Trigger a refresh of leads
-  const triggerRefresh = useCallback(() => {
-    refreshLeads();
-    setRefreshTrigger(prev => prev + 1);
-  }, [refreshLeads]);
-  
-  console.log('Mapped lead data:', { selectedLead, appSelectedLead });
-  
-  // Map Supabase profiles to App users
-  const appUsers: User[] = users.map(profile => ({
-    id: profile.id,
-    name: profile.name || '',
-    email: profile.email || '',
-    isAdmin: profile.is_admin
-  }));
-  
-  // Map current user to App user format
-  const appCurrentUser: User = {
-    id: currentUser?.id || '',
-    name: currentUser?.name || '',
-    email: currentUser?.email || '',
-    isAdmin: currentUser?.is_admin || false
-  };
-  
   const handleAddLead = useCallback(async (newLead: Omit<AppLead, 'id'>) => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     
     try {
       // Ensure all required fields are set for Supabase schema
@@ -557,9 +344,16 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
-  const onAddUser = async (userData: Omit<User, 'id'>) => {
+  // Trigger a refresh of leads - simplified dependencies
+  const triggerRefresh = useCallback(() => {
+    refreshLeads();
+    setRefreshTrigger(prev => prev + 1);
+  }, [refreshLeads]);
+
+  // User management functions with stable dependencies
+  const onAddUser = useCallback(async (userData: Omit<User, 'id'>) => {
     try {
       const { data, error } = await supabase.auth.admin.createUser({
         email: userData.email,
@@ -587,9 +381,9 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, []);
 
-  const onUpdateUser = async (updatedUser: User) => {
+  const onUpdateUser = useCallback(async (updatedUser: User) => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -617,9 +411,9 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
+  }, []);
 
-  const onDeleteUser = async (userId: string) => {
+  const onDeleteUser = useCallback(async (userId: string) => {
     try {
       const { error } = await supabase.auth.admin.deleteUser(userId);
       
@@ -641,6 +435,216 @@ const Index: React.FC = () => {
         variant: "destructive"
       });
     }
+  }, []);
+
+  // Fetch leads with real-time subscription - fixed dependencies
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    // Set up real-time subscription with better filtering
+    const subscription = supabase
+      .channel('leads_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leads'
+        },
+        (payload) => {
+          console.log('Real-time update:', payload);
+          
+          // Skip updates during modal editing to prevent form resets
+          if (isEditModalOpen) {
+            console.log('Skipping real-time update during edit modal');
+            return;
+          }
+
+          // Only update if the change affects the current user's leads
+          const updatedLead = payload.new as Lead;
+          if (updatedLead && !currentUser.is_admin && updatedLead.owner_id !== currentUser.id) {
+            return;
+          }
+
+          setLeads(prev => {
+            if (payload.eventType === 'INSERT') {
+              // Only add if not already in the list
+              if (prev.some(lead => lead.id === updatedLead.id)) {
+                return prev;
+              }
+              return [...prev, payload.new as Lead];
+            } else if (payload.eventType === 'UPDATE') {
+              return prev.map(lead => 
+                lead.id === (payload.new as Lead).id ? payload.new as Lead : lead
+              );
+            } else if (payload.eventType === 'DELETE') {
+              return prev.filter(lead => 
+                lead.id !== (payload.old as { id: string }).id
+              );
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    // Initial fetch - only when component mounts or user changes
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch leads based on user's role
+        let query = supabase.from('leads').select('*');
+        
+        // If not admin, only fetch user's leads
+        if (!currentUser.is_admin) {
+          query = query.eq('owner_id', currentUser.id);
+        }
+        
+        const { data: leadsData, error: leadsError } = await query;
+        
+        if (leadsError) {
+          throw leadsError;
+        }
+        
+        // Fetch notes
+        const { data: notesData, error: notesError } = await supabase
+          .from('notes')
+          .select('*');
+        
+        if (notesError) {
+          throw notesError;
+        }
+        
+        setLeads(leadsData || []);
+        setNotes(notesData || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error fetching data",
+          description: "Failed to load leads and notes",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentUser?.id, currentUser?.is_admin, isEditModalOpen]);
+
+  // Update todo items whenever leads change - fixed dependencies
+  useEffect(() => {
+    if (!currentUser?.id || !leads.length) return;
+    
+    const newTodoItems: TodoItem[] = [];
+    
+    leads.forEach(lead => {
+      // Only consider leads assigned to the current user
+      if (lead.owner_id === currentUser.id) {
+        // Check for follow-ups due today
+        if (lead.next_follow_up) {
+          const followUpDate = parseISO(lead.next_follow_up);
+          if (isToday(followUpDate)) {
+            newTodoItems.push({
+              id: `follow-up-${lead.id}`,
+              leadId: lead.id,
+              contactName: lead.contact_name,
+              businessName: lead.business_name || '',
+              dueDate: lead.next_follow_up,
+              completed: false,
+              type: 'follow-up'
+            });
+          }
+        }
+        
+        // Check for demos scheduled today
+        if (lead.demo_date) {
+          const demoDate = parseISO(lead.demo_date);
+          if (isToday(demoDate)) {
+            const demoTime = format(demoDate, 'h:mm a');
+            
+            newTodoItems.push({
+              id: `demo-${lead.id}`,
+              leadId: lead.id,
+              contactName: lead.contact_name,
+              businessName: lead.business_name || '',
+              dueDate: lead.demo_date,
+              completed: false,
+              type: 'demo',
+              time: demoTime
+            });
+          }
+        }
+      }
+    });
+    
+    // Only update if there are actual changes to prevent unnecessary re-renders
+    setTodoItems(prev => {
+      const prevIds = new Set(prev.map(item => item.id));
+      const newIds = new Set(newTodoItems.map(item => item.id));
+      
+      // Check if the todo items have actually changed
+      if (prev.length === newTodoItems.length && 
+          [...prevIds].every(id => newIds.has(id))) {
+        return prev; // No changes, return previous state
+      }
+      
+      // Filter out completed items and add new ones
+      const filteredItems = prev.filter(item => 
+        item.completed && 
+        !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
+      );
+      
+      return [...filteredItems, ...newTodoItems];
+    });
+  }, [leads, currentUser?.id]);
+
+  // Get the number of active todo items for the current user
+  const activeTodoCount = useMemo(() => 
+    todoItems.filter(item => !item.completed).length,
+    [todoItems]
+  );
+  
+  // Count leads by status
+  const leadStatusCounts = useMemo(() =>
+    leads.reduce((acc, lead) => {
+      if (!acc[lead.status]) acc[lead.status] = 0;
+      acc[lead.status]++;
+      return acc;
+    }, {} as Record<string, number>),
+    [leads]
+  );
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      );
+    );
+  }
+  
+  console.log('Mapped lead data:', { selectedLead, appSelectedLead });
+  
+  // Map Supabase profiles to App users
+  const appUsers: User[] = users.map(profile => ({
+    id: profile.id,
+    name: profile.name || '',
+    email: profile.email || '',
+    isAdmin: profile.is_admin
+  }));
+  
+  // Map current user to App user format
+  const appCurrentUser: User = {
+    id: currentUser?.id || '',
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    isAdmin: currentUser?.is_admin || false
   };
 
   return (
