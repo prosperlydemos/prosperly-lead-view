@@ -10,6 +10,7 @@ export type Lead = SupabaseDatabase['public']['Tables']['leads']['Row'] & {
   setup_fee?: number | null;
   mrr?: number | null;
   demo_date?: string | null;
+  demo_booked_date?: string | null;
   signup_date?: string | null;
   crm?: string | null;
   location?: string | null;
@@ -56,6 +57,7 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     setupFee: setupFee,
     mrr: mrr,
     demoDate: formatDate(supabaseLead.demo_date),
+    demoBookedDate: formatDate(supabaseLead.demo_booked_date),
     signupDate: formatDate(supabaseLead.signup_date),
     status: supabaseLead.status as import('./index').LeadStatus,
     ownerId: supabaseLead.owner_id,
@@ -78,6 +80,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
   setup_fee?: number | null;
   mrr?: number | null;
   demo_date?: string | null;
+  demo_booked_date?: string | null;
   signup_date?: string | null;
   status: string;
   owner_id: string;
@@ -104,6 +107,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
     setup_fee: appLead.setupFee || 0,
     mrr: appLead.mrr || 0,
     demo_date: formatDateForSupabase(appLead.demoDate),
+    demo_booked_date: formatDateForSupabase(appLead.demoBookedDate),
     signup_date: formatDateForSupabase(appLead.signupDate),
     status: appLead.status,
     owner_id: appLead.ownerId,

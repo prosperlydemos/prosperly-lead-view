@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '@/types';
 import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay, parseISO, subMonths, isSameMonth, isSameYear } from 'date-fns';
@@ -72,12 +73,12 @@ export const useReportsData = (
       
       filtered = filtered.filter(lead => {
         // Check if the lead has relevant dates that fall within the filter range
-        const demoDate = lead.demoDate ? new Date(lead.demoDate) : null;
+        const demoBookedDate = lead.demoBookedDate ? new Date(lead.demoBookedDate) : null;
         const signupDate = lead.signupDate ? new Date(lead.signupDate) : null;
         const closedDate = lead.closedAt ? new Date(lead.closedAt) : null;
         
         // Include if any relevant date is in the selected date range
-        return (demoDate && isWithinInterval(demoDate, { start: startOfDayDate, end: endOfDayDate })) || 
+        return (demoBookedDate && isWithinInterval(demoBookedDate, { start: startOfDayDate, end: endOfDayDate })) || 
                (signupDate && isWithinInterval(signupDate, { start: startOfDayDate, end: endOfDayDate })) ||
                (closedDate && isWithinInterval(closedDate, { start: startOfDayDate, end: endOfDayDate }));
       });
@@ -135,16 +136,16 @@ export const useReportsData = (
     // Count of new leads (excluding "Demo Scheduled" for conversion calculation)
     const newLeadsCount = leadsForConversionCalculation.length;
 
-    // Calculate demos booked in the current period
+    // Calculate demos booked in the current period (using demo booked date, not demo date)
     let demosBooked = 0;
     let demoComparisonRate = 0;
 
     if (dateFilter) {
-      // Get demos booked in the current period (using demo date)
+      // Get demos booked in the current period (using demo booked date)
       const demosInCurrentPeriod = leads.filter(lead => {
-        if (!lead.demoDate) return false;
-        const demoDate = new Date(lead.demoDate);
-        return isWithinInterval(demoDate, { 
+        if (!lead.demoBookedDate) return false;
+        const demoBookedDate = new Date(lead.demoBookedDate);
+        return isWithinInterval(demoBookedDate, { 
           start: dateFilter.startDate, 
           end: dateFilter.endDate 
         });
@@ -160,11 +161,11 @@ export const useReportsData = (
       
       console.log(`Previous period: ${format(previousPeriodStart, 'MMM d')} - ${format(previousPeriodEnd, 'MMM d')}`);
       
-      // Get demos booked in the previous period
+      // Get demos booked in the previous period (using demo booked date)
       const demosInPreviousPeriod = leads.filter(lead => {
-        if (!lead.demoDate) return false;
-        const demoDate = new Date(lead.demoDate);
-        return isWithinInterval(demoDate, { 
+        if (!lead.demoBookedDate) return false;
+        const demoBookedDate = new Date(lead.demoBookedDate);
+        return isWithinInterval(demoBookedDate, { 
           start: previousPeriodStart, 
           end: previousPeriodEnd 
         });

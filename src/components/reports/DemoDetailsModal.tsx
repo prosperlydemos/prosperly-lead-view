@@ -24,42 +24,42 @@ interface DemoDetailsModalProps {
 const DemoDetailsModal: React.FC<DemoDetailsModalProps> = ({ isOpen, onClose, leads }) => {
   const now = new Date();
   
-  // Filter leads that have demo dates
-  const leadsWithDemos = leads.filter(lead => lead.demoDate);
+  // Filter leads that have demo booked dates (when they were booked, not when they're scheduled)
+  const leadsWithDemos = leads.filter(lead => lead.demoBookedDate);
   
-  // Calculate demos for today
+  // Calculate demos for today (booked today)
   const todayStart = startOfDay(now);
   const todayEnd = endOfDay(now);
   const demosToday = leadsWithDemos.filter(lead => {
-    const demoDate = new Date(lead.demoDate!);
-    return isWithinInterval(demoDate, { start: todayStart, end: todayEnd });
+    const demoBookedDate = new Date(lead.demoBookedDate!);
+    return isWithinInterval(demoBookedDate, { start: todayStart, end: todayEnd });
   }).length;
   
-  // Calculate demos for this week
+  // Calculate demos for this week (booked this week)
   const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday start
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
   const demosThisWeek = leadsWithDemos.filter(lead => {
-    const demoDate = new Date(lead.demoDate!);
-    return isWithinInterval(demoDate, { start: weekStart, end: weekEnd });
+    const demoBookedDate = new Date(lead.demoBookedDate!);
+    return isWithinInterval(demoBookedDate, { start: weekStart, end: weekEnd });
   }).length;
   
-  // Calculate demos for this month
+  // Calculate demos for this month (booked this month)
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
   const demosThisMonth = leadsWithDemos.filter(lead => {
-    const demoDate = new Date(lead.demoDate!);
-    return isWithinInterval(demoDate, { start: monthStart, end: monthEnd });
+    const demoBookedDate = new Date(lead.demoBookedDate!);
+    return isWithinInterval(demoBookedDate, { start: monthStart, end: monthEnd });
   }).length;
   
-  // Generate day-by-day breakdown for this month
+  // Generate day-by-day breakdown for this month (based on when demos were booked)
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const dailyBreakdown = daysInMonth.map(day => {
     const dayStart = startOfDay(day);
     const dayEnd = endOfDay(day);
     
     const demosOnDay = leadsWithDemos.filter(lead => {
-      const demoDate = new Date(lead.demoDate!);
-      return isWithinInterval(demoDate, { start: dayStart, end: dayEnd });
+      const demoBookedDate = new Date(lead.demoBookedDate!);
+      return isWithinInterval(demoBookedDate, { start: dayStart, end: dayEnd });
     }).length;
     
     return {
@@ -125,7 +125,7 @@ const DemoDetailsModal: React.FC<DemoDetailsModalProps> = ({ isOpen, onClose, le
                   <span className={`font-semibold ${
                     day.count > 0 ? 'text-green-600' : 'text-gray-500'
                   }`}>
-                    {day.count} demo{day.count !== 1 ? 's' : ''}
+                    {day.count} demo{day.count !== 1 ? 's' : ''} booked
                   </span>
                 </div>
               ))}
