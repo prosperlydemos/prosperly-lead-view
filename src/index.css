@@ -121,3 +121,7 @@
 .lead-status-lost {
   @apply bg-[#F8F8F8] border-gray-300;
 }
+
+.lead-status-demo-no-show {
+  @apply bg-gray-400 border-gray-500;
+}
