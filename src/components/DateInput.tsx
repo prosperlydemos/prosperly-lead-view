@@ -20,7 +20,7 @@ const DateInput: React.FC<DateInputProps> = ({
   console.log(`DateInput rendered for ${label} with value:`, value);
   
   // Convert ISO string to Date object for the DatePicker
-  const dateValue = value ? new Date(value) : undefined;
+  const dateValue = value ? new Date(value + 'T12:00:00') : undefined;
   
   const handleChange = (date: Date | undefined) => {
     console.log(`DateInput change for ${label}:`, date);
@@ -31,9 +31,13 @@ const DateInput: React.FC<DateInputProps> = ({
       return;
     }
     
-    // Convert date to ISO string (YYYY-MM-DD format) using UTC values
-    const isoDate = parseDateToISO(date);
-    console.log(`Parsed ${label} to ISO:`, isoDate);
+    // Get the local date components directly without timezone conversion
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const isoDate = `${year}-${month}-${day}`;
+    
+    console.log(`Setting ${label} to ISO:`, isoDate);
     onChange(isoDate);
   };
 
