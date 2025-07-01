@@ -24,14 +24,17 @@ const DatePicker: React.FC<DatePickerProps> = ({
     if (newDate) {
       console.log('DatePicker selected date:', newDate);
       
-      // Create a new UTC date with the same day to avoid timezone shifts
-      const year = newDate.getFullYear();
-      const month = newDate.getMonth();
-      const day = newDate.getDate();
-      const utcDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+      // Create a new Date object at noon UTC to avoid timezone issues
+      // Use UTC methods to get the components
+      const selectedYear = newDate.getUTCFullYear();
+      const selectedMonth = newDate.getUTCMonth();
+      const selectedDay = newDate.getUTCDate();
       
-      console.log('DatePicker creating UTC date:', utcDate);
-      onSelect(utcDate);
+      // Create date at noon UTC to avoid timezone shifts
+      const preservedDate = new Date(Date.UTC(selectedYear, selectedMonth, selectedDay, 12, 0, 0));
+      console.log('DatePicker preserved date (UTC):', preservedDate);
+      
+      onSelect(preservedDate);
     } else {
       onSelect(undefined);
     }
@@ -48,21 +51,24 @@ const DatePicker: React.FC<DatePickerProps> = ({
           )}
           disabled={disabled}
           type="button"
+          onClick={(e) => e.stopPropagation()}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? formatDateForDisplay(date.toISOString()) : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-auto p-0 z-[300] pointer-events-auto" 
+        className="w-auto p-0 z-[300]" 
         align="start" 
         sideOffset={4}
+        onClick={(e) => e.stopPropagation()}
       >
         <Calendar
           mode="single"
           selected={date}
           onSelect={handleSelect}
           initialFocus
+          className="pointer-events-auto"
         />
       </PopoverContent>
     </Popover>

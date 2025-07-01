@@ -44,8 +44,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
       crm: '',
       nextFollowUp: null,
       value: 0,
-      location: '',
-      vertical: '',
+      location: '', // Initialize the location field
     };
     
     // Merge initialData with defaultData
@@ -104,15 +103,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
     }));
   }, []);
 
-  // Handle vertical changes
-  const handleVerticalChange = useCallback((vertical: string) => {
-    console.log(`Vertical changed to: ${vertical}`);
-    setFormData(prev => ({
-      ...prev,
-      vertical
-    }));
-  }, []);
-
   // Form submission
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -129,31 +119,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
     
     onSubmit(submissionData);
   }, [formData, onSubmit]);
-
-  // Verticals list
-  const verticals = [
-    'Legal',
-    'Dental Clinic',
-    'Chiropractors',
-    'Nail Salon',
-    'Med Spa',
-    'Insurance',
-    'Hotels',
-    'Title Companies',
-    'Car Washes',
-    'Pharmacies',
-    'Coffee Shops',
-    'Real estate agencies',
-    'real estate agents',
-    'hair salons',
-    'barbershops',
-    'gyms',
-    'Restaurant',
-    'auto repair shop',
-    'veterinary clinic',
-    'home cleaning service',
-    'daycare center'
-  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -195,25 +160,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
           onChange={handleInputChange}
           required
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Vertical</label>
-        <Select
-          value={formData.vertical || ''}
-          onValueChange={handleVerticalChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select vertical" />
-          </SelectTrigger>
-          <SelectContent>
-            {verticals.map(vertical => (
-              <SelectItem key={vertical} value={vertical}>
-                {vertical}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div>
@@ -269,7 +215,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
             <SelectItem value="Hot Lead">Hot Lead</SelectItem>
             <SelectItem value="Closed">Closed</SelectItem>
             <SelectItem value="Lost">Lost</SelectItem>
-            <SelectItem value="Demo No Show">Demo No Show</SelectItem>
           </SelectContent>
         </Select>
       </div>
