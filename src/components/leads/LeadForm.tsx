@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -183,64 +184,68 @@ const LeadForm: React.FC<LeadFormProps> = ({
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="businessName">
-          Business Name
-        </label>
-        <Input
-          id="businessName"
-          name="businessName"
-          value={formData.businessName || ''}
-          onChange={handleInputChange}
-          required
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="businessName">
+            Business Name
+          </label>
+          <Input
+            id="businessName"
+            name="businessName"
+            value={formData.businessName || ''}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="vertical">
+            Vertical
+          </label>
+          <Select
+            value={formData.vertical || ''}
+            onValueChange={handleVerticalChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select vertical" />
+            </SelectTrigger>
+            <SelectContent>
+              {VERTICALS.map(vertical => (
+                <SelectItem key={vertical} value={vertical}>
+                  {vertical}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="vertical">
-          Vertical
-        </label>
-        <Select
-          value={formData.vertical || ''}
-          onValueChange={handleVerticalChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select vertical" />
-          </SelectTrigger>
-          <SelectContent>
-            {VERTICALS.map(vertical => (
-              <SelectItem key={vertical} value={vertical}>
-                {vertical}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="location">
+            Location (US State/Canadian City)
+          </label>
+          <Input
+            id="location"
+            name="location"
+            value={formData.location || ''}
+            onChange={handleInputChange}
+            placeholder="e.g. California, Toronto"
+          />
+        </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="location">
-          Location (US State/Canadian City)
-        </label>
-        <Input
-          id="location"
-          name="location"
-          value={formData.location || ''}
-          onChange={handleInputChange}
-          placeholder="e.g. California, Toronto"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1" htmlFor="crm">
-          CRM System
-        </label>
-        <Input
-          id="crm"
-          name="crm"
-          value={formData.crm || ''}
-          onChange={handleInputChange}
-          placeholder="e.g. Salesforce, HubSpot, etc."
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="crm">
+            CRM System
+          </label>
+          <Input
+            id="crm"
+            name="crm"
+            value={formData.crm || ''}
+            onChange={handleInputChange}
+            placeholder="e.g. Salesforce, HubSpot, etc."
+          />
+        </div>
       </div>
 
       <div>
