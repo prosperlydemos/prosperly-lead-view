@@ -48,24 +48,21 @@ const DatePicker: React.FC<DatePickerProps> = ({
           )}
           disabled={disabled}
           type="button"
-          onClick={(e) => e.stopPropagation()}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? formatDateForDisplay(date.toISOString()) : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-auto p-0 z-[300]" 
+        className="w-auto p-0 z-[300] pointer-events-auto" 
         align="start" 
         sideOffset={4}
-        onClick={(e) => e.stopPropagation()}
       >
         <Calendar
           mode="single"
           selected={date}
           onSelect={handleSelect}
           initialFocus
-          className="pointer-events-auto"
         />
       </PopoverContent>
     </Popover>
