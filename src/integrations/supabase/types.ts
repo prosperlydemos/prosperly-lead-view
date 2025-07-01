@@ -32,7 +32,6 @@ export type Database = {
           contact_name: string
           created_at: string
           crm: string | null
-          demo_booked_date: string | null
           demo_date: string | null
           email: string | null
           id: string
@@ -55,7 +54,6 @@ export type Database = {
           contact_name: string
           created_at?: string
           crm?: string | null
-          demo_booked_date?: string | null
           demo_date?: string | null
           email?: string | null
           id?: string
@@ -78,7 +76,6 @@ export type Database = {
           contact_name?: string
           created_at?: string
           crm?: string | null
-          demo_booked_date?: string | null
           demo_date?: string | null
           email?: string | null
           id?: string

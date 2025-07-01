@@ -13,12 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Lead } from '@/types';
-import { startOfMonth, endOfMonth, eachDayOfInterval, format, isWithinInterval } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
-import { getEasternDayBounds } from '@/utils/dateUtils';
-
-// Eastern Time Zone identifier
-const TIMEZONE = "America/New_York";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, format, isWithinInterval } from 'date-fns';
 
 interface DemoDetailsModalProps {
   isOpen: boolean;
@@ -27,53 +22,44 @@ interface DemoDetailsModalProps {
 }
 
 const DemoDetailsModal: React.FC<DemoDetailsModalProps> = ({ isOpen, onClose, leads }) => {
-  // Get current date in Eastern time
   const now = new Date();
-  const easternNow = toZonedTime(now, TIMEZONE);
   
-  // Filter leads that have demo booked dates (when they were booked, not when they're scheduled)
-  const leadsWithDemos = leads.filter(lead => lead.demoBookedDate);
+  // Filter leads that have demo dates
+  const leadsWithDemos = leads.filter(lead => lead.demoDate);
   
-  // Calculate demos for today (booked today in Eastern time)
-  const todayBounds = getEasternDayBounds(easternNow);
+  // Calculate demos for today
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
   const demosToday = leadsWithDemos.filter(lead => {
-    const demoBookedDate = new Date(lead.demoBookedDate!);
-    return isWithinInterval(demoBookedDate, { start: todayBounds.start, end: todayBounds.end });
+    const demoDate = new Date(lead.demoDate!);
+    return isWithinInterval(demoDate, { start: todayStart, end: todayEnd });
   }).length;
   
-  // Calculate demos for this week (booked this week in Eastern time)
-  const weekStart = new Date(easternNow);
-  weekStart.setDate(easternNow.getDate() - easternNow.getDay() + 1); // Monday start
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6); // Sunday end
-  
-  const weekStartBounds = getEasternDayBounds(weekStart);
-  const weekEndBounds = getEasternDayBounds(weekEnd);
-  
+  // Calculate demos for this week
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday start
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
   const demosThisWeek = leadsWithDemos.filter(lead => {
-    const demoBookedDate = new Date(lead.demoBookedDate!);
-    return isWithinInterval(demoBookedDate, { start: weekStartBounds.start, end: weekEndBounds.end });
+    const demoDate = new Date(lead.demoDate!);
+    return isWithinInterval(demoDate, { start: weekStart, end: weekEnd });
   }).length;
   
-  // Calculate demos for this month (booked this month in Eastern time)
-  const monthStart = startOfMonth(easternNow);
-  const monthEnd = endOfMonth(easternNow);
-  const monthStartUTC = fromZonedTime(monthStart, TIMEZONE);
-  const monthEndUTC = fromZonedTime(monthEnd, TIMEZONE);
-  
+  // Calculate demos for this month
+  const monthStart = startOfMonth(now);
+  const monthEnd = endOfMonth(now);
   const demosThisMonth = leadsWithDemos.filter(lead => {
-    const demoBookedDate = new Date(lead.demoBookedDate!);
-    return isWithinInterval(demoBookedDate, { start: monthStartUTC, end: monthEndUTC });
+    const demoDate = new Date(lead.demoDate!);
+    return isWithinInterval(demoDate, { start: monthStart, end: monthEnd });
   }).length;
   
-  // Generate day-by-day breakdown for this month (based on when demos were booked in Eastern time)
+  // Generate day-by-day breakdown for this month
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const dailyBreakdown = daysInMonth.map(day => {
-    const dayBounds = getEasternDayBounds(day);
+    const dayStart = startOfDay(day);
+    const dayEnd = endOfDay(day);
     
     const demosOnDay = leadsWithDemos.filter(lead => {
-      const demoBookedDate = new Date(lead.demoBookedDate!);
-      return isWithinInterval(demoBookedDate, { start: dayBounds.start, end: dayBounds.end });
+      const demoDate = new Date(lead.demoDate!);
+      return isWithinInterval(demoDate, { start: dayStart, end: dayEnd });
     }).length;
     
     return {
@@ -87,7 +73,7 @@ const DemoDetailsModal: React.FC<DemoDetailsModalProps> = ({ isOpen, onClose, le
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Demo Booking Details (Eastern Time)</DialogTitle>
+          <DialogTitle>Demo Booking Details</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -126,7 +112,7 @@ const DemoDetailsModal: React.FC<DemoDetailsModalProps> = ({ isOpen, onClose, le
           
           {/* Daily Breakdown */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Daily Breakdown - {format(easternNow, 'MMMM yyyy')} (Eastern Time)</h3>
+            <h3 className="text-lg font-semibold mb-4">Daily Breakdown - {format(now, 'MMMM yyyy')}</h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {dailyBreakdown.map((day, index) => (
                 <div 
@@ -139,7 +125,7 @@ const DemoDetailsModal: React.FC<DemoDetailsModalProps> = ({ isOpen, onClose, le
                   <span className={`font-semibold ${
                     day.count > 0 ? 'text-green-600' : 'text-gray-500'
                   }`}>
-                    {day.count} demo{day.count !== 1 ? 's' : ''} booked
+                    {day.count} demo{day.count !== 1 ? 's' : ''}
                   </span>
                 </div>
               ))}

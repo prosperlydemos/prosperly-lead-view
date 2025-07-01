@@ -25,7 +25,6 @@ export interface Lead {
   setupFee: number;
   mrr: number; // Monthly Recurring Revenue
   demoDate: string | null;
-  demoBookedDate: string | null; // When the demo was booked/scheduled
   signupDate: string | null;
   status: LeadStatus;
   ownerId: string; // ID of the user who owns this lead

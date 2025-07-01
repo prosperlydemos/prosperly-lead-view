@@ -1,12 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '@/types';
-import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, parseISO, subMonths, isSameMonth, isSameYear, eachDayOfInterval } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
-import { getEasternDayBounds } from '@/utils/dateUtils';
-
-// Eastern Time Zone identifier
-const TIMEZONE = "America/New_York";
+import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay, parseISO, subMonths, isSameMonth, isSameYear } from 'date-fns';
 
 interface Metrics {
   totalMRR: number;
@@ -73,19 +67,19 @@ export const useReportsData = (
     // Filter by date range if provided
     if (dateFilter) {
       const { startDate, endDate } = dateFilter;
-      const startBounds = getEasternDayBounds(startDate);
-      const endBounds = getEasternDayBounds(endDate);
+      const startOfDayDate = startOfDay(startDate);
+      const endOfDayDate = endOfDay(endDate);
       
       filtered = filtered.filter(lead => {
         // Check if the lead has relevant dates that fall within the filter range
-        const demoBookedDate = lead.demoBookedDate ? new Date(lead.demoBookedDate) : null;
+        const demoDate = lead.demoDate ? new Date(lead.demoDate) : null;
         const signupDate = lead.signupDate ? new Date(lead.signupDate) : null;
         const closedDate = lead.closedAt ? new Date(lead.closedAt) : null;
         
-        // Include if any relevant date is in the selected date range (using Eastern time bounds)
-        return (demoBookedDate && isWithinInterval(demoBookedDate, { start: startBounds.start, end: endBounds.end })) || 
-               (signupDate && isWithinInterval(signupDate, { start: startBounds.start, end: endBounds.end })) ||
-               (closedDate && isWithinInterval(closedDate, { start: startBounds.start, end: endBounds.end }));
+        // Include if any relevant date is in the selected date range
+        return (demoDate && isWithinInterval(demoDate, { start: startOfDayDate, end: endOfDayDate })) || 
+               (signupDate && isWithinInterval(signupDate, { start: startOfDayDate, end: endOfDayDate })) ||
+               (closedDate && isWithinInterval(closedDate, { start: startOfDayDate, end: endOfDayDate }));
       });
     }
 
@@ -141,22 +135,18 @@ export const useReportsData = (
     // Count of new leads (excluding "Demo Scheduled" for conversion calculation)
     const newLeadsCount = leadsForConversionCalculation.length;
 
-    // Calculate demos booked in the current period (using demo booked date, not demo date)
+    // Calculate demos booked in the current period
     let demosBooked = 0;
     let demoComparisonRate = 0;
 
     if (dateFilter) {
-      // Get Eastern time bounds for the current period
-      const currentPeriodStart = getEasternDayBounds(dateFilter.startDate);
-      const currentPeriodEnd = getEasternDayBounds(dateFilter.endDate);
-      
-      // Get demos booked in the current period (using demo booked date)
+      // Get demos booked in the current period (using demo date)
       const demosInCurrentPeriod = leads.filter(lead => {
-        if (!lead.demoBookedDate) return false;
-        const demoBookedDate = new Date(lead.demoBookedDate);
-        return isWithinInterval(demoBookedDate, { 
-          start: currentPeriodStart.start, 
-          end: currentPeriodEnd.end 
+        if (!lead.demoDate) return false;
+        const demoDate = new Date(lead.demoDate);
+        return isWithinInterval(demoDate, { 
+          start: dateFilter.startDate, 
+          end: dateFilter.endDate 
         });
       });
       
@@ -164,20 +154,19 @@ export const useReportsData = (
       console.log(`Demos booked in current period: ${demosBooked}`);
       
       // Calculate the same period in the previous month
+      const dayDifference = dateFilter.endDate.getDate() - dateFilter.startDate.getDate();
       const previousPeriodEnd = subMonths(dateFilter.endDate, 1);
       const previousPeriodStart = subMonths(dateFilter.startDate, 1);
-      const prevStartBounds = getEasternDayBounds(previousPeriodStart);
-      const prevEndBounds = getEasternDayBounds(previousPeriodEnd);
       
       console.log(`Previous period: ${format(previousPeriodStart, 'MMM d')} - ${format(previousPeriodEnd, 'MMM d')}`);
       
-      // Get demos booked in the previous period (using demo booked date)
+      // Get demos booked in the previous period
       const demosInPreviousPeriod = leads.filter(lead => {
-        if (!lead.demoBookedDate) return false;
-        const demoBookedDate = new Date(lead.demoBookedDate);
-        return isWithinInterval(demoBookedDate, { 
-          start: prevStartBounds.start, 
-          end: prevEndBounds.end 
+        if (!lead.demoDate) return false;
+        const demoDate = new Date(lead.demoDate);
+        return isWithinInterval(demoDate, { 
+          start: previousPeriodStart, 
+          end: previousPeriodEnd 
         });
       });
       
@@ -237,31 +226,25 @@ export const useReportsData = (
       return acc;
     }, {} as Record<string, number>);
 
-    // Group by month for trend chart and revenue chart (using Eastern time)
+    // Group by month for trend chart and revenue chart
     const currentDate = new Date();
     const monthlyData = Array(12).fill(0).map((_, i) => {
       const month = new Date();
       month.setMonth(month.getMonth() - 11 + i);
       
-      // Convert to Eastern time for month boundaries
-      const easternMonth = toZonedTime(month, TIMEZONE);
-      const monthStart = startOfMonth(easternMonth);
-      const monthEnd = endOfMonth(easternMonth);
-      
-      // Convert back to UTC for date comparisons
-      const monthStartUTC = fromZonedTime(monthStart, TIMEZONE);
-      const monthEndUTC = fromZonedTime(monthEnd, TIMEZONE);
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
       
       const monthlyClosedDeals = filteredLeads.filter(lead => {
         if (lead.closedAt && lead.status === 'Closed') {
           const closedDate = new Date(lead.closedAt);
-          return closedDate >= monthStartUTC && closedDate <= monthEndUTC;
+          return closedDate >= monthStart && closedDate <= monthEnd;
         }
         return false;
       });
       
       // Log monthly deals for debugging
-      const monthLabel = format(easternMonth, 'MMM yyyy');
+      const monthLabel = format(month, 'MMM yyyy');
       console.log(`Closed deals for ${monthLabel}:`, monthlyClosedDeals.length, monthlyClosedDeals);
       
       const monthlyDealsCount = monthlyClosedDeals.length;
@@ -278,7 +261,7 @@ export const useReportsData = (
       console.log(`Revenue data for ${monthLabel}: MRR=${monthlyMRR}, Setup=${monthlySetupFees}`);
       
       return {
-        month: format(easternMonth, 'MMM'),
+        month: format(month, 'MMM'),
         monthYear: monthLabel, // Store full month and year for debugging
         deals: monthlyDealsCount,
         mrr: monthlyMRR,

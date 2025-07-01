@@ -1,6 +1,6 @@
 
 import { format, parse } from "date-fns";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 // Eastern Time Zone identifier
 const TIMEZONE = "America/New_York";
@@ -15,11 +15,10 @@ export const formatDateForInput = (dateStr: string | null | undefined): string =
       return '';
     }
     
-    // Convert to Eastern time and format as YYYY-MM-DD
-    const easternDate = toZonedTime(date, TIMEZONE);
-    const year = easternDate.getFullYear();
-    const month = String(easternDate.getMonth() + 1).padStart(2, '0');
-    const day = String(easternDate.getDate()).padStart(2, '0');
+    // Use UTC date components
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
     
     return `${year}-${month}-${day}`;
   } catch (e) {
@@ -38,9 +37,16 @@ export const formatDateForDisplay = (dateStr: string | null | undefined): string
       return '';
     }
     
-    // Convert to Eastern time for display
-    const easternDate = toZonedTime(date, TIMEZONE);
-    return format(easternDate, "MMM d, yyyy");
+    // Create a new date at noon UTC to avoid timezone issues
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+    
+    // Create a new date at noon UTC to avoid timezone shifts
+    const utcDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+    
+    // Format the date using the UTC date
+    return format(utcDate, "MMM d, yyyy");
   } catch (e) {
     console.error("Error formatting date for display:", e);
     return '';
@@ -57,38 +63,18 @@ export const parseDateToISO = (date: Date | string | null): string | null => {
       return null;
     }
     
-    // Convert to Eastern time, then get the date components
-    const easternDate = toZonedTime(dateObj, TIMEZONE);
-    const year = easternDate.getFullYear();
-    const month = String(easternDate.getMonth() + 1).padStart(2, '0');
-    const day = String(easternDate.getDate()).padStart(2, '0');
+    // Get UTC date components to ensure consistent date handling
+    const year = dateObj.getUTCFullYear();
+    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getUTCDate()).padStart(2, '0');
     
     // Format as YYYY-MM-DD
     const isoDate = `${year}-${month}-${day}`;
-    console.log(`Converting date: ${dateObj} to Eastern ISO format: ${isoDate}`);
+    console.log(`Converting date: ${dateObj} to ISO format: ${isoDate}`);
     
     return isoDate;
   } catch (e) {
     console.error("Error parsing date to ISO:", e);
     return null;
   }
-};
-
-// Helper function to get start/end of day in Eastern time
-export const getEasternDayBounds = (date: Date) => {
-  const easternDate = toZonedTime(date, TIMEZONE);
-  
-  // Start of day in Eastern time
-  const startOfDay = new Date(easternDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  
-  // End of day in Eastern time  
-  const endOfDay = new Date(easternDate);
-  endOfDay.setHours(23, 59, 59, 999);
-  
-  // Convert back to UTC for comparison with database dates
-  return {
-    start: fromZonedTime(startOfDay, TIMEZONE),
-    end: fromZonedTime(endOfDay, TIMEZONE)
-  };
 };

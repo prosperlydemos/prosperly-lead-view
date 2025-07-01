@@ -1,4 +1,3 @@
-
 import { Lead, Note } from '../types';
 
 export const mockLeads: Lead[] = [
@@ -11,7 +10,6 @@ export const mockLeads: Lead[] = [
     setupFee: 1000,
     mrr: 350,
     demoDate: '2025-05-10T14:00:00Z',
-    demoBookedDate: '2025-05-01T09:15:00Z', // Demo was booked on May 1st
     signupDate: null,
     status: 'Demo Scheduled',
     ownerId: 'user-1',  // Default owner
@@ -28,7 +26,6 @@ export const mockLeads: Lead[] = [
     setupFee: 1500,
     mrr: 500,
     demoDate: '2025-04-28T10:00:00Z',
-    demoBookedDate: '2025-04-20T11:45:00Z', // Demo was booked on April 20th
     signupDate: null,
     status: 'Warm Lead',
     ownerId: 'user-1',
@@ -45,7 +42,6 @@ export const mockLeads: Lead[] = [
     setupFee: 2000,
     mrr: 750,
     demoDate: '2025-04-25T15:30:00Z',
-    demoBookedDate: '2025-04-18T10:30:00Z', // Demo was booked on April 18th
     signupDate: null,
     status: 'Hot Lead',
     ownerId: 'user-2',
@@ -62,7 +58,6 @@ export const mockLeads: Lead[] = [
     setupFee: 1200,
     mrr: 450,
     demoDate: '2025-04-18T13:00:00Z',
-    demoBookedDate: '2025-04-15T09:00:00Z', // Demo was booked on April 15th
     signupDate: '2025-04-22T09:15:00Z',
     status: 'Closed',
     ownerId: 'user-2',
@@ -79,7 +74,6 @@ export const mockLeads: Lead[] = [
     setupFee: 800,
     mrr: 300,
     demoDate: '2025-05-05T11:00:00Z',
-    demoBookedDate: '2025-04-30T14:30:00Z', // Demo was booked on April 30th
     signupDate: null,
     status: 'Demo Scheduled',
     ownerId: 'user-3',
