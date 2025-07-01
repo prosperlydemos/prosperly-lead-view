@@ -24,11 +24,14 @@ const DatePicker: React.FC<DatePickerProps> = ({
     if (newDate) {
       console.log('DatePicker selected date:', newDate);
       
-      // Use the date as-is without timezone manipulation
-      // The date picker already gives us the correct local date
-      console.log('DatePicker passing date directly:', newDate);
+      // Create a new UTC date with the same day to avoid timezone shifts
+      const year = newDate.getFullYear();
+      const month = newDate.getMonth();
+      const day = newDate.getDate();
+      const utcDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
       
-      onSelect(newDate);
+      console.log('DatePicker creating UTC date:', utcDate);
+      onSelect(utcDate);
     } else {
       onSelect(undefined);
     }
