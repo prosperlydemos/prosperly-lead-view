@@ -13,6 +13,7 @@ export type Lead = SupabaseDatabase['public']['Tables']['leads']['Row'] & {
   signup_date?: string | null;
   crm?: string | null;
   location?: string | null;
+  vertical?: string | null;
 };
 export type Note = SupabaseDatabase['public']['Tables']['notes']['Row'];
 
@@ -64,7 +65,8 @@ export const mapSupabaseLeadToAppLead = (supabaseLead: Lead): import('./index').
     crm: supabaseLead.crm || '',
     value: value,
     location: supabaseLead.location || '',
-    commissionAmount: typeof supabaseLead.commission_amount === 'number' ? supabaseLead.commission_amount : undefined
+    commissionAmount: typeof supabaseLead.commission_amount === 'number' ? supabaseLead.commission_amount : undefined,
+    vertical: supabaseLead.vertical || ''
   };
 };
 
@@ -88,6 +90,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
   phone?: string | null;
   location?: string | null;
   commission_amount?: number | null;
+  vertical?: string | null;
 } => {
   // Use parseDateToISO for consistent date formatting for Supabase
   const formatDateForSupabase = (dateStr: string | null | undefined): string | null => {
@@ -113,6 +116,7 @@ export const mapAppLeadToSupabaseLead = (appLead: import('./index').Lead): {
     crm: appLead.crm || null,
     phone: null,
     location: appLead.location || null,
-    commission_amount: appLead.commissionAmount !== undefined ? appLead.commissionAmount : null
+    commission_amount: appLead.commissionAmount !== undefined ? appLead.commissionAmount : null,
+    vertical: appLead.vertical || null
   };
 };

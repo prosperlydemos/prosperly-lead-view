@@ -32,6 +32,7 @@ export type Database = {
           contact_name: string
           created_at: string
           crm: string | null
+          demo_booked_date: string | null
           demo_date: string | null
           email: string | null
           id: string
@@ -46,6 +47,7 @@ export type Database = {
           status: string
           updated_at: string
           value: number
+          vertical: string | null
         }
         Insert: {
           business_name?: string | null
@@ -54,6 +56,7 @@ export type Database = {
           contact_name: string
           created_at?: string
           crm?: string | null
+          demo_booked_date?: string | null
           demo_date?: string | null
           email?: string | null
           id?: string
@@ -68,6 +71,7 @@ export type Database = {
           status?: string
           updated_at?: string
           value?: number
+          vertical?: string | null
         }
         Update: {
           business_name?: string | null
@@ -76,6 +80,7 @@ export type Database = {
           contact_name?: string
           created_at?: string
           crm?: string | null
+          demo_booked_date?: string | null
           demo_date?: string | null
           email?: string | null
           id?: string
@@ -90,6 +95,7 @@ export type Database = {
           status?: string
           updated_at?: string
           value?: number
+          vertical?: string | null
         }
         Relationships: []
       }

@@ -16,6 +16,31 @@ interface LeadFormProps {
   isSubmitting?: boolean;
 }
 
+const VERTICALS = [
+  'Legal',
+  'Dental Clinic',
+  'Medical clinic',
+  'Chiropractors',
+  'Nail Salon',
+  'Med Spa',
+  'Insurance',
+  'Hotels',
+  'Title Companies',
+  'Car Washes',
+  'Pharmacies',
+  'Coffee Shops',
+  'Real estate agencies',
+  'Real estate agents',
+  'Hair salons',
+  'Barbershops',
+  'Gyms',
+  'Restaurant',
+  'Auto repair shop',
+  'Veterinary clinic',
+  'Home cleaning service',
+  'Daycare center'
+];
+
 const LeadForm: React.FC<LeadFormProps> = ({
   initialData,
   users,
@@ -44,7 +69,8 @@ const LeadForm: React.FC<LeadFormProps> = ({
       crm: '',
       nextFollowUp: null,
       value: 0,
-      location: '', // Initialize the location field
+      location: '',
+      vertical: '',
     };
     
     // Merge initialData with defaultData
@@ -100,6 +126,15 @@ const LeadForm: React.FC<LeadFormProps> = ({
     setFormData(prev => ({
       ...prev,
       ownerId
+    }));
+  }, []);
+
+  // Handle vertical changes
+  const handleVerticalChange = useCallback((vertical: string) => {
+    console.log(`Vertical changed to: ${vertical}`);
+    setFormData(prev => ({
+      ...prev,
+      vertical
     }));
   }, []);
 
@@ -160,6 +195,27 @@ const LeadForm: React.FC<LeadFormProps> = ({
           onChange={handleInputChange}
           required
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1" htmlFor="vertical">
+          Vertical
+        </label>
+        <Select
+          value={formData.vertical || ''}
+          onValueChange={handleVerticalChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select vertical" />
+          </SelectTrigger>
+          <SelectContent>
+            {VERTICALS.map(vertical => (
+              <SelectItem key={vertical} value={vertical}>
+                {vertical}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
