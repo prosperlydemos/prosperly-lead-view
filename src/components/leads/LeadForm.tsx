@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -271,6 +270,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
             <SelectItem value="Hot Lead">Hot Lead</SelectItem>
             <SelectItem value="Closed">Closed</SelectItem>
             <SelectItem value="Lost">Lost</SelectItem>
+            <SelectItem value="Demo No Show">Demo No Show</SelectItem>
           </SelectContent>
         </Select>
       </div>

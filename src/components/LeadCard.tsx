@@ -52,6 +52,8 @@ const LeadCard = forwardRef<HTMLButtonElement, LeadCardProps>(({
         return 'lead-status-closed';
       case 'Lost':
         return 'lead-status-lost';
+      case 'Demo No Show':
+        return 'lead-status-demo-no-show';
       default:
         return '';
     }
