@@ -15,12 +15,22 @@ serve(async (req) => {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
-    // Get Calendly webhook payload
-    const payload = await req.json()
-    console.log('Calendly webhook payload:', JSON.stringify(payload, null, 2))
+    // Try to get payload, but don't fail if it's not JSON (for manual sync)
+    let payload = null
+    try {
+      const text = await req.text()
+      if (text) {
+        payload = JSON.parse(text)
+        console.log('Calendly webhook payload:', JSON.stringify(payload, null, 2))
+      } else {
+        console.log('Manual sync triggered - no payload')
+      }
+    } catch (e) {
+      console.log('No JSON payload found - treating as manual sync')
+    }
 
     // Handle invitee.created event (when someone books a demo)
-    if (payload.event === 'invitee.created') {
+    if (payload && payload.event === 'invitee.created') {
       const invitee = payload.payload
       const event = invitee.event
       
@@ -84,6 +94,15 @@ serve(async (req) => {
         }
 
         console.log('Created new lead:', newLead)
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Lead created successfully',
+          newLeads: [newLead]
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
       } else {
         // Update existing lead with demo date
         const { error: updateError } = await supabase
@@ -100,13 +119,28 @@ serve(async (req) => {
         }
 
         console.log('Updated existing lead:', existingLead.id)
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Lead updated successfully',
+          newLeads: []
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
       }
+    } else {
+      // Manual sync or other request - just return success
+      console.log('Manual sync completed - no webhook data to process')
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Manual sync completed - no new leads to process',
+        newLeads: []
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
     }
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
 
   } catch (error) {
     console.error('Error processing Calendly webhook:', error)
