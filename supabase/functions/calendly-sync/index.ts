@@ -61,11 +61,13 @@ serve(async (req) => {
       const userData = await userResponse.json()
       const organizationUri = userData.resource.current_organization
       
-      // Fetch scheduled events from the last 30 days to today + 90 days
+      // Fetch scheduled events from today forward for 21 days
       const startTime = new Date()
-      startTime.setDate(startTime.getDate() - 30)
+      startTime.setHours(0, 0, 0, 0) // Set to beginning of today
       const endTime = new Date()
-      endTime.setDate(endTime.getDate() + 90)
+      endTime.setDate(endTime.getDate() + 21)
+
+      console.log(`Fetching events from ${startTime.toISOString()} to ${endTime.toISOString()}`)
 
       const eventsResponse = await fetch(`https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}&status=active`, {
         headers: {
