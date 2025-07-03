@@ -35,6 +35,7 @@ serve(async (req) => {
     let newLeads = []
     let totalEventsFound = 0
     let dateRange = null
+    let debugInfo = {}
 
     // Handle invitee.created event (when someone books a demo)
     if (payload && payload.event === 'invitee.created') {
@@ -68,12 +69,13 @@ serve(async (req) => {
       const userData = await userResponse.json()
       const organizationUri = userData.resource.current_organization
       console.log('Organization URI:', organizationUri)
+      console.log('User resource:', JSON.stringify(userData.resource, null, 2))
       
       // Fetch scheduled events - expanded date range to catch more events
       const startTime = new Date()
-      startTime.setDate(startTime.getDate() - 7) // Start from 7 days ago
+      startTime.setDate(startTime.getDate() - 30) // Expand to 30 days ago
       const endTime = new Date()
-      endTime.setDate(endTime.getDate() + 30) // Go 30 days into future
+      endTime.setDate(endTime.getDate() + 60) // Expand to 60 days in future
 
       dateRange = {
         from: startTime.toISOString(),
@@ -82,83 +84,126 @@ serve(async (req) => {
 
       console.log(`Fetching events from ${startTime.toISOString()} to ${endTime.toISOString()}`)
 
-      const eventsUrl = `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}&status=active`
-      console.log('Events API URL:', eventsUrl)
-
-      const eventsResponse = await fetch(eventsUrl, {
-        headers: {
-          'Authorization': `Bearer ${calendlyToken}`,
-          'Content-Type': 'application/json'
+      // Try multiple approaches to get events
+      const approaches = [
+        {
+          name: 'With organization and status active',
+          url: `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}&status=active`
+        },
+        {
+          name: 'With organization, no status filter',
+          url: `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}`
+        },
+        {
+          name: 'Without organization filter',
+          url: `https://api.calendly.com/scheduled_events?min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}`
         }
-      })
+      ]
 
-      if (!eventsResponse.ok) {
-        const errorText = await eventsResponse.text()
-        console.error('Events API response error:', errorText)
-        throw new Error(`Failed to fetch events: ${eventsResponse.status} - ${errorText}`)
-      }
+      let eventsData = null
+      let successfulApproach = null
 
-      const eventsData = await eventsResponse.json()
-      totalEventsFound = eventsData.collection.length
-      
-      console.log(`=== EVENTS RESPONSE ===`)
-      console.log(`Found ${totalEventsFound} scheduled events`)
-      
-      if (totalEventsFound === 0) {
-        console.log('No events found in the specified date range')
-        console.log('This could mean:')
-        console.log('1. No events are scheduled in the date range')
-        console.log('2. The organization URI is incorrect')
-        console.log('3. The Calendly token doesn\'t have access to events')
-      } else {
-        console.log('Sample event from response:', JSON.stringify(eventsData.collection[0], null, 2))
-      }
+      for (const approach of approaches) {
+        console.log(`=== TRYING APPROACH: ${approach.name} ===`)
+        console.log('URL:', approach.url)
 
-      // Process each event
-      for (const event of eventsData.collection) {
         try {
-          console.log(`=== PROCESSING EVENT ===`)
-          console.log(`Event URI: ${event.uri}`)
-          console.log(`Event start_time: ${event.start_time}`)
-          console.log(`Event name: ${event.name}`)
-          
-          // Fetch invitee information for each event
-          const inviteeResponse = await fetch(`${event.uri}/invitees`, {
+          const eventsResponse = await fetch(approach.url, {
             headers: {
               'Authorization': `Bearer ${calendlyToken}`,
               'Content-Type': 'application/json'
             }
           })
 
-          if (inviteeResponse.ok) {
-            const inviteeData = await inviteeResponse.json()
-            console.log(`Found ${inviteeData.collection.length} invitees for event`)
-            
-            // Process each invitee
-            for (const invitee of inviteeData.collection) {
-              console.log('=== PROCESSING INVITEE ===')
-              console.log('Invitee name:', invitee.name)
-              console.log('Invitee email:', invitee.email)
-              console.log('Event start time:', event.start_time)
-              
-              const leadData = await processCalendlyInvitee({
-                event: event,
-                ...invitee
-              }, supabase)
-              
-              if (leadData) {
-                console.log('✅ Lead created successfully:', leadData.id)
-                newLeads.push(leadData)
-              } else {
-                console.log('❌ Lead was not created (skipped or error)')
-              }
-            }
-          } else {
-            console.error(`Failed to fetch invitees for event ${event.uri}: ${inviteeResponse.status}`)
+          if (!eventsResponse.ok) {
+            const errorText = await eventsResponse.text()
+            console.error(`${approach.name} failed:`, eventsResponse.status, errorText)
+            continue
           }
-        } catch (eventError) {
-          console.error('Error processing event:', event.uri, eventError)
-          // Continue with other events
+
+          const responseData = await eventsResponse.json()
+          console.log(`${approach.name} - Found ${responseData.collection.length} events`)
+          
+          if (responseData.collection.length > 0) {
+            eventsData = responseData
+            successfulApproach = approach.name
+            totalEventsFound = responseData.collection.length
+            console.log('✅ SUCCESS! Using this approach')
+            console.log('Sample event:', JSON.stringify(responseData.collection[0], null, 2))
+            break
+          }
+        } catch (error) {
+          console.error(`Error with ${approach.name}:`, error)
+        }
+      }
+
+      debugInfo = {
+        approaches: approaches.map(a => a.name),
+        successfulApproach,
+        totalEventsFound,
+        dateRange,
+        organizationUri,
+        tokenLength: calendlyToken?.length || 0
+      }
+
+      if (!eventsData || totalEventsFound === 0) {
+        console.log('❌ NO EVENTS FOUND WITH ANY APPROACH')
+        console.log('Debug info:', JSON.stringify(debugInfo, null, 2))
+        console.log('This could mean:')
+        console.log('1. No events are scheduled in the expanded date range')
+        console.log('2. The Calendly token doesn\'t have the right permissions')
+        console.log('3. The organization URI is incorrect')
+        console.log('4. Events exist but are in a different status')
+      } else {
+        console.log(`✅ Processing ${totalEventsFound} events...`)
+        
+        // Process each event
+        for (const event of eventsData.collection) {
+          try {
+            console.log(`=== PROCESSING EVENT ===`)
+            console.log(`Event URI: ${event.uri}`)
+            console.log(`Event start_time: ${event.start_time}`)
+            console.log(`Event name: ${event.name}`)
+            console.log(`Event status: ${event.status}`)
+            
+            // Fetch invitee information for each event
+            const inviteeResponse = await fetch(`${event.uri}/invitees`, {
+              headers: {
+                'Authorization': `Bearer ${calendlyToken}`,
+                'Content-Type': 'application/json'
+              }
+            })
+
+            if (inviteeResponse.ok) {
+              const inviteeData = await inviteeResponse.json()
+              console.log(`Found ${inviteeData.collection.length} invitees for event`)
+              
+              // Process each invitee
+              for (const invitee of inviteeData.collection) {
+                console.log('=== PROCESSING INVITEE ===')
+                console.log('Invitee name:', invitee.name)
+                console.log('Invitee email:', invitee.email)
+                console.log('Event start time:', event.start_time)
+                
+                const leadData = await processCalendlyInvitee({
+                  event: event,
+                  ...invitee
+                }, supabase)
+                
+                if (leadData) {
+                  console.log('✅ Lead created successfully:', leadData.id)
+                  newLeads.push(leadData)
+                } else {
+                  console.log('❌ Lead was not created (skipped or error)')
+                }
+              }
+            } else {
+              console.error(`Failed to fetch invitees for event ${event.uri}: ${inviteeResponse.status}`)
+            }
+          } catch (eventError) {
+            console.error('Error processing event:', event.uri, eventError)
+            // Continue with other events
+          }
         }
       }
     }
@@ -184,10 +229,7 @@ serve(async (req) => {
       success: true, 
       message: `Sync completed - processed ${newLeads.length} new leads`,
       newLeads: newLeads,
-      debug: {
-        totalEventsFound: totalEventsFound,
-        dateRange: dateRange
-      }
+      debug: debugInfo
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
