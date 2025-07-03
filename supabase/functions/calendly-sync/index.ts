@@ -35,15 +35,29 @@ serve(async (req) => {
     let totalEventsFound = 0
     let totalEventsProcessed = 0
     let totalPastEventsSkipped = 0
+    let totalInviteesProcessed = 0
+    let totalLeadsCreated = 0
+    let totalLeadsSkipped = 0
+    let errors = []
     let dateRange = null
     let debugInfo = {}
 
     // Handle invitee.created event (when someone books a demo)
     if (payload && payload.event === 'invitee.created') {
       console.log('Processing webhook event: invitee.created')
-      const leadData = await processCalendlyInvitee(payload.payload, supabase)
-      if (leadData) {
-        newLeads.push(leadData)
+      try {
+        const leadData = await processCalendlyInvitee(payload.payload, supabase)
+        if (leadData) {
+          newLeads.push(leadData)
+          totalLeadsCreated++
+          console.log(`✅ Lead created from webhook: ${leadData.contact_name}`)
+        } else {
+          totalLeadsSkipped++
+          console.log('⚠️ Lead was skipped from webhook (already exists or missing data)')
+        }
+      } catch (error) {
+        errors.push(`Webhook processing error: ${error.message}`)
+        console.error('❌ Error processing webhook:', error)
       }
     } else {
       // Manual sync - fetch current and future scheduled events from Calendly API
@@ -63,7 +77,9 @@ serve(async (req) => {
       })
 
       if (!userResponse.ok) {
-        console.error('User API failed:', userResponse.status, await userResponse.text())
+        const errorText = await userResponse.text()
+        console.error('User API failed:', userResponse.status, errorText)
+        errors.push(`Failed to get user info: ${userResponse.status} - ${errorText}`)
         throw new Error(`Failed to get user info: ${userResponse.status}`)
       }
 
@@ -84,9 +100,11 @@ serve(async (req) => {
         currentTime: now.toISOString()
       }
 
-      console.log(`Fetching events from ${startTime.toISOString()} to ${endTime.toISOString()}`)
-      console.log(`Current time: ${now.toISOString()}`)
-      console.log(`Date range: Today + 21 days forward`)
+      console.log(`📅 SYNC DATE RANGE:`)
+      console.log(`   From: ${startTime.toISOString()}`)
+      console.log(`   To: ${endTime.toISOString()}`)
+      console.log(`   Current time: ${now.toISOString()}`)
+      console.log(`   Range: Today + 21 days forward`)
 
       // Try multiple approaches to get events with pagination
       const approaches = [
@@ -120,11 +138,18 @@ serve(async (req) => {
             totalEventsFound = eventsFromApproach.length
             console.log(`✅ SUCCESS! Found ${totalEventsFound} total events using: ${approach.name}`)
             break
+          } else {
+            console.log(`⚠️ No events found with approach: ${approach.name}`)
           }
         } catch (error) {
-          console.error(`Error with ${approach.name}:`, error)
+          console.error(`❌ Error with ${approach.name}:`, error)
+          errors.push(`API approach "${approach.name}" failed: ${error.message}`)
         }
       }
+
+      console.log(`📊 EVENTS DISCOVERY SUMMARY:`)
+      console.log(`   Total events found: ${totalEventsFound}`)
+      console.log(`   Successful approach: ${successfulApproach || 'None'}`)
 
       debugInfo = {
         approaches: approaches.map(a => a.name),
@@ -132,26 +157,29 @@ serve(async (req) => {
         totalEventsFound,
         totalEventsProcessed,
         totalPastEventsSkipped,
+        totalInviteesProcessed,
+        totalLeadsCreated,
+        totalLeadsSkipped,
         dateRange,
         organizationUri,
-        tokenLength: calendlyToken?.length || 0
+        tokenLength: calendlyToken?.length || 0,
+        errors
       }
 
       if (allEvents.length === 0) {
         console.log('❌ NO EVENTS FOUND WITH ANY APPROACH')
-        console.log('Debug info:', JSON.stringify(debugInfo, null, 2))
         console.log('This could mean:')
         console.log('1. No events are scheduled in the next 21 days')
         console.log('2. The Calendly token doesn\'t have the right permissions')
         console.log('3. The organization URI is incorrect')
         console.log('4. Events exist but are in a different status')
       } else {
-        console.log(`✅ Processing ${totalEventsFound} events...`)
+        console.log(`🔄 PROCESSING ${totalEventsFound} EVENTS...`)
         
         // Process each event - all should be current or future since we filtered by date range
         for (const event of allEvents) {
           try {
-            console.log(`=== PROCESSING EVENT ===`)
+            console.log(`=== PROCESSING EVENT ${totalEventsProcessed + totalPastEventsSkipped + 1}/${totalEventsFound} ===`)
             console.log(`Event URI: ${event.uri}`)
             console.log(`Event start_time: ${event.start_time}`)
             console.log(`Event name: ${event.name}`)
@@ -170,41 +198,59 @@ serve(async (req) => {
             totalEventsProcessed++
             
             // Fetch invitee information for each event
-            const inviteeResponse = await fetch(`${event.uri}/invitees`, {
-              headers: {
-                'Authorization': `Bearer ${calendlyToken}`,
-                'Content-Type': 'application/json'
-              }
-            })
-
-            if (inviteeResponse.ok) {
-              const inviteeData = await inviteeResponse.json()
-              console.log(`Found ${inviteeData.collection.length} invitees for event`)
-              
-              // Process each invitee
-              for (const invitee of inviteeData.collection) {
-                console.log('=== PROCESSING INVITEE ===')
-                console.log('Invitee name:', invitee.name)
-                console.log('Invitee email:', invitee.email)
-                console.log('Event start time:', event.start_time)
-                
-                const leadData = await processCalendlyInvitee({
-                  event: event,
-                  ...invitee
-                }, supabase)
-                
-                if (leadData) {
-                  console.log('✅ Lead created successfully:', leadData.id)
-                  newLeads.push(leadData)
-                } else {
-                  console.log('❌ Lead was not created (skipped or error)')
+            try {
+              const inviteeResponse = await fetch(`${event.uri}/invitees`, {
+                headers: {
+                  'Authorization': `Bearer ${calendlyToken}`,
+                  'Content-Type': 'application/json'
                 }
+              })
+
+              if (inviteeResponse.ok) {
+                const inviteeData = await inviteeResponse.json()
+                const inviteeCount = inviteeData.collection.length
+                console.log(`👥 Found ${inviteeCount} invitees for event`)
+                totalInviteesProcessed += inviteeCount
+                
+                // Process each invitee
+                for (const invitee of inviteeData.collection) {
+                  try {
+                    console.log('=== PROCESSING INVITEE ===')
+                    console.log('Invitee name:', invitee.name)
+                    console.log('Invitee email:', invitee.email)
+                    console.log('Event start time:', event.start_time)
+                    
+                    const leadData = await processCalendlyInvitee({
+                      event: event,
+                      ...invitee
+                    }, supabase)
+                    
+                    if (leadData) {
+                      console.log(`✅ Lead created successfully: ${leadData.contact_name} (${leadData.id})`)
+                      newLeads.push(leadData)
+                      totalLeadsCreated++
+                    } else {
+                      console.log('⚠️ Lead was skipped (already exists or missing data)')
+                      totalLeadsSkipped++
+                    }
+                  } catch (inviteeError) {
+                    console.error(`❌ Error processing invitee ${invitee.name}:`, inviteeError)
+                    errors.push(`Error processing invitee ${invitee.name}: ${inviteeError.message}`)
+                    totalLeadsSkipped++
+                  }
+                }
+              } else {
+                const errorText = await inviteeResponse.text()
+                console.error(`❌ Failed to fetch invitees for event ${event.uri}: ${inviteeResponse.status} - ${errorText}`)
+                errors.push(`Failed to fetch invitees for event: ${inviteeResponse.status} - ${errorText}`)
               }
-            } else {
-              console.error(`Failed to fetch invitees for event ${event.uri}: ${inviteeResponse.status}`)
+            } catch (fetchError) {
+              console.error(`❌ Error fetching invitees for event ${event.uri}:`, fetchError)
+              errors.push(`Error fetching invitees: ${fetchError.message}`)
             }
           } catch (eventError) {
-            console.error('Error processing event:', event.uri, eventError)
+            console.error(`❌ Error processing event ${event.uri}:`, eventError)
+            errors.push(`Error processing event: ${eventError.message}`)
             // Continue with other events
           }
         }
@@ -212,12 +258,10 @@ serve(async (req) => {
         // Update debug info with final counts
         debugInfo.totalEventsProcessed = totalEventsProcessed
         debugInfo.totalPastEventsSkipped = totalPastEventsSkipped
-        
-        console.log(`=== PROCESSING SUMMARY ===`)
-        console.log(`Total events found: ${totalEventsFound}`)
-        console.log(`Events processed (future): ${totalEventsProcessed}`)
-        console.log(`Past events skipped: ${totalPastEventsSkipped}`)
-        console.log(`New leads created: ${newLeads.length}`)
+        debugInfo.totalInviteesProcessed = totalInviteesProcessed
+        debugInfo.totalLeadsCreated = totalLeadsCreated
+        debugInfo.totalLeadsSkipped = totalLeadsSkipped
+        debugInfo.errors = errors
       }
     }
 
@@ -229,19 +273,47 @@ serve(async (req) => {
           key: 'calendly_last_sync',
           value: new Date().toISOString()
         })
-      console.log('Updated last sync time')
+      console.log('✅ Updated last sync time')
     } catch (settingsError) {
-      console.error('Error updating last sync time:', settingsError)
+      console.error('❌ Error updating last sync time:', settingsError)
+      errors.push(`Error updating last sync time: ${settingsError.message}`)
       // Don't fail the whole operation for this
     }
 
-    console.log(`=== SYNC COMPLETED ===`)
-    console.log(`Processed ${newLeads.length} new leads`)
+    console.log(`=== 📊 FINAL SYNC SUMMARY ===`)
+    console.log(`📅 Date range: ${dateRange ? `${dateRange.from} to ${dateRange.to}` : 'Webhook event'}`)
+    console.log(`🔍 Events found: ${totalEventsFound}`)
+    console.log(`✅ Events processed: ${totalEventsProcessed}`)
+    console.log(`⏰ Past events skipped: ${totalPastEventsSkipped}`)
+    console.log(`👥 Total invitees processed: ${totalInviteesProcessed}`)
+    console.log(`🎯 New leads created: ${totalLeadsCreated}`)
+    console.log(`⚠️ Leads skipped: ${totalLeadsSkipped}`)
+    console.log(`❌ Errors encountered: ${errors.length}`)
+    
+    if (errors.length > 0) {
+      console.log(`=== ❌ ERROR DETAILS ===`)
+      errors.forEach((error, index) => {
+        console.log(`${index + 1}. ${error}`)
+      })
+    }
+    
+    const successMessage = `Sync completed - ${totalLeadsCreated} new leads created from ${totalEventsProcessed} future events (${totalPastEventsSkipped} past events skipped, ${totalInviteesProcessed} invitees processed, ${errors.length} errors)`
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: `Sync completed - processed ${newLeads.length} new leads (${totalEventsProcessed} future events processed, ${totalPastEventsSkipped} past events skipped)`,
+      message: successMessage,
+      summary: {
+        eventsFound: totalEventsFound,
+        eventsProcessed: totalEventsProcessed,
+        pastEventsSkipped: totalPastEventsSkipped,
+        inviteesProcessed: totalInviteesProcessed,
+        leadsCreated: totalLeadsCreated,
+        leadsSkipped: totalLeadsSkipped,
+        errorsCount: errors.length,
+        dateRange: dateRange
+      },
       newLeads: newLeads,
+      errors: errors,
       debug: debugInfo
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -249,10 +321,11 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('=== ERROR IN CALENDLY SYNC ===')
+    console.error('=== ❌ CRITICAL ERROR IN CALENDLY SYNC ===')
     console.error('Error details:', error)
     console.error('Error stack:', error.stack)
     return new Response(JSON.stringify({ 
+      success: false,
       error: error.message,
       details: error.stack
     }), {
