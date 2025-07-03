@@ -85,7 +85,10 @@ serve(async (req) => {
 
       const eventsData = await eventsResponse.json()
       console.log(`Found ${eventsData.collection.length} scheduled events`)
-      console.log('Sample event data:', JSON.stringify(eventsData.collection[0], null, 2))
+      
+      if (eventsData.collection.length > 0) {
+        console.log('Sample event data:', JSON.stringify(eventsData.collection[0], null, 2))
+      }
 
       // Process each event
       for (const event of eventsData.collection) {
@@ -205,23 +208,29 @@ async function processCalendlyInvitee(invitee: any, supabase: any) {
   }
 
   // Get default admin user ID for lead assignment
-  const { data: adminUser } = await supabase
+  const { data: adminUser, error: adminError } = await supabase
     .from('profiles')
     .select('id')
     .eq('is_admin', true)
     .limit(1)
     .single()
 
-  if (!adminUser) {
+  if (adminError || !adminUser) {
+    console.error('Error getting admin user:', adminError)
     throw new Error('No admin user found to assign lead to')
   }
 
-  // Check if lead already exists
-  const { data: existingLead } = await supabase
+  // Check if lead already exists - use maybeSingle() instead of single()
+  const { data: existingLead, error: checkError } = await supabase
     .from('leads')
     .select('id')
     .eq('email', email)
-    .single()
+    .maybeSingle()
+
+  if (checkError) {
+    console.error('Error checking for existing lead:', checkError)
+    throw checkError
+  }
 
   if (!existingLead) {
     console.log('Creating new lead for:', email)
