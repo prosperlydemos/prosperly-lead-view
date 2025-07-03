@@ -39,11 +39,12 @@ serve(async (req) => {
       const name = invitee.name
       const scheduledTime = invitee.start_time
       
-      // Check if demo date is in the future
+      // Check if demo date is today or in the future (not in the past)
       const demoDate = new Date(scheduledTime)
-      const now = new Date()
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Set to beginning of today
       
-      if (demoDate <= now) {
+      if (demoDate < today) {
         console.log('Demo date is in the past, skipping lead processing:', scheduledTime)
         return new Response(JSON.stringify({ 
           success: true, 
@@ -120,25 +121,12 @@ serve(async (req) => {
           status: 200,
         })
       } else {
-        // Update existing lead with demo date ONLY - don't change status
-        const { error: updateError } = await supabase
-          .from('leads')
-          .update({
-            demo_date: scheduledTime
-            // Removed status update to preserve existing lead status
-          })
-          .eq('id', existingLead.id)
-
-        if (updateError) {
-          console.error('Error updating lead:', updateError)
-          throw updateError
-        }
-
-        console.log('Updated existing lead demo date:', existingLead.id)
+        // Lead already exists - don't update it, just log and return
+        console.log('Lead already exists, skipping update:', existingLead.id)
         
         return new Response(JSON.stringify({ 
           success: true, 
-          message: 'Lead demo date updated successfully',
+          message: 'Lead already exists - no changes made',
           newLeads: []
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
