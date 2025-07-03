@@ -39,6 +39,22 @@ serve(async (req) => {
       const name = invitee.name
       const scheduledTime = invitee.start_time
       
+      // Check if demo date is in the future
+      const demoDate = new Date(scheduledTime)
+      const now = new Date()
+      
+      if (demoDate <= now) {
+        console.log('Demo date is in the past, skipping lead processing:', scheduledTime)
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Demo date is in the past - lead not processed',
+          newLeads: []
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
+      }
+      
       // Get additional details from questions if available
       let businessName = ''
       if (invitee.questions_and_answers) {
