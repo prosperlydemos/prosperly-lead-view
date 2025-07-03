@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -88,52 +89,37 @@ serve(async (req) => {
       console.log(`Fetching events from ${startTime.toISOString()} to ${endTime.toISOString()}`)
       console.log(`Current time: ${now.toISOString()}`)
 
-      // Try multiple approaches to get events
+      // Try multiple approaches to get events with pagination
       const approaches = [
         {
           name: 'With organization and status active',
-          url: `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}&status=active`
+          baseUrl: `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}&status=active`
         },
         {
           name: 'With organization, no status filter',
-          url: `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}`
+          baseUrl: `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(organizationUri)}&min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}`
         },
         {
           name: 'Without organization filter',
-          url: `https://api.calendly.com/scheduled_events?min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}`
+          baseUrl: `https://api.calendly.com/scheduled_events?min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}`
         }
       ]
 
-      let eventsData = null
+      let allEvents = []
       let successfulApproach = null
 
       for (const approach of approaches) {
         console.log(`=== TRYING APPROACH: ${approach.name} ===`)
-        console.log('URL:', approach.url)
-
+        
         try {
-          const eventsResponse = await fetch(approach.url, {
-            headers: {
-              'Authorization': `Bearer ${calendlyToken}`,
-              'Content-Type': 'application/json'
-            }
-          })
-
-          if (!eventsResponse.ok) {
-            const errorText = await eventsResponse.text()
-            console.error(`${approach.name} failed:`, eventsResponse.status, errorText)
-            continue
-          }
-
-          const responseData = await eventsResponse.json()
-          console.log(`${approach.name} - Found ${responseData.collection.length} total events`)
+          // Fetch all pages for this approach
+          const eventsFromApproach = await fetchAllEvents(approach.baseUrl, calendlyToken)
           
-          if (responseData.collection.length > 0) {
-            eventsData = responseData
+          if (eventsFromApproach.length > 0) {
+            allEvents = eventsFromApproach
             successfulApproach = approach.name
-            totalEventsFound = responseData.collection.length
-            console.log('✅ SUCCESS! Using this approach')
-            console.log('Sample event:', JSON.stringify(responseData.collection[0], null, 2))
+            totalEventsFound = eventsFromApproach.length
+            console.log(`✅ SUCCESS! Found ${totalEventsFound} total events using: ${approach.name}`)
             break
           }
         } catch (error) {
@@ -152,7 +138,7 @@ serve(async (req) => {
         tokenLength: calendlyToken?.length || 0
       }
 
-      if (!eventsData || totalEventsFound === 0) {
+      if (allEvents.length === 0) {
         console.log('❌ NO EVENTS FOUND WITH ANY APPROACH')
         console.log('Debug info:', JSON.stringify(debugInfo, null, 2))
         console.log('This could mean:')
@@ -164,7 +150,7 @@ serve(async (req) => {
         console.log(`✅ Processing ${totalEventsFound} events...`)
         
         // Process each event, but only current and future ones
-        for (const event of eventsData.collection) {
+        for (const event of allEvents) {
           try {
             console.log(`=== PROCESSING EVENT ===`)
             console.log(`Event URI: ${event.uri}`)
@@ -277,6 +263,62 @@ serve(async (req) => {
     })
   }
 })
+
+// New function to handle pagination and fetch all events
+async function fetchAllEvents(baseUrl: string, token: string) {
+  const allEvents = []
+  let nextPageToken = null
+  let pageCount = 0
+  
+  do {
+    pageCount++
+    console.log(`--- Fetching page ${pageCount} ---`)
+    
+    // Build URL with pagination token if available
+    let url = baseUrl + '&count=100' // Request max items per page
+    if (nextPageToken) {
+      url += `&page_token=${nextPageToken}`
+    }
+    
+    console.log('Fetching URL:', url)
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Page ${pageCount} failed:`, response.status, errorText)
+      break
+    }
+
+    const data = await response.json()
+    console.log(`Page ${pageCount}: Found ${data.collection.length} events`)
+    
+    // Add events from this page
+    allEvents.push(...data.collection)
+    
+    // Check if there's a next page
+    nextPageToken = data.pagination?.next_page_token || null
+    console.log(`Next page token: ${nextPageToken ? 'exists' : 'none'}`)
+    
+    // Safety limit to prevent infinite loops
+    if (pageCount > 50) {
+      console.warn('Reached maximum page limit (50), stopping pagination')
+      break
+    }
+    
+  } while (nextPageToken)
+  
+  console.log(`=== PAGINATION COMPLETE ===`)
+  console.log(`Total pages fetched: ${pageCount}`)
+  console.log(`Total events collected: ${allEvents.length}`)
+  
+  return allEvents
+}
 
 async function processCalendlyInvitee(invitee: any, supabase: any) {
   console.log('=== PROCESS CALENDLY INVITEE START ===')
