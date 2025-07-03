@@ -220,10 +220,13 @@ serve(async (req) => {
                     console.log('Invitee email:', invitee.email)
                     console.log('Event start time:', event.start_time)
                     
-                    const leadData = await processCalendlyInvitee({
-                      event: event,
-                      ...invitee
-                    }, supabase)
+                    // Create a combined object with both event and invitee data
+                    const inviteeWithEvent = {
+                      ...invitee,
+                      event: event
+                    }
+                    
+                    const leadData = await processCalendlyInvitee(inviteeWithEvent, supabase)
                     
                     if (leadData) {
                       console.log(`✅ Lead created successfully: ${leadData.contact_name} (${leadData.id})`)
@@ -391,14 +394,29 @@ async function fetchAllEvents(baseUrl: string, token: string) {
   return allEvents
 }
 
-async function processCalendlyInvitee(invitee: any, supabase: any) {
+async function processCalendlyInvitee(inviteeData: any, supabase: any) {
   console.log('=== PROCESS CALENDLY INVITEE START ===')
-  console.log('Full invitee data:', JSON.stringify(invitee, null, 2))
+  console.log('Full invitee data:', JSON.stringify(inviteeData, null, 2))
 
   // Extract lead information
-  const email = invitee.email
-  const name = invitee.name
-  const scheduledTime = invitee.start_time || invitee.event?.start_time
+  const email = inviteeData.email
+  const name = inviteeData.name
+  
+  // Fix: Handle different data structures for webhook vs manual sync
+  let scheduledTime = null
+  
+  if (inviteeData.event && inviteeData.event.start_time) {
+    // Manual sync: event data is attached to invitee
+    scheduledTime = inviteeData.event.start_time
+    console.log('📅 Using event.start_time from manual sync:', scheduledTime)
+  } else if (inviteeData.start_time) {
+    // Webhook: start_time is directly on invitee
+    scheduledTime = inviteeData.start_time
+    console.log('📅 Using invitee.start_time from webhook:', scheduledTime)
+  } else {
+    console.log('❌ No scheduled time found in invitee data')
+    console.log('Available keys:', Object.keys(inviteeData))
+  }
   
   console.log('Extracted data:')
   console.log('- Email:', email)
@@ -421,8 +439,8 @@ async function processCalendlyInvitee(invitee: any, supabase: any) {
   
   // Get additional details from questions if available
   let businessName = ''
-  if (invitee.questions_and_answers) {
-    const businessQuestion = invitee.questions_and_answers.find(
+  if (inviteeData.questions_and_answers) {
+    const businessQuestion = inviteeData.questions_and_answers.find(
       (qa: any) => qa.question.toLowerCase().includes('business') || qa.question.toLowerCase().includes('company')
     )
     if (businessQuestion) {
