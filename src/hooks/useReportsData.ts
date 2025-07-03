@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '@/types';
 import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay, parseISO, subMonths, isSameMonth, isSameYear } from 'date-fns';
@@ -226,7 +227,7 @@ export const useReportsData = (
       return acc;
     }, {} as Record<string, number>);
 
-    // Group by month for trend chart and revenue chart
+    // Group by month for trend chart and revenue chart - USE SIGNUP DATE for commission reporting
     const currentDate = new Date();
     const monthlyData = Array(12).fill(0).map((_, i) => {
       const month = new Date();
@@ -235,17 +236,18 @@ export const useReportsData = (
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
       
+      // Use signupDate instead of closedAt for commission reporting
       const monthlyClosedDeals = filteredLeads.filter(lead => {
-        if (lead.closedAt && lead.status === 'Closed') {
-          const closedDate = new Date(lead.closedAt);
-          return closedDate >= monthStart && closedDate <= monthEnd;
+        if (lead.signupDate && lead.status === 'Closed') {
+          const signupDate = new Date(lead.signupDate);
+          return signupDate >= monthStart && signupDate <= monthEnd;
         }
         return false;
       });
       
       // Log monthly deals for debugging
       const monthLabel = format(month, 'MMM yyyy');
-      console.log(`Closed deals for ${monthLabel}:`, monthlyClosedDeals.length, monthlyClosedDeals);
+      console.log(`Closed deals for ${monthLabel} (by signup date):`, monthlyClosedDeals.length, monthlyClosedDeals);
       
       const monthlyDealsCount = monthlyClosedDeals.length;
       
@@ -270,11 +272,16 @@ export const useReportsData = (
       };
     });
 
-    // Create leaderboard data with commission calculation
+    // Create leaderboard data with commission calculation - also use signup date
     const leaderboardData = users.map(user => {
-      const userLeads = filteredLeads.filter(lead => lead.ownerId === user.id && lead.status === 'Closed');
+      // Filter by signup date for commission calculations
+      const userLeads = filteredLeads.filter(lead => 
+        lead.ownerId === user.id && 
+        lead.status === 'Closed' && 
+        lead.signupDate // Only include leads with signup dates
+      );
       
-      console.log(`Processing user ${user.name} with ${userLeads.length} closed leads:`, userLeads);
+      console.log(`Processing user ${user.name} with ${userLeads.length} closed leads (by signup date):`, userLeads);
       
       const totalMRR = userLeads.reduce((sum, lead) => sum + (lead.mrr || 0), 0);
       const totalSetupFees = userLeads.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
