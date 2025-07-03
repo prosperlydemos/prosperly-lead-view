@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -47,7 +46,7 @@ serve(async (req) => {
         newLeads.push(leadData)
       }
     } else {
-      // Manual sync - fetch recent and future scheduled events from Calendly API
+      // Manual sync - fetch current and future scheduled events from Calendly API
       console.log('=== STARTING MANUAL SYNC ===')
       
       if (!calendlyToken) {
@@ -73,12 +72,11 @@ serve(async (req) => {
       console.log('Organization URI:', organizationUri)
       console.log('User resource:', JSON.stringify(userData.resource, null, 2))
       
-      // Fetch scheduled events - focus on current and future events
+      // Fetch scheduled events - focus on current and future events only
       const now = new Date()
-      const startTime = new Date()
-      startTime.setDate(startTime.getDate() - 7) // Only check last 7 days for recent bookings
+      const startTime = new Date() // Start from now (today)
       const endTime = new Date()
-      endTime.setDate(endTime.getDate() + 90) // Look 90 days ahead for future events
+      endTime.setDate(endTime.getDate() + 21) // Look 21 days ahead for future events
 
       dateRange = {
         from: startTime.toISOString(),
@@ -88,6 +86,7 @@ serve(async (req) => {
 
       console.log(`Fetching events from ${startTime.toISOString()} to ${endTime.toISOString()}`)
       console.log(`Current time: ${now.toISOString()}`)
+      console.log(`Date range: Today + 21 days forward`)
 
       // Try multiple approaches to get events with pagination
       const approaches = [
@@ -142,14 +141,14 @@ serve(async (req) => {
         console.log('❌ NO EVENTS FOUND WITH ANY APPROACH')
         console.log('Debug info:', JSON.stringify(debugInfo, null, 2))
         console.log('This could mean:')
-        console.log('1. No events are scheduled in the date range')
+        console.log('1. No events are scheduled in the next 21 days')
         console.log('2. The Calendly token doesn\'t have the right permissions')
         console.log('3. The organization URI is incorrect')
         console.log('4. Events exist but are in a different status')
       } else {
         console.log(`✅ Processing ${totalEventsFound} events...`)
         
-        // Process each event, but only current and future ones
+        // Process each event - all should be current or future since we filtered by date range
         for (const event of allEvents) {
           try {
             console.log(`=== PROCESSING EVENT ===`)
@@ -158,17 +157,16 @@ serve(async (req) => {
             console.log(`Event name: ${event.name}`)
             console.log(`Event status: ${event.status}`)
             
-            // Check if event is in the future or very recent (within last 24 hours)
+            // Since we're only fetching future events, we should process all of them
             const eventTime = new Date(event.start_time)
-            const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000))
             
-            if (eventTime < twentyFourHoursAgo) {
-              console.log(`⏰ SKIPPING PAST EVENT: Event was ${eventTime.toISOString()}, more than 24 hours ago`)
+            if (eventTime < now) {
+              console.log(`⏰ SKIPPING PAST EVENT: Event was ${eventTime.toISOString()}, already passed`)
               totalPastEventsSkipped++
               continue
             }
             
-            console.log(`✅ PROCESSING CURRENT/FUTURE EVENT: ${eventTime.toISOString()}`)
+            console.log(`✅ PROCESSING FUTURE EVENT: ${eventTime.toISOString()}`)
             totalEventsProcessed++
             
             // Fetch invitee information for each event
@@ -217,7 +215,7 @@ serve(async (req) => {
         
         console.log(`=== PROCESSING SUMMARY ===`)
         console.log(`Total events found: ${totalEventsFound}`)
-        console.log(`Events processed (current/future): ${totalEventsProcessed}`)
+        console.log(`Events processed (future): ${totalEventsProcessed}`)
         console.log(`Past events skipped: ${totalPastEventsSkipped}`)
         console.log(`New leads created: ${newLeads.length}`)
       }
@@ -242,7 +240,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: `Sync completed - processed ${newLeads.length} new leads (${totalEventsProcessed} current/future events processed, ${totalPastEventsSkipped} past events skipped)`,
+      message: `Sync completed - processed ${newLeads.length} new leads (${totalEventsProcessed} future events processed, ${totalPastEventsSkipped} past events skipped)`,
       newLeads: newLeads,
       debug: debugInfo
     }), {
