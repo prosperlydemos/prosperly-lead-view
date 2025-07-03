@@ -60,6 +60,7 @@ serve(async (req) => {
 
       const userData = await userResponse.json()
       const organizationUri = userData.resource.current_organization
+      console.log('Organization URI:', organizationUri)
       
       // Fetch scheduled events from today forward for 21 days
       const startTime = new Date()
@@ -77,15 +78,20 @@ serve(async (req) => {
       })
 
       if (!eventsResponse.ok) {
-        throw new Error(`Failed to fetch events: ${eventsResponse.status}`)
+        const errorText = await eventsResponse.text()
+        console.error('Events API response:', errorText)
+        throw new Error(`Failed to fetch events: ${eventsResponse.status} - ${errorText}`)
       }
 
       const eventsData = await eventsResponse.json()
       console.log(`Found ${eventsData.collection.length} scheduled events`)
+      console.log('Sample event data:', JSON.stringify(eventsData.collection[0], null, 2))
 
       // Process each event
       for (const event of eventsData.collection) {
         try {
+          console.log(`Processing event: ${event.uri}, start_time: ${event.start_time}`)
+          
           // Fetch invitee information for each event
           const inviteeResponse = await fetch(`${event.uri}/invitees`, {
             headers: {
@@ -96,9 +102,16 @@ serve(async (req) => {
 
           if (inviteeResponse.ok) {
             const inviteeData = await inviteeResponse.json()
+            console.log(`Found ${inviteeData.collection.length} invitees for event`)
             
             // Process each invitee
             for (const invitee of inviteeData.collection) {
+              console.log('Processing invitee:', JSON.stringify({
+                name: invitee.name,
+                email: invitee.email,
+                event_start_time: event.start_time
+              }, null, 2))
+              
               const leadData = await processCalendlyInvitee({
                 event: event,
                 ...invitee
@@ -108,6 +121,8 @@ serve(async (req) => {
                 newLeads.push(leadData)
               }
             }
+          } else {
+            console.error(`Failed to fetch invitees for event ${event.uri}: ${inviteeResponse.status}`)
           }
         } catch (eventError) {
           console.error('Error processing event:', event.uri, eventError)
@@ -129,6 +144,7 @@ serve(async (req) => {
       // Don't fail the whole operation for this
     }
 
+    console.log(`Sync completed - processed ${newLeads.length} new leads`)
     return new Response(JSON.stringify({ 
       success: true, 
       message: `Sync completed - processed ${newLeads.length} new leads`,
@@ -148,6 +164,13 @@ serve(async (req) => {
 })
 
 async function processCalendlyInvitee(invitee: any, supabase: any) {
+  console.log('processCalendlyInvitee called with:', JSON.stringify({
+    email: invitee.email,
+    name: invitee.name,
+    start_time: invitee.start_time,
+    event_start_time: invitee.event?.start_time
+  }, null, 2))
+
   // Extract lead information
   const email = invitee.email
   const name = invitee.name
@@ -162,6 +185,8 @@ async function processCalendlyInvitee(invitee: any, supabase: any) {
   const demoDate = new Date(scheduledTime)
   const today = new Date()
   today.setHours(0, 0, 0, 0) // Set to beginning of today
+  
+  console.log(`Demo date: ${demoDate.toISOString()}, Today: ${today.toISOString()}`)
   
   if (demoDate < today) {
     console.log('Demo date is in the past, skipping lead processing:', scheduledTime)
@@ -199,6 +224,8 @@ async function processCalendlyInvitee(invitee: any, supabase: any) {
     .single()
 
   if (!existingLead) {
+    console.log('Creating new lead for:', email)
+    
     // Create new lead with blank lead source
     const { data: newLead, error: insertError } = await supabase
       .from('leads')
