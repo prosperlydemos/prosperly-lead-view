@@ -33,6 +33,8 @@ serve(async (req) => {
     }
 
     let newLeads = []
+    let totalEventsFound = 0
+    let dateRange = null
 
     // Handle invitee.created event (when someone books a demo)
     if (payload && payload.event === 'invitee.created') {
@@ -67,11 +69,16 @@ serve(async (req) => {
       const organizationUri = userData.resource.current_organization
       console.log('Organization URI:', organizationUri)
       
-      // Fetch scheduled events - let's try a wider date range to see if we get any events
+      // Fetch scheduled events - expanded date range to catch more events
       const startTime = new Date()
       startTime.setDate(startTime.getDate() - 7) // Start from 7 days ago
       const endTime = new Date()
       endTime.setDate(endTime.getDate() + 30) // Go 30 days into future
+
+      dateRange = {
+        from: startTime.toISOString(),
+        to: endTime.toISOString()
+      }
 
       console.log(`Fetching events from ${startTime.toISOString()} to ${endTime.toISOString()}`)
 
@@ -92,33 +99,19 @@ serve(async (req) => {
       }
 
       const eventsData = await eventsResponse.json()
-      console.log(`=== EVENTS RESPONSE ===`)
-      console.log(`Found ${eventsData.collection.length} scheduled events`)
-      console.log('Full events data:', JSON.stringify(eventsData, null, 2))
+      totalEventsFound = eventsData.collection.length
       
-      if (eventsData.collection.length === 0) {
+      console.log(`=== EVENTS RESPONSE ===`)
+      console.log(`Found ${totalEventsFound} scheduled events`)
+      
+      if (totalEventsFound === 0) {
         console.log('No events found in the specified date range')
         console.log('This could mean:')
         console.log('1. No events are scheduled in the date range')
         console.log('2. The organization URI is incorrect')
         console.log('3. The Calendly token doesn\'t have access to events')
-        
-        // Let's try without organization filter to see if that helps
-        console.log('Trying without organization filter...')
-        const eventsResponseNoOrg = await fetch(`https://api.calendly.com/scheduled_events?min_start_time=${startTime.toISOString()}&max_start_time=${endTime.toISOString()}&status=active`, {
-          headers: {
-            'Authorization': `Bearer ${calendlyToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (eventsResponseNoOrg.ok) {
-          const eventsDataNoOrg = await eventsResponseNoOrg.json()
-          console.log(`Without org filter: Found ${eventsDataNoOrg.collection.length} events`)
-          if (eventsDataNoOrg.collection.length > 0) {
-            console.log('Sample event without org filter:', JSON.stringify(eventsDataNoOrg.collection[0], null, 2))
-          }
-        }
+      } else {
+        console.log('Sample event from response:', JSON.stringify(eventsData.collection[0], null, 2))
       }
 
       // Process each event
@@ -192,11 +185,8 @@ serve(async (req) => {
       message: `Sync completed - processed ${newLeads.length} new leads`,
       newLeads: newLeads,
       debug: {
-        totalEventsFound: eventsData?.collection?.length || 0,
-        dateRange: {
-          from: startTime?.toISOString(),
-          to: endTime?.toISOString()
-        }
+        totalEventsFound: totalEventsFound,
+        dateRange: dateRange
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
