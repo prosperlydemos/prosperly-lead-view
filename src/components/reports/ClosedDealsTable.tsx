@@ -25,18 +25,31 @@ interface ClosedDealsTableProps {
   onEditCommission: (lead: Lead) => void;
 }
 
+// Helper function to safely get commission amount
+const getCommissionAmount = (lead: Lead, users: User[]): number => {
+  // Check if commissionAmount is a valid number
+  if (typeof lead.commissionAmount === 'number' && !isNaN(lead.commissionAmount)) {
+    return lead.commissionAmount;
+  }
+  
+  // If commissionAmount is malformed (like an object), fall back to calculation
+  return calculateCommission(lead, users);
+};
+
 const ClosedDealsTable: React.FC<ClosedDealsTableProps> = ({
   filteredLeads,
   users,
   onEditCommission
 }) => {
-  // Filter only closed deals
-  const closedDeals = filteredLeads.filter(lead => lead.status === 'Closed');
+  // Filter only closed deals with signup dates
+  const closedDeals = filteredLeads.filter(lead => 
+    lead.status === 'Closed' && lead.signupDate
+  );
   
-  // Sort by closing date (most recent first)
+  // Sort by signup date (most recent first)
   const sortedDeals = [...closedDeals].sort((a, b) => {
-    const dateA = a.closedAt ? new Date(a.closedAt).getTime() : 0;
-    const dateB = b.closedAt ? new Date(b.closedAt).getTime() : 0;
+    const dateA = a.signupDate ? new Date(a.signupDate).getTime() : 0;
+    const dateB = b.signupDate ? new Date(b.signupDate).getTime() : 0;
     return dateB - dateA;
   });
 
@@ -45,14 +58,14 @@ const ClosedDealsTable: React.FC<ClosedDealsTableProps> = ({
       <CardHeader>
         <CardTitle className="text-lg">Closed Deals</CardTitle>
         <CardDescription>
-          All closed deals in the selected time period
+          All closed deals in the selected time period (sorted by signup date)
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date Closed</TableHead>
+              <TableHead>Signup Date</TableHead>
               <TableHead>Business</TableHead>
               <TableHead>Owner</TableHead>
               <TableHead>Setup Fee</TableHead>
@@ -66,13 +79,11 @@ const ClosedDealsTable: React.FC<ClosedDealsTableProps> = ({
             {sortedDeals.length > 0 ? (
               sortedDeals.map((deal) => {
                 const owner = users.find(user => user.id === deal.ownerId);
-                const commissionAmount = deal.commissionAmount !== undefined && deal.commissionAmount !== null
-                  ? deal.commissionAmount
-                  : calculateCommission(deal, users);
+                const commissionAmount = getCommissionAmount(deal, users);
                 
                 return (
                   <TableRow key={deal.id}>
-                    <TableCell>{formatDate(deal.closedAt)}</TableCell>
+                    <TableCell>{formatDate(deal.signupDate)}</TableCell>
                     <TableCell>{deal.businessName || deal.contactName}</TableCell>
                     <TableCell>{owner?.name || 'Unassigned'}</TableCell>
                     <TableCell>${deal.setupFee?.toLocaleString() || 0}</TableCell>
@@ -94,7 +105,7 @@ const ClosedDealsTable: React.FC<ClosedDealsTableProps> = ({
             ) : (
               <TableRow>
                 <TableCell colSpan={8} className="py-4 text-center text-muted-foreground">
-                  No closed deals in the selected time period.
+                  No closed deals with signup dates in the selected time period.
                 </TableCell>
               </TableRow>
             )}

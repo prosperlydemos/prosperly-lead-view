@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Lead, CommissionRule } from '@/types';
 import { format, isWithinInterval, startOfMonth, endOfMonth, getMonth, getYear, startOfDay, endOfDay, parseISO, subMonths, isSameMonth, isSameYear } from 'date-fns';
@@ -59,25 +58,30 @@ export const useReportsData = (
     leaderboardData: []
   });
 
-  // Filter leads based on date range and user ID
+  // Filter leads based on date range and user ID - USE SIGNUP DATE for filtering closed deals
   useEffect(() => {
     if (!leads.length) return;
 
     let filtered: Lead[] = [...leads];
 
-    // Filter by date range if provided
+    // Filter by date range if provided - for closed deals, use signup date
     if (dateFilter) {
       const { startDate, endDate } = dateFilter;
       const startOfDayDate = startOfDay(startDate);
       const endOfDayDate = endOfDay(endDate);
       
       filtered = filtered.filter(lead => {
-        // Check if the lead has relevant dates that fall within the filter range
+        // For closed deals, only consider signup date for the date filter
+        if (lead.status === 'Closed') {
+          const signupDate = lead.signupDate ? new Date(lead.signupDate) : null;
+          return signupDate && isWithinInterval(signupDate, { start: startOfDayDate, end: endOfDayDate });
+        }
+        
+        // For non-closed leads, check other relevant dates
         const demoDate = lead.demoDate ? new Date(lead.demoDate) : null;
         const signupDate = lead.signupDate ? new Date(lead.signupDate) : null;
         const closedDate = lead.closedAt ? new Date(lead.closedAt) : null;
         
-        // Include if any relevant date is in the selected date range
         return (demoDate && isWithinInterval(demoDate, { start: startOfDayDate, end: endOfDayDate })) || 
                (signupDate && isWithinInterval(signupDate, { start: startOfDayDate, end: endOfDayDate })) ||
                (closedDate && isWithinInterval(closedDate, { start: startOfDayDate, end: endOfDayDate }));
@@ -90,7 +94,7 @@ export const useReportsData = (
     }
 
     setFilteredLeads(filtered);
-    console.log('Filtered leads:', filtered);
+    console.log('Filtered leads (using signup date for closed deals):', filtered);
   }, [leads, dateFilter, selectedUserId]);
 
   // Compute sales metrics
@@ -287,7 +291,7 @@ export const useReportsData = (
       const totalSetupFees = userLeads.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
       const closedDeals = userLeads.length;
       
-      // Calculate commission based on rules
+      // Calculate commission based on rules - fix malformed commission amounts
       let commission = 0;
       if (user.commissionRules && user.commissionRules.length) {
         console.log(`Applying commission rules for ${user.name}:`, user.commissionRules);

@@ -31,28 +31,37 @@ interface CommissionsTabProps {
   }>;
 }
 
+// Helper function to safely get commission amount
+const getCommissionAmount = (lead: Lead, users: User[]): number => {
+  // Check if commissionAmount is a valid number
+  if (typeof lead.commissionAmount === 'number' && !isNaN(lead.commissionAmount)) {
+    return lead.commissionAmount;
+  }
+  
+  // If commissionAmount is malformed (like an object), fall back to calculation
+  return calculateCommission(lead, users);
+};
+
 const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, leaderboardData }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedOwner, setSelectedOwner] = useState<User | null>(null);
   
-  // Calculate totals for summary
-  const totalSetupFees = filteredLeads
-    .filter(lead => lead.status === 'Closed')
+  // Calculate totals for summary - only include closed deals with signup dates
+  const closedLeadsWithSignupDate = filteredLeads.filter(lead => 
+    lead.status === 'Closed' && lead.signupDate
+  );
+  
+  const totalSetupFees = closedLeadsWithSignupDate
     .reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
   
-  const totalMRR = filteredLeads
-    .filter(lead => lead.status === 'Closed')
+  const totalMRR = closedLeadsWithSignupDate
     .reduce((sum, lead) => sum + (lead.mrr || 0), 0);
     
-  // Calculate total commissions including both custom and default amounts
-  const totalCommissions = filteredLeads
-    .filter(lead => lead.status === 'Closed')
+  // Calculate total commissions with proper handling of malformed amounts
+  const totalCommissions = closedLeadsWithSignupDate
     .reduce((sum, lead) => {
-      // Use custom commission if set, otherwise calculate default
-      const commissionAmount = lead.commissionAmount !== undefined && lead.commissionAmount !== null
-        ? lead.commissionAmount
-        : calculateCommission(lead, users);
+      const commissionAmount = getCommissionAmount(lead, users);
       return sum + commissionAmount;
     }, 0);
 
@@ -69,7 +78,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
         <CardHeader>
           <CardTitle className="text-lg">Revenue Summary</CardTitle>
           <CardDescription>
-            Overview of revenue and commissions for the selected time period
+            Overview of revenue and commissions for the selected time period (based on signup dates)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -94,7 +103,7 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
         <CardHeader>
           <CardTitle className="text-lg">Commission Structure</CardTitle>
           <CardDescription>
-            Current commission rules for each team member
+            Current commission rules for each team member (based on signup dates)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -111,9 +120,11 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
             </TableHeader>
             <TableBody>
               {users.map((user) => {
+                // Only count closed deals with signup dates
                 const userClosedLeads = filteredLeads.filter(lead => 
                   lead.ownerId === user.id && 
-                  lead.status === 'Closed'
+                  lead.status === 'Closed' &&
+                  lead.signupDate
                 );
                 
                 // Calculate the total revenue for each user's closed leads
@@ -121,11 +132,9 @@ const CommissionsTab: React.FC<CommissionsTabProps> = ({ users, filteredLeads, l
                 const userTotalSetupFees = userClosedLeads.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
                 const userTotalRevenue = userTotalMRR + userTotalSetupFees;
                 
-                // Calculate total commission earned including custom commission amounts
+                // Calculate total commission earned with proper handling of malformed amounts
                 const userTotalCommission = userClosedLeads.reduce((sum, lead) => {
-                  const commissionAmount = lead.commissionAmount !== undefined && lead.commissionAmount !== null
-                    ? lead.commissionAmount
-                    : calculateCommission(lead, users);
+                  const commissionAmount = getCommissionAmount(lead, users);
                   return sum + commissionAmount;
                 }, 0);
                 

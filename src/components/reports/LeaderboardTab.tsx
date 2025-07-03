@@ -32,24 +32,34 @@ interface LeaderboardTabProps {
   filteredLeads: Lead[];
 }
 
+// Helper function to safely get commission amount
+const getCommissionAmount = (lead: Lead, users: User[]): number => {
+  // Check if commissionAmount is a valid number
+  if (typeof lead.commissionAmount === 'number' && !isNaN(lead.commissionAmount)) {
+    return lead.commissionAmount;
+  }
+  
+  // If commissionAmount is malformed (like an object), fall back to calculation
+  return calculateCommission(lead, users);
+};
+
 const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ leaderboardData, users, filteredLeads }) => {
-  // Create a modified leaderboard that takes custom commission amounts into account
+  // Create a modified leaderboard that takes custom commission amounts into account and uses signup date
   const modifiedLeaderboard = users.map(user => {
-    // Find all closed deals for this user
+    // Find all closed deals for this user with signup dates
     const userClosedLeads = filteredLeads.filter(lead => 
       lead.ownerId === user.id && 
-      lead.status === 'Closed'
+      lead.status === 'Closed' &&
+      lead.signupDate // Only include leads with signup dates
     );
     
     // Calculate total value (MRR + setup fees)
     const totalValue = userClosedLeads.reduce((sum, lead) => 
       sum + (lead.mrr || 0) + (lead.setupFee || 0), 0);
     
-    // Calculate total commission with custom amounts
+    // Calculate total commission with custom amounts and proper handling of malformed data
     const totalCommission = userClosedLeads.reduce((sum, lead) => {
-      const commissionAmount = lead.commissionAmount !== undefined && lead.commissionAmount !== null
-        ? lead.commissionAmount
-        : calculateCommission(lead, users);
+      const commissionAmount = getCommissionAmount(lead, users);
       return sum + commissionAmount;
     }, 0);
     
@@ -69,7 +79,7 @@ const LeaderboardTab: React.FC<LeaderboardTabProps> = ({ leaderboardData, users,
         <CardHeader>
           <CardTitle className="text-lg">Sales Leaderboard</CardTitle>
           <CardDescription>
-            Performance ranking based on number of closed deals and revenue
+            Performance ranking based on number of closed deals and revenue (by signup date)
           </CardDescription>
         </CardHeader>
         <CardContent>
