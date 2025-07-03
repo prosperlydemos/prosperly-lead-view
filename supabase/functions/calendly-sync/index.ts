@@ -104,12 +104,12 @@ serve(async (req) => {
           status: 200,
         })
       } else {
-        // Update existing lead with demo date
+        // Update existing lead with demo date ONLY - don't change status
         const { error: updateError } = await supabase
           .from('leads')
           .update({
-            demo_date: scheduledTime,
-            status: 'Demo Scheduled'
+            demo_date: scheduledTime
+            // Removed status update to preserve existing lead status
           })
           .eq('id', existingLead.id)
 
@@ -118,11 +118,11 @@ serve(async (req) => {
           throw updateError
         }
 
-        console.log('Updated existing lead:', existingLead.id)
+        console.log('Updated existing lead demo date:', existingLead.id)
         
         return new Response(JSON.stringify({ 
           success: true, 
-          message: 'Lead updated successfully',
+          message: 'Lead demo date updated successfully',
           newLeads: []
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
