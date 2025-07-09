@@ -28,9 +28,14 @@ const KickoffList: React.FC<KickoffListProps> = ({
   onViewLead
 }) => {
   // Filter leads to show only closed leads without completed kickoff
+  // This ensures that once kickoff_completed is true, they won't appear
   const kickoffPendingLeads = leads.filter(
-    lead => lead.status === 'Closed' && !lead.kickoff_completed
+    lead => lead.status === 'Closed' && lead.kickoff_completed === false
   );
+
+  console.log('KickoffList - All leads:', leads.length);
+  console.log('KickoffList - Closed leads:', leads.filter(l => l.status === 'Closed').length);
+  console.log('KickoffList - Pending kickoff leads:', kickoffPendingLeads.length);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

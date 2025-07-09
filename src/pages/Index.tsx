@@ -440,6 +440,8 @@ const Index: React.FC = () => {
 
   const handleMarkKickoffComplete = useCallback(async (leadId: string) => {
     try {
+      console.log('Marking kickoff complete for lead:', leadId);
+      
       const { error } = await supabase
         .from('leads')
         .update({ kickoff_completed: true })
@@ -447,10 +449,14 @@ const Index: React.FC = () => {
         
       if (error) throw error;
       
-      // Update the leads state
-      setLeads(prev => prev.map(lead => 
-        lead.id === leadId ? { ...lead, kickoff_completed: true } : lead
-      ));
+      // Update the leads state immediately for UI responsiveness
+      setLeads(prev => {
+        const updatedLeads = prev.map(lead => 
+          lead.id === leadId ? { ...lead, kickoff_completed: true } : lead
+        );
+        console.log('Updated leads state after kickoff completion');
+        return updatedLeads;
+      });
       
       toast({
         title: "Kickoff completed",
@@ -644,15 +650,18 @@ const Index: React.FC = () => {
   const pendingKickoffCount = useMemo(() => {
     if (!currentUser?.id) return 0;
     
-    return leads.filter(lead => {
+    const count = leads.filter(lead => {
       // Only consider leads assigned to the current user or if user is admin
       const isUserLead = lead.owner_id === currentUser.id;
       const isAdmin = currentUser.is_admin;
       
       return (isUserLead || isAdmin) && 
              lead.status === 'Closed' && 
-             !lead.kickoff_completed;
+             lead.kickoff_completed === false; // Explicitly check for false
     }).length;
+    
+    console.log('Pending kickoff count:', count);
+    return count;
   }, [leads, currentUser?.id, currentUser?.is_admin]);
   
   // Count leads by status
