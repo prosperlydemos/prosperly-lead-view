@@ -297,9 +297,15 @@ const Index: React.FC = () => {
   }, []);
   
   const handleMarkTodoComplete = useCallback((todoId: string) => {
-    setTodoItems(prev => prev.map(item => 
-      item.id === todoId ? { ...item, completed: true } : item
-    ));
+    console.log('Marking todo complete:', todoId);
+    
+    setTodoItems(prev => {
+      const updatedItems = prev.map(item => 
+        item.id === todoId ? { ...item, completed: true } : item
+      );
+      console.log('Updated todo items after completion');
+      return updatedItems;
+    });
     
     toast({
       title: "Task completed",
@@ -592,7 +598,7 @@ const Index: React.FC = () => {
               contactName: lead.contact_name,
               businessName: lead.business_name || '',
               dueDate: lead.next_follow_up,
-              completed: false,
+              completed: false, // Always start as not completed
               type: 'follow-up'
             });
           }
@@ -610,7 +616,7 @@ const Index: React.FC = () => {
               contactName: lead.contact_name,
               businessName: lead.business_name || '',
               dueDate: lead.demo_date,
-              completed: false,
+              completed: false, // Always start as not completed
               type: 'demo',
               time: demoTime
             });
@@ -619,32 +625,29 @@ const Index: React.FC = () => {
       }
     });
     
-    // Only update if there are actual changes to prevent unnecessary re-renders
+    // Update todo items, preserving completed status for existing items
     setTodoItems(prev => {
-      const prevIds = new Set(prev.map(item => item.id));
-      const newIds = new Set(newTodoItems.map(item => item.id));
+      const completedItems = prev.filter(item => item.completed === true);
+      const completedItemIds = new Set(completedItems.map(item => item.id));
       
-      // Check if the todo items have actually changed
-      if (prev.length === newTodoItems.length && 
-          [...prevIds].every(id => newIds.has(id))) {
-        return prev; // No changes, return previous state
-      }
-      
-      // Filter out completed items and add new ones
-      const filteredItems = prev.filter(item => 
-        item.completed && 
-        !newTodoItems.some(newItem => newItem.leadId === item.leadId && newItem.type === item.type)
+      // Only add new items that haven't been completed yet
+      const filteredNewItems = newTodoItems.filter(newItem => 
+        !completedItemIds.has(newItem.id)
       );
       
-      return [...filteredItems, ...newTodoItems];
+      console.log('Todo items update - Completed items preserved:', completedItems.length);
+      console.log('Todo items update - New items added:', filteredNewItems.length);
+      
+      return [...completedItems, ...filteredNewItems];
     });
   }, [leads, currentUser?.id]);
 
   // Get the number of active todo items for the current user
-  const activeTodoCount = useMemo(() => 
-    todoItems.filter(item => !item.completed).length,
-    [todoItems]
-  );
+  const activeTodoCount = useMemo(() => {
+    const count = todoItems.filter(item => item.completed === false).length;
+    console.log('Active todo count:', count);
+    return count;
+  }, [todoItems]);
 
   // Get the number of pending kickoff calls for the current user
   const pendingKickoffCount = useMemo(() => {

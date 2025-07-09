@@ -40,10 +40,15 @@ const TodoList: React.FC<TodoListProps> = ({
   onViewLead,
   currentUser
 }) => {
-  // Filter todo items to only show those for the current user that are not completed
+  // Filter todo items to only show those that are explicitly not completed
+  // This ensures that once completed is true, they won't appear
   const userTodoItems = todoItems.filter(
-    item => !item.completed
+    item => item.completed === false
   );
+
+  console.log('TodoList - All todo items:', todoItems.length);
+  console.log('TodoList - Completed items:', todoItems.filter(item => item.completed === true).length);
+  console.log('TodoList - Active todo items:', userTodoItems.length);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
