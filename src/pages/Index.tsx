@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -7,7 +6,7 @@ import { Note, Lead, mapSupabaseLeadToAppLead, mapAppLeadToSupabaseLead, Profile
 import { toast } from "@/hooks/use-toast";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ListTodo } from 'lucide-react';
+import { ListTodo, UserCheck } from 'lucide-react';
 import { isToday, parseISO, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +17,7 @@ import AddLeadDialog from '@/components/leads/AddLeadDialog';
 import EditLeadDialog from '@/components/leads/EditLeadDialog';
 import CalendlySync from '@/components/CalendlySync';
 import { DateFilterOption, DateFieldOption } from '@/components/DateRangeFilter';
+import KickoffList from '../components/KickoffList';
 
 interface TodoItem {
   id: string;
@@ -39,6 +39,7 @@ const Index: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'All'>('All');
   const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all');
   const [isTodoListOpen, setIsTodoListOpen] = useState(false);
+  const [isKickoffListOpen, setIsKickoffListOpen] = useState(false);
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<Profile[]>([]);
@@ -437,6 +438,34 @@ const Index: React.FC = () => {
     }
   }, []);
 
+  const handleMarkKickoffComplete = useCallback(async (leadId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ kickoff_completed: true })
+        .eq('id', leadId);
+        
+      if (error) throw error;
+      
+      // Update the leads state
+      setLeads(prev => prev.map(lead => 
+        lead.id === leadId ? { ...lead, kickoff_completed: true } : lead
+      ));
+      
+      toast({
+        title: "Kickoff completed",
+        description: "Kickoff call marked as completed."
+      });
+    } catch (error) {
+      console.error('Error marking kickoff complete:', error);
+      toast({
+        title: "Error updating kickoff status",
+        description: "Failed to mark kickoff as completed",
+        variant: "destructive"
+      });
+    }
+  }, []);
+
   // Fetch leads with real-time subscription - fixed dependencies
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -610,6 +639,21 @@ const Index: React.FC = () => {
     todoItems.filter(item => !item.completed).length,
     [todoItems]
   );
+
+  // Get the number of pending kickoff calls for the current user
+  const pendingKickoffCount = useMemo(() => {
+    if (!currentUser?.id) return 0;
+    
+    return leads.filter(lead => {
+      // Only consider leads assigned to the current user or if user is admin
+      const isUserLead = lead.owner_id === currentUser.id;
+      const isAdmin = currentUser.is_admin;
+      
+      return (isUserLead || isAdmin) && 
+             lead.status === 'Closed' && 
+             !lead.kickoff_completed;
+    }).length;
+  }, [leads, currentUser?.id, currentUser?.is_admin]);
   
   // Count leads by status
   const leadStatusCounts = useMemo(() =>
@@ -690,6 +734,19 @@ const Index: React.FC = () => {
                   </span>
                 )}
               </Button>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2" 
+                onClick={() => setIsKickoffListOpen(true)}
+              >
+                <UserCheck className="h-4 w-4" /> 
+                <span>Kickoff Calls</span>
+                {pendingKickoffCount > 0 && (
+                  <span className="ml-1 text-red-500 font-medium">
+                    ({pendingKickoffCount})
+                  </span>
+                )}
+              </Button>
               <UserNavbar />
             </div>
           </div>
@@ -761,6 +818,17 @@ const Index: React.FC = () => {
           setIsTodoListOpen(false);
         }}
         currentUser={currentUser}
+      />
+
+      <KickoffList
+        isOpen={isKickoffListOpen}
+        onClose={() => setIsKickoffListOpen(false)}
+        leads={leads}
+        onMarkComplete={handleMarkKickoffComplete}
+        onViewLead={(leadId) => {
+          setSelectedLeadId(leadId);
+          setIsKickoffListOpen(false);
+        }}
       />
     </div>
   );

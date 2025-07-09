@@ -1,3 +1,4 @@
+
 export type LeadStatus = 'Demo Scheduled' | 'Warm Lead' | 'Hot Lead' | 'Closed' | 'Lost' | 'Demo No Show';
 
 export interface CommissionRule {
@@ -34,6 +35,7 @@ export interface Lead {
   location?: string; // US state or Canadian city
   commissionAmount?: number; // Custom commission amount for this lead
   vertical?: string; // Business vertical/industry
+  kickoffCompleted?: boolean; // Whether the kickoff call has been completed
 }
 
 export interface Note {
