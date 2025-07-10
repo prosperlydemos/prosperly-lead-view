@@ -276,6 +276,7 @@ const Reports: React.FC<ReportsProps> = ({ users: initialUsers, leads: initialLe
             revenueData={chartData.revenueData}
             totalMRR={metrics.totalMRR}
             totalSetupFees={metrics.totalSetupFees}
+            filteredLeads={filteredLeads}
           />
           
           <LeaderboardTab 
