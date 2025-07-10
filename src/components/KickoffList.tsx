@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Lead } from '../types/supabase';
 import { format } from 'date-fns';
-import { Check, UserCheck } from 'lucide-react';
+import { Check, UserCheck, Copy } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,22 @@ const KickoffList: React.FC<KickoffListProps> = ({
       return new Date(a.signup_date).getTime() - new Date(b.signup_date).getTime();
     });
 
+  const handleCopyEmail = async (email: string) => {
+    try {
+      await navigator.clipboard.writeText(email);
+      toast({
+        title: "Email copied",
+        description: "Email address has been copied to clipboard"
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy email address",
+        variant: "destructive"
+      });
+    }
+  };
+
   console.log('KickoffList - All leads:', leads.length);
   console.log('KickoffList - Closed leads:', leads.filter(l => l.status === 'Closed').length);
   console.log('KickoffList - Pending kickoff leads:', kickoffPendingLeads.length);
@@ -65,6 +82,19 @@ const KickoffList: React.FC<KickoffListProps> = ({
                   <div className="space-y-1">
                     <div className="font-medium">{lead.contact_name}</div>
                     <div className="text-sm text-muted-foreground">{lead.business_name}</div>
+                    {lead.email && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">{lead.email}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => handleCopyEmail(lead.email!)}
+                        >
+                          <Copy size={12} />
+                        </Button>
+                      </div>
+                    )}
                     <div className="text-xs flex items-center">
                       <UserCheck className="mr-1" size={14} />
                       Closed: {lead.closing_date ? format(new Date(lead.closing_date), 'PPP') : 'Recently'}
