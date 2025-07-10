@@ -29,9 +29,15 @@ const KickoffList: React.FC<KickoffListProps> = ({
 }) => {
   // Filter leads to show only closed leads without completed kickoff
   // This ensures that once kickoff_completed is true, they won't appear
-  const kickoffPendingLeads = leads.filter(
-    lead => lead.status === 'Closed' && lead.kickoff_completed === false
-  );
+  const kickoffPendingLeads = leads
+    .filter(lead => lead.status === 'Closed' && lead.kickoff_completed === false)
+    .sort((a, b) => {
+      // Sort by signup_date, earliest first (null values go to the end)
+      if (!a.signup_date && !b.signup_date) return 0;
+      if (!a.signup_date) return 1;
+      if (!b.signup_date) return -1;
+      return new Date(a.signup_date).getTime() - new Date(b.signup_date).getTime();
+    });
 
   console.log('KickoffList - All leads:', leads.length);
   console.log('KickoffList - Closed leads:', leads.filter(l => l.status === 'Closed').length);
@@ -63,6 +69,11 @@ const KickoffList: React.FC<KickoffListProps> = ({
                       <UserCheck className="mr-1" size={14} />
                       Closed: {lead.closing_date ? format(new Date(lead.closing_date), 'PPP') : 'Recently'}
                     </div>
+                    {lead.signup_date && (
+                      <div className="text-xs text-muted-foreground">
+                        Signup: {format(new Date(lead.signup_date), 'PPP')}
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
