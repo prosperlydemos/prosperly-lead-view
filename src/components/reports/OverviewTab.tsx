@@ -43,6 +43,10 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   const potentialMRRFromHotLeads = hotLeadsLast60Days.reduce((sum, lead) => sum + (lead.mrr || 0), 0);
   const potentialSetupFeesFromHotLeads = hotLeadsLast60Days.reduce((sum, lead) => sum + (lead.setupFee || 0), 0);
 
+  // Calculate total potential (current closed + potential from hot leads)
+  const totalPotentialMRR = totalMRR + potentialMRRFromHotLeads;
+  const totalPotentialSetupFees = totalSetupFees + potentialSetupFeesFromHotLeads;
+
   return (
     <TabsContent value="overview">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -53,8 +57,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           <CardContent>
             <div className="text-3xl font-bold">${totalMRR.toLocaleString()}</div>
             <div className="mt-3 pt-3 border-t">
-              <div className="text-sm text-muted-foreground">Potential from Hot Leads:</div>
-              <div className="text-lg font-semibold text-orange-600">${potentialMRRFromHotLeads.toLocaleString()}</div>
+              <div className="text-sm text-muted-foreground">Potential with Hot Leads:</div>
+              <div className="text-lg font-semibold text-green-600">${totalPotentialMRR.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
@@ -66,8 +70,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           <CardContent>
             <div className="text-3xl font-bold">${totalSetupFees.toLocaleString()}</div>
             <div className="mt-3 pt-3 border-t">
-              <div className="text-sm text-muted-foreground">Potential from Hot Leads:</div>
-              <div className="text-lg font-semibold text-orange-600">${potentialSetupFeesFromHotLeads.toLocaleString()}</div>
+              <div className="text-sm text-muted-foreground">Potential with Hot Leads:</div>
+              <div className="text-lg font-semibold text-green-600">${totalPotentialSetupFees.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
