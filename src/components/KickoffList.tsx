@@ -62,7 +62,7 @@ const KickoffList: React.FC<KickoffListProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Kickoff Calls Pending ({kickoffPendingLeads.length})</DialogTitle>
         </DialogHeader>
