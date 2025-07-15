@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -376,7 +375,7 @@ const Index: React.FC = () => {
           name: userData.name,
           email: userData.email,
           is_admin: userData.isAdmin,
-          commission_rules: userData.commissionRules || [{ threshold: 0, amount: 100 }]
+          commission_rules: userData.commissionRules as any || [{ threshold: 0, amount: 100 }]
         })
         .select()
         .single();
@@ -411,7 +410,7 @@ const Index: React.FC = () => {
           name: updatedUser.name,
           email: updatedUser.email,
           is_admin: updatedUser.isAdmin,
-          commission_rules: updatedUser.commissionRules
+          commission_rules: updatedUser.commissionRules as any
         })
         .eq('id', updatedUser.id);
         
@@ -420,7 +419,13 @@ const Index: React.FC = () => {
       // Update local users state
       setUsers(prev => prev.map(user => 
         user.id === updatedUser.id 
-          ? { ...user, name: updatedUser.name, email: updatedUser.email, is_admin: updatedUser.isAdmin, commission_rules: updatedUser.commissionRules }
+          ? { 
+              ...user, 
+              name: updatedUser.name, 
+              email: updatedUser.email, 
+              is_admin: updatedUser.isAdmin, 
+              commission_rules: updatedUser.commissionRules as any
+            }
           : user
       ));
       
