@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, CommissionRule } from '../types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -43,13 +44,35 @@ const UserManagement: React.FC<UserManagementProps> = ({
     }
   });
 
-  const handleSubmit = (data: Omit<User, 'id'>) => {
-    onAddUser(data);
-    form.reset();
-    toast({
-      title: "User added",
-      description: `${data.name} has been added to your team.`
-    });
+  const handleSubmit = async (data: any) => {
+    try {
+      // Create user object with proper structure
+      const newUser = {
+        name: data.name,
+        email: data.email,
+        isAdmin: data.isAdmin,
+        commissionRules: [{
+          threshold: 0,
+          amount: data.commissionRules[0].amount || 100
+        }]
+      };
+
+      await onAddUser(newUser);
+      form.reset();
+      setIsOpen(false);
+      
+      toast({
+        title: "User added",
+        description: `${data.name} has been added to your team.`
+      });
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+      toast({
+        title: "Error adding user",
+        description: "Failed to add the user. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditUser = (user: User) => {
@@ -186,7 +209,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                           type="number" 
                           placeholder="100" 
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
                       </FormControl>
                     </FormItem>

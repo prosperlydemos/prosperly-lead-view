@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LeadList from '../components/LeadList';
 import NoteSection from '../components/NoteSection';
@@ -362,24 +363,35 @@ const Index: React.FC = () => {
   // User management functions with stable dependencies
   const onAddUser = useCallback(async (userData: Omit<User, 'id'>) => {
     try {
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        email_confirm: true,
-        user_metadata: { name: userData.name, is_admin: userData.isAdmin }
-      });
+      console.log('Adding user:', userData);
       
+      // Create a new profile directly in the profiles table
+      // Generate a UUID for the new user profile
+      const newUserId = crypto.randomUUID();
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: newUserId,
+          name: userData.name,
+          email: userData.email,
+          is_admin: userData.isAdmin,
+          commission_rules: userData.commissionRules || [{ threshold: 0, amount: 100 }]
+        })
+        .select()
+        .single();
+        
       if (error) throw error;
       
-      // Refresh users list
-      const { data: updatedUsers } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (updatedUsers) {
-        setUsers(updatedUsers);
-      }
+      // Update local users state
+      setUsers(prev => [...prev, data]);
       
-      return data.user;
+      toast({
+        title: "User added successfully",
+        description: `${userData.name} has been added to the team.`
+      });
+      
+      return data;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
@@ -387,6 +399,7 @@ const Index: React.FC = () => {
         description: `Failed to add user: ${(error as Error).message}`,
         variant: "destructive"
       });
+      throw error;
     }
   }, []);
 
@@ -396,20 +409,25 @@ const Index: React.FC = () => {
         .from('profiles')
         .update({ 
           name: updatedUser.name,
-          is_admin: updatedUser.isAdmin
+          email: updatedUser.email,
+          is_admin: updatedUser.isAdmin,
+          commission_rules: updatedUser.commissionRules
         })
         .eq('id', updatedUser.id);
         
       if (error) throw error;
       
-      // Refresh users list
-      const { data: updatedUsers } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (updatedUsers) {
-        setUsers(updatedUsers);
-      }
+      // Update local users state
+      setUsers(prev => prev.map(user => 
+        user.id === updatedUser.id 
+          ? { ...user, name: updatedUser.name, email: updatedUser.email, is_admin: updatedUser.isAdmin, commission_rules: updatedUser.commissionRules }
+          : user
+      ));
+      
+      toast({
+        title: "User updated",
+        description: `${updatedUser.name} has been updated successfully.`
+      });
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
@@ -422,18 +440,20 @@ const Index: React.FC = () => {
 
   const onDeleteUser = useCallback(async (userId: string) => {
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+        
       if (error) throw error;
       
-      // Refresh users list
-      const { data: updatedUsers } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (updatedUsers) {
-        setUsers(updatedUsers);
-      }
+      // Update local users state
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      
+      toast({
+        title: "User deleted",
+        description: "User has been deleted successfully."
+      });
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
@@ -692,7 +712,11 @@ const Index: React.FC = () => {
     id: profile.id,
     name: profile.name || '',
     email: profile.email || '',
-    isAdmin: profile.is_admin
+    isAdmin: profile.is_admin,
+    commissionRules: Array.isArray(profile.commission_rules) ? profile.commission_rules.map((rule: any) => ({
+      threshold: rule.threshold || 0,
+      amount: rule.amount || 0
+    })) : []
   }));
   
   // Map current user to App user format
@@ -700,7 +724,11 @@ const Index: React.FC = () => {
     id: currentUser?.id || '',
     name: currentUser?.name || '',
     email: currentUser?.email || '',
-    isAdmin: currentUser?.is_admin || false
+    isAdmin: currentUser?.is_admin || false,
+    commissionRules: Array.isArray(currentUser?.commission_rules) ? currentUser.commission_rules.map((rule: any) => ({
+      threshold: rule.threshold || 0,
+      amount: rule.amount || 0
+    })) : []
   };
 
   return (
