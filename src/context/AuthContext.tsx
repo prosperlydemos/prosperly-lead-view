@@ -13,6 +13,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -152,8 +154,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Reset link sent",
+        description: "Check your email for a password reset link"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error sending reset email",
+        description: error.message || "An error occurred while sending the reset email",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully updated"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating password",
+        description: error.message || "An error occurred while updating the password",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider value={{ session, user, profile, signIn, signUp, signOut, resetPassword, updatePassword, loading }}>
       {children}
     </AuthContext.Provider>
   );

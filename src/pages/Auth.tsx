@@ -15,8 +15,10 @@ const Auth = () => {
   const [password, setPassword] = useState<string>('');
   const [name, setName] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
+  const [isResetting, setIsResetting] = useState<boolean>(false);
   
-  const { signIn, signUp, session } = useAuth();
+  const { signIn, signUp, resetPassword, session } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -52,6 +54,19 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsResetting(true);
+      await resetPassword(email);
+      setShowForgotPassword(false);
+    } catch (error) {
+      console.error('Reset password error:', error);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-[350px]">
@@ -67,35 +82,74 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="login">
-              <form onSubmit={handleLogin}>
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="name@example.com" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+              {!showForgotPassword ? (
+                <form onSubmit={handleLogin}>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="name@example.com" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        placeholder="********"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-sm text-muted-foreground hover:text-primary underline"
+                      >
+                        Forgot your password?
+                      </button>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      placeholder="********"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                </form>
+              ) : (
+                <form onSubmit={handleForgotPassword}>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="reset-email">Email</Label>
+                      <Input 
+                        id="reset-email" 
+                        type="email" 
+                        placeholder="name@example.com" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isResetting}>
+                      {isResetting ? 'Sending reset link...' : 'Send Reset Link'}
+                    </Button>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(false)}
+                        className="text-sm text-muted-foreground hover:text-primary underline"
+                      >
+                        Back to login
+                      </button>
+                    </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </div>
-              </form>
+                </form>
+              )}
             </TabsContent>
             
             <TabsContent value="register">
